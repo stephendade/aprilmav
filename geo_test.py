@@ -26,7 +26,7 @@ if __name__ == '__main__':
     parser.add_argument("-tagSize", type=int, default=160, help="Apriltag size in mm")
     parser.add_argument("-camera", type=str, default="PiCamV2LowRes", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=20, help="Capture and process this many frames")
-    parser.add_argument("-qual", type=int, default=30, help="Minimum tag quality to use, in n*E-8 units")
+    parser.add_argument("-maxerror", type=int, default=30, help="Maximum pose error to use, in n*E-8 units")
     args = parser.parse_args()
     
     print("Initialising")
@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
         # add any new tags to database, or existing one to duplicates
         for tag in tags:
-            if tag.tag_id not in tagPlacement and tag.pose_err < args.qual*1e-8:
+            if tag.tag_id not in tagPlacement and tag.pose_err < args.maxerror*1e-8:
                 # tag is in cur camera frame
                 T_TagToCam = numpy.array( numpy.eye((4)) )
                 T_TagToCam[0:3, 0:3] = numpy.array(tag.pose_R)
@@ -96,7 +96,7 @@ if __name__ == '__main__':
                 tagPlacement[tag.tag_id] = T_CamToWorld @ T_TagToCam
                 print("Added Tag ID {0}, Qual {2}, T =\n {1}".format(tag.tag_id, tagPlacement[tag.tag_id].round(3), tag.pose_err))
                 usingtags += 1
-            elif tag.pose_err < args.qual*1e-8:
+            elif tag.pose_err < args.maxerror*1e-8:
                 # get tag's last pos, in camera frame
                 T_TagToCam = numpy.array( numpy.eye((4)) )
                 T_TagToCam[0:3, 0:3] = numpy.array(tag.pose_R)

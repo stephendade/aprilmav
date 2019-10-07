@@ -26,6 +26,7 @@ if __name__ == '__main__':
     parser.add_argument("-tagSize", type=int, default=160, help="Apriltag size in mm")
     parser.add_argument("-camera", type=str, default="PiCamV2LowRes", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=20, help="Capture and process this many frames")
+    parser.add_argument("-qual", type=int, default=30, help="Minimum tag quality to use, in n*E-8 units")
     args = parser.parse_args()
     
     print("Initialising")
@@ -82,10 +83,11 @@ if __name__ == '__main__':
         # Key is the tag ID
         tagDuplicatesT = {}
         tagDuplicatesPrev = {}
+        usingtags = 0
 
         # add any new tags to database, or existing one to duplicates
         for tag in tags:
-            if tag.tag_id not in tagPlacement and tag.pose_err < 3e-7:
+            if tag.tag_id not in tagPlacement and tag.pose_err < args.qual*1e-8:
                 # tag is in cur camera frame
                 T_TagToCam = numpy.array( numpy.eye((4)) )
                 T_TagToCam[0:3, 0:3] = numpy.array(tag.pose_R)
@@ -93,7 +95,8 @@ if __name__ == '__main__':
                 T_TagToCam[0:3, 3] = tag.pose_t.reshape(3)
                 tagPlacement[tag.tag_id] = T_CamToWorld @ T_TagToCam
                 print("Added Tag ID {0}, Qual {2}, T =\n {1}".format(tag.tag_id, tagPlacement[tag.tag_id].round(3), tag.pose_err))
-            elif tag.pose_err < 3e-7:
+                usingtags += 1
+            elif tag.pose_err < args.qual*1e-8:
                 # get tag's last pos, in camera frame
                 T_TagToCam = numpy.array( numpy.eye((4)) )
                 T_TagToCam[0:3, 0:3] = numpy.array(tag.pose_R)
@@ -103,6 +106,7 @@ if __name__ == '__main__':
                 # save tag positions in Camera frame at time t for the duplicate
                 tagDuplicatesT[tag.tag_id] = T_TagToCam
                 # and t-1 for the original
+                usingtags += 1
                                
         # get the least cost transform from the common points at time t-1 to time t
         # cost is the sum of position error between the common points, with the t-1 points
@@ -141,7 +145,7 @@ if __name__ == '__main__':
             #we have the lowest cost transform (need inverse)
             T_CamToWorld = numpy.linalg.inv(bestTransform) @ T_CamToWorld
             print("T_CamToWorld is\n{0}".format(T_CamToWorld.round(3)))
-            print("Time to capture and detect = {0:.3f} sec, found {1} tags".format(time.time() - myStart, len(tags)))
+            print("Time to capture and detect = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), usingtags))
                 
                         
         #cv2.imwrite("detect_{0}.jpg".format(i), image)

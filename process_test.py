@@ -16,7 +16,7 @@ import yaml
 import argparse
 
 from picamera import PiCamera
-from apriltags3-py.apriltags3 import Detector
+from apriltags3py.apriltags3 import Detector
 
 
 if __name__ == '__main__':

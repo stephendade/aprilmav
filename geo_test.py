@@ -137,15 +137,15 @@ if __name__ == '__main__':
                     newpoint = (Ttprevtocur @ tagPlacement[tagidj]) - (T_CamToWorld @ tagTj)
                     summeddist += math.sqrt(math.pow(newpoint[0,3], 2) + math.pow(newpoint[1,3], 2) + math.pow(newpoint[2,3], 2))
                     
-                print("Summed DeltaDist3D (Tag {1})= {0} cm".format(round(summeddist*100, 1), tagid))
+                print("Tag error (Tag {1})= {0} cm".format(round(summeddist*100, 1), tagid))
                 if lowestCost > summeddist:
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur
                     
             #we have the lowest cost transform (need inverse)
             T_CamToWorld = numpy.linalg.inv(bestTransform) @ T_CamToWorld
-            print("T_CamToWorld is\n{0}".format(T_CamToWorld.round(3)))
-            print("Time to capture and detect = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), usingtags))
+            print("T_CamToWorld (camera rotation and position) is\n{0}".format(T_CamToWorld.round(3)))
+            print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), usingtags))
                 
                         
         #cv2.imwrite("detect_{0}.jpg".format(i), image)

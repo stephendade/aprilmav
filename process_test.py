@@ -15,8 +15,9 @@ import cv2
 import yaml
 import argparse
 
-from picamera import PiCamera
 from apriltags3py.apriltags3 import Detector
+
+from lib import cameraPi
 
 
 if __name__ == '__main__':
@@ -34,8 +35,7 @@ if __name__ == '__main__':
     camParams = parameters[args.camera]
 
     # initialize the camera
-    camera = PiCamera(resolution=camParams['resolution'], framerate=camParams['framerate'],sensor_mode=camParams['sensor_mode'])
-    camera.rotation = camParams['rotation']
+    camera = cameraPi.cameraPi(parameters[args.camera])
     
     # allow the camera to warmup
     time.sleep(2)
@@ -49,10 +49,6 @@ if __name__ == '__main__':
                            decode_sharpening=0.25,
                            debug=0)
     
-    # Current image
-    image = numpy.empty((camera.resolution[0] * camera.resolution[1] * 3,),
-                        dtype=numpy.uint8)
-
     print("Starting {0} image capture and process...".format(args.loop))
 
     for i in range(args.loop):
@@ -60,11 +56,7 @@ if __name__ == '__main__':
         myStart = time.time()
 
         # grab an image from the camera
-        camera.capture(image, format="bgr", use_video_port=camParams['use_video_port'])
-
-        # and convert to greyscale
-        image = image.reshape((camera.resolution[1], camera.resolution[0], 3))
-        imageBW = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        imageBW = camera.getImage()
         
         # AprilDetect
         tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
@@ -75,8 +67,8 @@ if __name__ == '__main__':
         # write image to file with tag details - don't time this
         for tag in tags:
             for idx in range(len(tag.corners)):
-                cv2.line(image, tuple(tag.corners[idx-1, :].astype(int)), tuple(tag.corners[idx, :].astype(int)), (0, 255, 0))
-            cv2.putText(image, str(tag.tag_id),
+                cv2.line(imageBW, tuple(tag.corners[idx-1, :].astype(int)), tuple(tag.corners[idx, :].astype(int)), (0, 255, 0))
+            cv2.putText(imageBW, str(tag.tag_id),
                         org=(tag.corners[0, 0].astype(int)+10,tag.corners[0, 1].astype(int)+10),
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=0.8,
@@ -89,5 +81,5 @@ if __name__ == '__main__':
             
             print("Tag {0} pos = ({1}, {2}, {3})m".format(tag.tag_id, round(tag.pose_t[0][0], 3), round(tag.pose_t[1][0], 3), round(tag.pose_t[2][0], 3)))
 
-        cv2.imwrite("detect_{0}.jpg".format(i), image)
+        cv2.imwrite("detect_{0}.jpg".format(i), imageBW)
 

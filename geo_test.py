@@ -18,8 +18,10 @@ import cv2
 import yaml
 import argparse
 
-from picamera import PiCamera
 from apriltags3py.apriltags3 import Detector
+
+from lib import cameraPi
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -37,8 +39,7 @@ if __name__ == '__main__':
     camParams = parameters[args.camera]
         
     # initialize the camera
-    camera = PiCamera(resolution=camParams['resolution'], framerate=camParams['framerate'],sensor_mode=camParams['sensor_mode'])
-    camera.rotation = camParams['rotation']
+    camera = cameraPi.cameraPi(parameters[args.camera])
 
     # allow the camera to warmup
     time.sleep(2)
@@ -52,10 +53,6 @@ if __name__ == '__main__':
                            decode_sharpening=0.25,
                            debug=0)
 
-    # Current image
-    image = numpy.empty((camera.resolution[0] * camera.resolution[1] * 3,),
-                        dtype=numpy.uint8)
-                        
     # Current pos and orientation of camera in world frame
     T_CamToWorld = numpy.array( numpy.eye((4)) )
     # Tag positions (T), world frame
@@ -70,11 +67,7 @@ if __name__ == '__main__':
         myStart = time.time()
 
         # grab an image from the camera
-        camera.capture(image, format="bgr", use_video_port=camParams['use_video_port'])
-
-        # and convert to greyscale
-        image = image.reshape((camera.resolution[1], camera.resolution[0], 3))
-        imageBW = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        imageBW = camera.getImage()
         
         # AprilDetect
         tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)

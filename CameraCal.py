@@ -17,7 +17,7 @@ import cv2
 import time
 import sys
 
-from picamera import PiCamera
+from lib import cameraPi
 
 
 if __name__ == '__main__':
@@ -32,14 +32,8 @@ if __name__ == '__main__':
     parser.add_argument("-staticmode", action="store_true", help="Use photo rather than video mode")
     args = parser.parse_args()
     
-    # sanity check the resolution
-    if args.hres % 16 != 0 or args.vres % 16 != 0:
-        print("Error: Resolution must be divisible by 16")
-        sys.exit(0)
-
     # initialize the camera
-    camera = PiCamera(resolution=(args.hres, args.vres), framerate=args.framerate,sensor_mode=args.mode)
-    camera.rotation = args.rotation
+    camera = cameraPi.cameraPi(parameters[args.camera])
     
     # Chessboard rows and cols
     cbcol = args.cbcol
@@ -47,10 +41,6 @@ if __name__ == '__main__':
 
     # allow the camera to warmup
     time.sleep(1)
-
-    # Current image
-    image = numpy.empty((camera.resolution[0] * camera.resolution[1] * 3,),
-                        dtype=numpy.uint8)
 
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
     objp = numpy.zeros((cbrow * cbcol, 3), numpy.float32)
@@ -63,11 +53,7 @@ if __name__ == '__main__':
 
     for i in range(1, 30):
         # grab an image from the camera
-        camera.capture(image, format="bgr", use_video_port=not args.staticmode)
-
-        # and convert to greyscale
-        image = image.reshape((camera.resolution[1], camera.resolution[0], 3))
-        grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        grey = camera.getImage()
 
         print("Got image {0}/30".format(i))
        
@@ -78,7 +64,7 @@ if __name__ == '__main__':
             corners2 = cv2.cornerSubPix(grey,corners,(11,11),(-1,-1),(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01))
             objpoints.append(objp)
             imgpoints.append(corners2)
-            cv2.imwrite("cal_{0}.jpg".format(i), image)
+            cv2.imwrite("cal_{0}.jpg".format(i), grey)
             
         time.sleep(1)
         
@@ -96,8 +82,8 @@ if __name__ == '__main__':
         print("Put the following in camera.yaml:")
         print("<profilename>:")
         print("  cam_params: !!python/tuple [{0}, {1}, {2}, {3}]".format(K[0,0], K[1,1], K[0,2], K[1,2]))
-        print("  resolution: !!python/tuple [{0}, {1}]".format(camera.resolution[0], camera.resolution[1]))
-        print("  rotation: {0}".format(camera.rotation))
+        print("  resolution: !!python/tuple [{0}, {1}]".format(args.hres, args.vres))
+        print("  rotation: {0}".format(args.rotation))
         print("  use_video_port: {0}".format(not args.staticmode))
-        print("  sensor_mode: {0}".format(camera.sensor_mode))
-        print("  framerate: {0}".format(camera.framerate))
+        print("  sensor_mode: {0}".format(args.mode))
+        print("  framerate: {0}".format(args.framerate))

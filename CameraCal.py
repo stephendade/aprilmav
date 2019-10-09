@@ -17,9 +17,6 @@ import cv2
 import time
 import sys
 
-from lib import cameraPi
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-cbcol", type=int, default=6, help="Number of chessboard columns-1")
@@ -30,10 +27,16 @@ if __name__ == '__main__':
     parser.add_argument("-hres", type=int, default=800, help="PiCam vertical resolution")
     parser.add_argument("-vres", type=int, default=608, help="PiCam horizontal resolution")
     parser.add_argument("-staticmode", action="store_true", help="Use photo rather than video mode")
+    parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
     args = parser.parse_args()
     
     # initialize the camera
-    camera = cameraPi.cameraPi(parameters[args.camera])
+    if args.folder == None:
+        from lib import cameraPi
+        camera = cameraPi.cameraPi(parameters[args.camera])
+    else:
+        from lib import cameraFile
+        camera = cameraFile.FileCamera(args.folder)
     
     # Chessboard rows and cols
     cbcol = args.cbcol
@@ -45,6 +48,7 @@ if __name__ == '__main__':
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
     objp = numpy.zeros((cbrow * cbcol, 3), numpy.float32)
     objp[:, :2] = numpy.mgrid[0:cbcol, 0:cbrow].T.reshape(-1, 2)
+    shape = None
     
     objpoints = [] # 3d point in real world space
     imgpoints = [] # 2d points in image plane.
@@ -54,6 +58,10 @@ if __name__ == '__main__':
     for i in range(1, 30):
         # grab an image from the camera
         grey = camera.getImage()
+        
+        # we're out of images
+        if grey is None:
+            break
 
         print("Got image {0}/30".format(i))
        
@@ -61,6 +69,7 @@ if __name__ == '__main__':
         ret, corners = cv2.findChessboardCorners(grey, (cbcol, cbrow), flags=cv2.CALIB_CB_ADAPTIVE_THRESH)
         if (ret):
             print("Found chessboard in image {0}/30".format(i))
+            shape = grey.shape[::-1]
             corners2 = cv2.cornerSubPix(grey,corners,(11,11),(-1,-1),(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01))
             objpoints.append(objp)
             imgpoints.append(corners2)
@@ -73,7 +82,7 @@ if __name__ == '__main__':
         print("Error: Less than 15 images with detected chessboard. Aborting")
     else:
         print("Got images, processing...")
-        ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, grey.shape[::-1], None, None)
+        ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, shape, None, None)
         
         print("------Calibration success-------")
         print("K = {0}".format(K))

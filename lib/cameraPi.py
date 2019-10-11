@@ -23,6 +23,25 @@ class AMCamera:
         
         self.image = numpy.empty((self.camera.resolution[0] * self.camera.resolution[1] * 3,), dtype=numpy.uint8)
         
+        # Set ISO to the desired value
+        camera.iso = 100
+        # Wait for the automatic gain control to settle
+        sleep(2)
+        # Now fix the values
+        camera.shutter_speed = camera.exposure_speed
+        camera.exposure_mode = 'off'
+        g = camera.awb_gains
+        camera.awb_mode = 'off'
+        camera.awb_gains = g
+        
+    def getNumberImages(self):
+        '''Get number of loaded images'''
+        return None
+
+    def getFileName(self):
+        '''Get current file in camera'''
+        return None
+        
     def getImage(self):
         ''' Capture a single image from the Camera '''
         

@@ -17,6 +17,10 @@ class FileCamera:
         
         print("FileCamera: Found {0} images in folder".format(len(self.images)))
         
+    def getNumberImages(self):
+        '''Get number of loaded images'''
+        return len(self.images)
+        
     def getImage(self):
         ''' Capture a single image from the Camera '''
         
@@ -27,3 +31,7 @@ class FileCamera:
         img = cv2.imread(self.images.pop(0), cv2.IMREAD_GRAYSCALE)
         
         return img
+    
+    def getFileName(self):
+        '''Get current file in camera'''
+        return self.images[0]

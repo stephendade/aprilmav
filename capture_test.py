@@ -44,5 +44,5 @@ if __name__ == '__main__':
         print("Time to capture = {0}".format(time.time() - myStart))
 
         # write image to file - don't time this
-        cv2.imwrite("capture_{0}.jpg".format(i), imageBW)
+        cv2.imwrite("capture_{:02d}.jpg".format(i), imageBW)
 

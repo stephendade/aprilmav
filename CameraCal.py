@@ -27,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument("-hres", type=int, default=800, help="PiCam vertical resolution")
     parser.add_argument("-vres", type=int, default=608, help="PiCam horizontal resolution")
     parser.add_argument("-staticmode", action="store_true", help="Use photo rather than video mode")
+    parser.add_argument("-shutterspeed", action="store_true", help="Camera shutter speed in ms")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
     args = parser.parse_args()
     
@@ -41,9 +42,6 @@ if __name__ == '__main__':
     # Chessboard rows and cols
     cbcol = args.cbcol
     cbrow = args.cbrow
-
-    # allow the camera to warmup
-    time.sleep(1)
 
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
     objp = numpy.zeros((cbrow * cbcol, 3), numpy.float32)
@@ -76,7 +74,10 @@ if __name__ == '__main__':
             cv2.imwrite("cal_{0}.jpg".format(i), grey)
             
         time.sleep(1)
-        
+       
+    # close camera
+    camera.close()
+    
     # and process
     if len(imgpoints) < 15:
         print("Error: Less than 15 images with detected chessboard. Aborting")
@@ -96,3 +97,4 @@ if __name__ == '__main__':
         print("  use_video_port: {0}".format(not args.staticmode))
         print("  sensor_mode: {0}".format(args.mode))
         print("  framerate: {0}".format(args.framerate))
+        print("  shutterspeed: {0}".format(args.shutterspeed))

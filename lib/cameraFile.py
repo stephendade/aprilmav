@@ -35,3 +35,7 @@ class FileCamera:
     def getFileName(self):
         '''Get current file in camera'''
         return self.images[0]
+        
+    def close(self):
+        ''' close the camera'''
+        pass 

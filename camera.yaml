@@ -6,6 +6,7 @@ PiCamV2LowRes:
   use_video_port: True
   sensor_mode: 5
   framerate: 30
+  shutterspeed: 3
   
 PiCamV2FullFoV:
   cam_params: !!python/tuple [646.7895716876668, 648.0066280321572, 402.3718061406127, 301.7492204982478]
@@ -14,3 +15,4 @@ PiCamV2FullFoV:
   use_video_port: True
   sensor_mode: 4
   framerate: 25
+  shutterspeed: 3

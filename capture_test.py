@@ -17,8 +17,8 @@ from lib import cameraPi
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-camera", type=str, default="PiCamV2LowRes", help="Camera profile in camera.yaml")
-    parser.add_argument("-loop", type=int, default=10, help="Capture this many frames")
+    parser.add_argument("-camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
+    parser.add_argument("-loop", type=int, default=20, help="Capture this many frames")
     args = parser.parse_args()
     
     print("Initialising")
@@ -29,9 +29,6 @@ if __name__ == '__main__':
 
     # initialize the camera
     camera = cameraPi.cameraPi(parameters[args.camera])
-
-    # allow the camera to warmup
-    time.sleep(2)
 
     print("Starting {0} image capture...".format(args.loop))
 
@@ -46,3 +43,5 @@ if __name__ == '__main__':
         # write image to file - don't time this
         cv2.imwrite("capture_{:02d}.jpg".format(i), imageBW)
 
+    # close camera
+    camera.close()

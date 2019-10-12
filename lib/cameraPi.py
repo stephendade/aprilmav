@@ -4,10 +4,11 @@ Camera Interfacing for the Raspberry Pi Camera (V2)
 
 import numpy
 import cv2
+import time
 
 from picamera import PiCamera
 
-class AMCamera:
+class cameraPi:
     '''A Camera setup and capture class for the PiCamV2'''
     
     def __init__(self, camParams):
@@ -23,16 +24,11 @@ class AMCamera:
         
         self.image = numpy.empty((self.camera.resolution[0] * self.camera.resolution[1] * 3,), dtype=numpy.uint8)
         
-        # Set ISO to the desired value
-        camera.iso = 100
-        # Wait for the automatic gain control to settle
-        sleep(2)
-        # Now fix the values
-        camera.shutter_speed = camera.exposure_speed
-        camera.exposure_mode = 'off'
-        g = camera.awb_gains
-        camera.awb_mode = 'off'
-        camera.awb_gains = g
+        # Set exposure mode to the desired value
+        self.camera.exposure_mode = 'sports'
+        self.camera.shutter_speed = camParams['shutterspeed']*1000 #in usec
+        
+        time.sleep(2)
         
     def getNumberImages(self):
         '''Get number of loaded images'''
@@ -50,3 +46,7 @@ class AMCamera:
         # and convert to OpenCV greyscale format
         self.image = self.image.reshape((self.camera.resolution[1], self.camera.resolution[0], 3))
         return cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY) 
+        
+    def close(self):
+        ''' close the camera'''
+        self.camera.close()

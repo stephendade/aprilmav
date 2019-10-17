@@ -5,7 +5,7 @@ calulates the camera's rotation and position as a
 transformation matrix T_CamToWorld, relative to it's
 starting location.
 
-Requires a Raspberry Pi Camera V2 and 0.16m Apriltags.
+Requires a Raspberry Pi Camera V2.
 
 Note camera settings are specific to the camera model and
 settings. Use cameracal.py to generate new settings and put
@@ -19,16 +19,15 @@ import yaml
 import argparse
 
 from apriltags3py.apriltags3 import Detector
-
-from lib import cameraPi
-
+from lib.geo import tagDB
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-tagSize", type=int, default=160, help="Apriltag size in mm")
+    parser.add_argument("-tagSize", type=int, default=115, help="Apriltag size in mm")
     parser.add_argument("-camera", type=str, default="PiCamV2LowRes", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=20, help="Capture and process this many frames")
-    parser.add_argument("-maxerror", type=int, default=30, help="Maximum pose error to use, in n*E-8 units")
+    parser.add_argument("-maxerror", type=int, default=100, help="Maximum pose error to use, in n*E-8 units")
+    parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
     args = parser.parse_args()
     
     print("Initialising")
@@ -39,106 +38,63 @@ if __name__ == '__main__':
     camParams = parameters[args.camera]
         
     # initialize the camera
-    camera = cameraPi.cameraPi(parameters[args.camera])
+    if args.folder == None:
+        from lib import cameraPi
+        camera = cameraPi.cameraPi(parameters[args.camera])
+    else:
+        from lib import cameraFile
+        camera = cameraFile.FileCamera(args.folder)
 
     # allow the camera to warmup
     time.sleep(2)
 
-    at_detector = Detector(searchpath=['apriltags/lib', 'apriltags/lib64'],
-                           families='tag36h11',
+    at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
+                           families='tagStandard41h12',
                            nthreads=3,
                            quad_decimate=1.0,
-                           quad_sigma=0.0,
+                           quad_sigma=0.2,
                            refine_edges=1,
-                           decode_sharpening=0.25,
+                           decode_sharpening=0.2,
                            debug=0)
 
-    # Current pos and orientation of camera in world frame
-    T_CamToWorld = numpy.array( numpy.eye((4)) )
-    # Tag positions (T), world frame
-    # Key is the tag ID
-    tagPlacement = {}
+    # All tags live in here
+    tagPlacement = tagDB(0, 0, -0.07)
+    
+    # how many loops
+    loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
 
-    print("Starting {0} image capture and process...".format(args.loop))
+    print("Starting {0} image capture and process...".format(loops))
 
-    for i in range(args.loop):
+    for i in range(loops):
         print("--------------------------------------")
         
         myStart = time.time()
 
         # grab an image from the camera
+        file = camera.getFileName()
         imageBW = camera.getImage()
         
+        # we're out of images
+        if imageBW is None:
+            break
+            
         # AprilDetect
         tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
-        # Tags in camera frame
-        # Key is the tag ID
-        tagDuplicatesT = {}
-        tagDuplicatesPrev = {}
-        usingtags = 0
-
         # add any new tags to database, or existing one to duplicates
+        tagsused = 0
         for tag in tags:
-            if tag.tag_id not in tagPlacement and tag.pose_err < args.maxerror*1e-8:
-                # tag is in cur camera frame
-                T_TagToCam = numpy.array( numpy.eye((4)) )
-                T_TagToCam[0:3, 0:3] = numpy.array(tag.pose_R)
-                tag.pose_t = numpy.array(tag.pose_t)
-                T_TagToCam[0:3, 3] = tag.pose_t.reshape(3)
-                tagPlacement[tag.tag_id] = T_CamToWorld @ T_TagToCam
-                print("Added Tag ID {0}, Qual {2}, T =\n {1}".format(tag.tag_id, tagPlacement[tag.tag_id].round(3), tag.pose_err))
-                usingtags += 1
-            elif tag.pose_err < args.maxerror*1e-8:
-                # get tag's last pos, in camera frame
-                T_TagToCam = numpy.array( numpy.eye((4)) )
-                T_TagToCam[0:3, 0:3] = numpy.array(tag.pose_R)
-                tag.pose_t = numpy.array(tag.pose_t)
-                T_TagToCam[0:3, 3] = tag.pose_t.reshape(3)
-                
-                # save tag positions in Camera frame at time t for the duplicate
-                tagDuplicatesT[tag.tag_id] = T_TagToCam
-                # and t-1 for the original
-                usingtags += 1
-                               
-        # get the least cost transform from the common points at time t-1 to time t
-        # cost is the sum of position error between the common points, with the t-1 points
-        # projected forward to t
-        if len(tagDuplicatesT) > 0:
-            bestTransform = -1
-            lowestCost = 999
-            # Use each tag pair as a guess for the correct transform - lowest cost wins
-            for tagid, tagT in tagDuplicatesT.items():
-                # t is the time now, t-1 is the previous frame - where T_CamToWorld is at this point
-                # tag is the same world position at both orig and duplicate
-                # World frame is time-independent
-                # RT(World)(Orig) = T(World <- Cam_t) * RT(Cam_t)(Duplicate)
-                # and:
-                # T(World <- Cam_t-1) = T(World <- Cam_t) * T(Cam_t <- Cam_t-1)
-                #
-                # Thus
-                # T(World <- Cam_t) = T(World <- Cam_t-1) * T(Cam_t <- Cam_t-1)^-1
-                # then
-                # RT(World)(Orig) = T(World <- Cam_t-1) * T(Cam_t <- Cam_t-1)^-1 * RT(Cam_t)(Duplicate)
-                # Thus
-                # T(Cam_t <- Cam_t-1) = T(World <- Cam_t-1) * RT(Cam_t)(Duplicate) * RT(World)(Orig)^-1
-                Ttprevtocur = T_CamToWorld @ tagT @ numpy.linalg.inv(tagPlacement[tagid])
-                
-                # and figure out summed distances between transformed new point to old (in world frame)
-                summeddist = 0
-                for tagidj, tagTj in tagDuplicatesT.items():
-                    newpoint = (Ttprevtocur @ tagPlacement[tagidj]) - (T_CamToWorld @ tagTj)
-                    summeddist += math.sqrt(math.pow(newpoint[0,3], 2) + math.pow(newpoint[1,3], 2) + math.pow(newpoint[2,3], 2))
-                    
-                print("Tag error (Tag {1})= {0} cm".format(round(summeddist*100, 1), tagid))
-                if lowestCost > summeddist:
-                    lowestCost = summeddist
-                    bestTransform = Ttprevtocur
-                    
-            #we have the lowest cost transform (need inverse)
-            T_CamToWorld = numpy.linalg.inv(bestTransform) @ T_CamToWorld
-            print("T_CamToWorld (camera rotation and position) is\n{0}".format(T_CamToWorld.round(3)))
-            print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), usingtags))
+            if tag.pose_err < args.maxerror*1e-8:
+                tagsused += 1
+                tagPlacement.addTag(tag)
+                              
+        tagPlacement.getBestTransform()
+
+        #x = left
+        print("Pos {0}, Rot = {3} in {1} with {4}/{2} tags".format(tagPlacement.getCurrentPosition().round(3), file, len(tags), tagPlacement.getCurrentRotation().round(0), tagsused))
+        #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
+        
+        tagPlacement.newFrame()
                 
                         
         #cv2.imwrite("detect_{0}.jpg".format(i), image)

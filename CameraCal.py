@@ -21,20 +21,28 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-cbcol", type=int, default=6, help="Number of chessboard columns-1")
     parser.add_argument("-cbrow", type=int, default=9, help="Number of chessboard rows-1")
-    parser.add_argument("-mode", type=int, default=5, help="PiCam sensor mode")
-    parser.add_argument("-framerate", type=int, default=30, help="PiCam framerate")
+    parser.add_argument("-mode", type=int, default=4, help="PiCam sensor mode")
+    parser.add_argument("-framerate", type=int, default=25, help="PiCam framerate")
     parser.add_argument("-rotation", type=int, default=180, help="PiCam rotation (roll) (degrees)")
-    parser.add_argument("-hres", type=int, default=800, help="PiCam vertical resolution")
+    parser.add_argument("-hres", type=int, default=832, help="PiCam vertical resolution")
     parser.add_argument("-vres", type=int, default=608, help="PiCam horizontal resolution")
     parser.add_argument("-staticmode", action="store_true", help="Use photo rather than video mode")
-    parser.add_argument("-shutterspeed", action="store_true", help="Camera shutter speed in ms")
+    parser.add_argument("-shutterspeed", type=int, default=10, help="Camera shutter speed in ms")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
+    parser.add_argument("-loop", type=int, default=100, help="Capture and process this many frames")
     args = parser.parse_args()
     
     # initialize the camera
     if args.folder == None:
         from lib import cameraPi
-        camera = cameraPi.cameraPi(parameters[args.camera])
+        params = {}
+        params['sensor_mode'] = args.mode
+        params['resolution'] = [args.hres, args.vres]
+        params['framerate'] = args.framerate
+        params['rotation'] = args.rotation
+        params['shutterspeed'] = args.shutterspeed
+        params['use_video_port'] = args.staticmode
+        camera = cameraPi.cameraPi(params)
     else:
         from lib import cameraFile
         camera = cameraFile.FileCamera(args.folder)
@@ -53,7 +61,10 @@ if __name__ == '__main__':
 
     print("Starting 30 image capture at ~1/sec...")
 
-    for i in range(1, 30):
+    # how many loops
+    loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
+    
+    for i in range(args.loop):
         # grab an image from the camera
         grey = camera.getImage()
         
@@ -61,25 +72,25 @@ if __name__ == '__main__':
         if grey is None:
             break
 
-        print("Got image {0}/30".format(i))
+        print("Got image {0}/{1}".format(i, loops))
        
         # process
         ret, corners = cv2.findChessboardCorners(grey, (cbcol, cbrow), flags=cv2.CALIB_CB_ADAPTIVE_THRESH)
         if (ret):
-            print("Found chessboard in image {0}/30".format(i))
+            print("Found chessboard in image {0}/{1}".format(i, loops))
             shape = grey.shape[::-1]
             corners2 = cv2.cornerSubPix(grey,corners,(11,11),(-1,-1),(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01))
             objpoints.append(objp)
             imgpoints.append(corners2)
-            cv2.imwrite("cal_{0}.jpg".format(i), grey)
+            #cv2.imwrite("cal_{0}.jpg".format(i), grey)
             
-        time.sleep(1)
+        #time.sleep(1)
        
     # close camera
     camera.close()
     
     # and process
-    if len(imgpoints) < 15:
+    if len(imgpoints) < 50:
         print("Error: Less than 15 images with detected chessboard. Aborting")
     else:
         print("Got images, processing...")

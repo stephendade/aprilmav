@@ -1,3 +1,0 @@
-[submodule "apriltags3-py"]
-	path = apriltags3py
-	url = https://github.com/duckietown/apriltags3-py.git

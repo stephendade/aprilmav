@@ -9,18 +9,11 @@ or complicated equipment. All you need is:
 - Printed April tags on a ~A4 paper mounted around the areas of travel
 - Small embedded computer (Raspberry Pi + PiCam V2) with camera
 
-This library uses the the [Apriltags Python bindings](https://github.com/duckietown/apriltags3-py) by Duckietown
+This library uses the the [Apriltags Python bindings](https://github.com/duckietown/dt-apriltags) by Duckietown
 
 ## How to get started
 
-Build the Apriltag library
-
-```
-$ git submodule update --init --recursive
-$ cd ./apriltags3-py/apriltags
-$ cmake .
-$ make
-```
+Install the dt-apriltag library: ``pip install dt-apriltags``
 
 If you are not using a Raspberry Pi Camera V2, you will need to calibrate your
 camera:

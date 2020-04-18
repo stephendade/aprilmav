@@ -18,7 +18,7 @@ import cv2
 import yaml
 import argparse
 
-from apriltags3py.apriltags3 import Detector
+from dt_apriltags import Detector
 from lib.geo import tagDB
 
 if __name__ == '__main__':

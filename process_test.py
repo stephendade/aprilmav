@@ -16,12 +16,12 @@ import yaml
 import argparse
 
 from apriltags3py.apriltags3 import Detector
-from lib.geo import getTransform, getPos, getRotation
+from lib.geo import getPos
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-camera", type=str, default="PiCamV2LowRes", help="Camera profile in camera.yaml")
+    parser.add_argument("-camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=10, help="Process this many frames")
     parser.add_argument("-tagSize", type=int, default=115, help="Apriltag size in mm")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     print("Starting {0} image capture and process...".format(loops))
     
     outfile = open(args.outfile,"w+")
-    outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "TagID", "PosX", "PosY", "PosZ", "RotX", "RotY", "RotZ", "PoseErr"))
+    outfile.write("{0},{1},{2},{3},{4},{5}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)", "PosZ (fwd)", "PoseErr"))
 
     for i in range(loops):
         print("--------------------------------------")
@@ -78,26 +78,22 @@ if __name__ == '__main__':
         # AprilDetect
         tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
+        # write image to file with tag details - don't time this
+        print("File: {0}".format(file))
+        
         # get time to capture and convert
         print("Time to capture and detect = {0:.3f} sec, found {1} tags".format(time.time() - myStart, len(tags)))
 
-        # write image to file with tag details - don't time this
-        print("File: {0}".format(file))
         for tag in tags:
                         
-            T_TagToCam = getTransform(tag)
-            tagpos = getPos(T_TagToCam)
-            tagrot = getRotation(T_TagToCam)
+            tagpos = getPos(tag)
             
-            print("Tag {0} pos = ({1}, {2}, {3})m".format(tag.tag_id, round(tagpos[0], 3), round(tagpos[1], 3), round(tagpos[2], 3)))
-            outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format(file,
+            print("Tag {0} pos = ({1:.3f}, {2:.3f}, {3:.3f}) m".format(tag.tag_id, tagpos[0], tagpos[1], tagpos[2]))
+            outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5}\n".format(file,
                                                                      tag.tag_id,
-                                                                     round(tagpos[0], 3),
-                                                                     round(tagpos[1], 3),
-                                                                     round(tagpos[2], 3),
-                                                                     round(tagrot[0], 3),
-                                                                     round(tagrot[1], 3),
-                                                                     round(tagrot[2], 3),
+                                                                     tagpos[0],
+                                                                     tagpos[1],
+                                                                     tagpos[2],
                                                                      tag.pose_err))
             
 

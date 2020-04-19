@@ -13,7 +13,7 @@ This library uses the the [Apriltags Python bindings](https://github.com/duckiet
 
 ## How to get started
 
-Install the dt-apriltag library: ``pip install dt-apriltags``
+Install the dt-apriltag and transforms3d library: ``pip install dt-apriltags transforms3d``
 
 If you are not using a Raspberry Pi Camera V2, you will need to calibrate your
 camera:

@@ -19,6 +19,7 @@ import yaml
 import argparse
 
 from dt_apriltags import Detector
+from transforms3d.euler import mat2euler
 from lib.geo import tagDB
 
 if __name__ == '__main__':

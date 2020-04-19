@@ -16,14 +16,14 @@ import yaml
 import argparse
 
 from dt_apriltags import Detector
-from lib.geo import getPos
+from lib.geo import getPos, getTransform, getRotation
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=10, help="Process this many frames")
-    parser.add_argument("-tagSize", type=int, default=115, help="Apriltag size in mm")
+    parser.add_argument("-tagSize", type=int, default=200, help="Apriltag size in mm")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("-outfile", type=str, default="processed.csv", help="Output tag data to this file")
     args = parser.parse_args()
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     print("Starting {0} image capture and process...".format(loops))
     
     outfile = open(args.outfile,"w+")
-    outfile.write("{0},{1},{2},{3},{4},{5}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)", "PosZ (fwd)", "PoseErr"))
+    outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)", "PosZ (fwd)", "RotX (pitch)", "RotY (yaw)", "RotZ (roll)", "PoseErr"))
 
     for i in range(loops):
         print("--------------------------------------")
@@ -86,14 +86,19 @@ if __name__ == '__main__':
 
         for tag in tags:
                         
-            tagpos = getPos(tag)
+            tagpos = getPos(getTransform(tag))
+            tagrot = getRotation(getTransform(tag))
             
-            print("Tag {0} pos = ({1:.3f}, {2:.3f}, {3:.3f}) m".format(tag.tag_id, tagpos[0], tagpos[1], tagpos[2]))
-            outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5}\n".format(file,
+            print("Tag {0} pos = {1} m, Rot = {2} deg".format(tag.tag_id, tagpos.round(3), tagrot.round(1)))
+            
+            outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
                                                                      tag.tag_id,
                                                                      tagpos[0],
                                                                      tagpos[1],
                                                                      tagpos[2],
+                                                                     tagrot[0],
+                                                                     tagrot[1],
+                                                                     tagrot[2],
                                                                      tag.pose_err))
             
 

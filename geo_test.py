@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument("-tagSize", type=int, default=200, help="Apriltag size in mm")
     parser.add_argument("-camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=20, help="Capture and process this many frames")
-    parser.add_argument("-maxerror", type=int, default=50000, help="Maximum pose error to use, in n*E-8 units")
+    parser.add_argument("-maxerror", type=int, default=500, help="Maximum pose error to use, in n*E-8 units")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("-outfile", type=str, default="positions.csv", help="Output tag data to this file")
     parser.add_argument('--gui', dest='gui', default=True, action='store_true')
@@ -57,7 +57,7 @@ if __name__ == '__main__':
                            quad_decimate=1.0,
                            quad_sigma=0.4,
                            refine_edges=1,
-                           decode_sharpening=3,
+                           decode_sharpening=0,
                            debug=0)
 
     # All tags live in here
@@ -73,19 +73,29 @@ if __name__ == '__main__':
     
     #GUI
     fig = None
-    ax = None
+    axMap = None
+    axHeight = None
     lineVehicle = None
     lineTag = None
+    lineHeight = []
     coordsX = []
     coordsY = []
+    coordsZ = []
+    coordsFile = []
     if args.gui:
         print("plotting")
         import matplotlib.pyplot as plt
-        fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        ax.set_xlim(-4, 4)
-        ax.set_ylim(-4, 4)
-        lineVehicle, = plt.plot(coordsX, coordsY)  # Plot some data on the axes.
-        lineTag, = plt.plot([], [], 'bs')
+        fig, (axMap, axHeight) = plt.subplots(2)  # Create a figure containing a single axes.
+        axMap.set_xlim(-4, 4)
+        axMap.set_ylim(-4, 4)
+        axMap.grid()
+        axHeight.set_xlim(0, loops-1)
+        axHeight.set_ylim(-4, 4)
+        axMap.set(xlabel='Left (m)', ylabel='Fwd (m)', title='Horizonal Map')
+        axHeight.set(xlabel='', ylabel='Up (m)', title='Vehicle Height')
+        lineVehicle, = axMap.plot(coordsX, coordsY)  # Plot some data on the axes.
+        lineTag, = axMap.plot([], [], 'bs')
+        lineHeight, = axHeight.plot([], [])
 
         plt.show(block = False)
 
@@ -123,10 +133,14 @@ if __name__ == '__main__':
         #Update the live graph
         coordsX.append(posn[2])
         coordsY.append(posn[0])
+        coordsZ.append(posn[1])
+        coordsFile.append(i)
         lineVehicle.set_xdata(coordsX)
         lineVehicle.set_ydata(coordsY)
         lineTag.set_xdata(tagPlacement.getTagPoints(2))
         lineTag.set_ydata(tagPlacement.getTagPoints(0))
+        lineHeight.set_xdata(coordsFile)
+        lineHeight.set_ydata(coordsZ)
         plt.draw()
         fig.canvas.flush_events()
 
@@ -139,6 +153,6 @@ if __name__ == '__main__':
 
 # Tags
 for tagid, tag in tagPlacement.getTagdb().items():
-    ax.annotate(tagid, (tag[2,3]+0.1, tag[0,3]+0.1))
+    axMap.annotate("T{0} ({1:.3f})m".format(tagid, tag[1,3]), (tag[2,3]+0.1, tag[0,3]+0.1))
 print("Waiting for plot window to be closed")
 plt.show()

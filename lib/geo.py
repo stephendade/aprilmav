@@ -110,7 +110,7 @@ class tagDB:
         # cost is the sum of position error between the common points, with the t-1 points
         # projected forward to t
         if len(self.tagDuplicatesT) > 0:
-            bestTransform = -1
+            bestTransform = numpy.array( numpy.eye((4)) )
             lowestCost = 999
             # Use each tag pair as a guess for the correct transform - lowest cost wins
             for tagid, tagT in self.tagDuplicatesT.items():
@@ -136,13 +136,13 @@ class tagDB:
                 summeddist = 0
                 for tagidj, tagTj in self.tagDuplicatesT.items():
                     # PosDelta = TOrig(World<-Tag) * [0,0,0] - T(World <- Cam_t-1) * T(Cam_t <- Cam_t-1)^-1 * TDup(Cam_t<-Tag) * [0,0,0]
-                    PosDelta = self.tagPlacement[tagidj]@[[0],[0],[0],[1]] - self.T_CamToWorld @ numpy.linalg.inv(Ttprevtocur) @ tagTj@[[0],[0],[0],[1]]
+                    PosDelta = self.tagPlacement[tagidj] @ [[0],[0],[0],[1]] - self.T_CamToWorld @ numpy.linalg.inv(Ttprevtocur) @ tagTj @ [[0],[0],[0],[1]]
                     #print(self.tagPlacement[tagidj] - (self.T_CamToWorld @ numpy.linalg.inv(Ttprevtocur) @ tagTj))
-                    summeddist += math.sqrt(math.pow(PosDelta[0], 2) + math.pow(PosDelta[1], 2) + math.pow(PosDelta[2], 2))
+                    summeddist += mag(PosDelta)
                     
                 #print("Tag rot (Tag {1})= {0} deg".format(getRotation(Ttprevtocur), tagid))
                 #print("Tag T (Tag {1})= {0} deg".format([Ttprevtocur[0,3],Ttprevtocur[1,3],Ttprevtocur[2,3]], tagid))
-                if lowestCost > summeddist:
+                if lowestCost > summeddist: #and mag(getPos(Ttprevtocur)) < 2:
                     print("Using tag {0} with error {1:.3f}".format(tagid, summeddist))
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur

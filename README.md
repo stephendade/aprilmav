@@ -13,7 +13,9 @@ This library uses the the [Apriltags Python bindings](https://github.com/duckiet
 
 ## How to get started
 
-Install the dt-apriltag and transforms3d library: ``pip install dt-apriltags transforms3d``
+Install OpenCV and Matplotlib: ``sudo apt install python3-matplotlib python3-opencv``
+
+Install the dt-apriltag, PyYAML and transforms3d libraries: ``pip install dt-apriltags transforms3d PyYAML``.
 
 If you are not using a Raspberry Pi Camera V2, you will need to calibrate your
 camera:

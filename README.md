@@ -13,9 +13,11 @@ This library uses the the [Apriltags Python bindings](https://github.com/duckiet
 
 ## How to get started
 
-Install OpenCV and Matplotlib: ``sudo apt install python3-matplotlib python3-opencv``
+Install OpenCV and Matplotlib: ``sudo apt install python3-matplotlib python3-opencv``.
 
-Install the dt-apriltag, PyYAML and transforms3d libraries: ``pip install dt-apriltags transforms3d PyYAML``.
+Note for the Raspberry Pi, use ``pip install opencv-python`` instead.
+
+Install the dt-apriltag, PyYAML and transforms3d libraries: ``pip install dt-apriltags transforms3d PyYAML pymavlink``.
 
 If you are not using a Raspberry Pi Camera V2, you will need to calibrate your
 camera:
@@ -42,7 +44,8 @@ $ process_test.py
 ```
 
 Localisation test. Estimates the vehicles current position based on Apriltags. Useful
-for confirming the camera calibration:
+for confirming the camera calibration.:
 ```
 $ geo_test.py
 ```
+[Use the --gui option to get a plot of the tag and vehicle locations]

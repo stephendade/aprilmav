@@ -26,7 +26,6 @@ class cameraPi:
         
         # Set exposure mode to the desired value
         self.camera.exposure_mode = 'sports'
-        self.camera.shutter_speed = camParams['shutterspeed']*1000 #in usec
         
         time.sleep(2)
         

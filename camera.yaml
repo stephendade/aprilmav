@@ -6,19 +6,14 @@ PiCamV2LowRes:
   use_video_port: True
   sensor_mode: 5
   framerate: 30
-  shutterspeed: 3
   
 PiCamV2FullFoV:
-  #cam_params: !!python/tuple [643.4524362878575, 641.9877449135777, 414.7830319599709, 295.67704216335795]
-  #cam_params: !!python/tuple [639.6565670839427, 639.2178511307759, 421.5303810637826, 291.85972097557885]
-  #cam_params: !!python/tuple [639.4767738809558, 639.0234297168666, 421.55235628065356, 292.07722396257066]
   cam_params: !!python/tuple [646.7895716876668, 648.0066280321572, 402.3718061406127, 301.7492204982478]
   resolution: !!python/tuple [832, 608]
   rotation: 180
   use_video_port: True
   sensor_mode: 4
   framerate: 25
-  shutterspeed: 3
   
 PiCamV2FullFoVHD:
   cam_params: !!python/tuple [948.081890418443, 950.8362449958827, 637.9904659268185, 439.9205249003001]
@@ -27,4 +22,4 @@ PiCamV2FullFoVHD:
   use_video_port: True
   sensor_mode: 4
   framerate: 20
-  shutterspeed: 5
+

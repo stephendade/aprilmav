@@ -27,7 +27,6 @@ if __name__ == '__main__':
     parser.add_argument("-hres", type=int, default=832, help="PiCam vertical resolution")
     parser.add_argument("-vres", type=int, default=608, help="PiCam horizontal resolution")
     parser.add_argument("-staticmode", action="store_true", help="Use photo rather than video mode")
-    parser.add_argument("-shutterspeed", type=int, default=10, help="Camera shutter speed in ms")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("-loop", type=int, default=100, help="Capture and process this many frames")
     args = parser.parse_args()
@@ -40,7 +39,6 @@ if __name__ == '__main__':
         params['resolution'] = [args.hres, args.vres]
         params['framerate'] = args.framerate
         params['rotation'] = args.rotation
-        params['shutterspeed'] = args.shutterspeed
         params['use_video_port'] = args.staticmode
         camera = cameraPi.cameraPi(params)
     else:
@@ -108,4 +106,3 @@ if __name__ == '__main__':
         print("  use_video_port: {0}".format(not args.staticmode))
         print("  sensor_mode: {0}".format(args.mode))
         print("  framerate: {0}".format(args.framerate))
-        print("  shutterspeed: {0}".format(args.shutterspeed))

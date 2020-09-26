@@ -17,6 +17,8 @@ Install OpenCV and Matplotlib: ``sudo apt install python3-matplotlib python3-ope
 
 Note for the Raspberry Pi, use ``pip install opencv-python`` instead.
 
+Note for the ArduCam, use ``sudo apt install i2c-tools`` and ensure ``dtparam=i2c_vc=on`` is in ``/boot/config.txt``
+
 Install the dt-apriltag, PyYAML and transforms3d libraries: ``pip install dt-apriltags transforms3d PyYAML pymavlink``.
 
 If you are not using a Raspberry Pi Camera V2, you will need to calibrate your

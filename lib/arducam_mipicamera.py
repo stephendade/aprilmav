@@ -5,9 +5,10 @@ To use this script you need to pre-install libarducam_mipicamera.so
 from ctypes import *
 import numpy as np
 import sys
+import os
 
 try:
-    camera_lib = cdll.LoadLibrary("libarducam_mipicamera.so")
+    camera_lib = cdll.LoadLibrary(os.path.abspath(os.path.join(os.path.dirname(__file__), "libarducam_mipicamera.so")))
 except:
     print("Load libarducam_mipicamera fail.")
     sys.exit(0)

@@ -23,3 +23,7 @@ PiCamV2FullFoVHD:
   sensor_mode: 4
   framerate: 20
 
+ArduCamUC580:
+  cam_params: !!python/tuple [0, 0, 0, 0]
+  resolution: !!python/tuple [1280, 800]
+  rotation: 180

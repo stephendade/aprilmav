@@ -5,7 +5,7 @@ Camera Interfacing for the ArduCam UC-580 (OV9281 Global Shutter)
 import numpy
 import cv2
 import time
-import arducam_mipicamera as arducam
+from . import arducam_mipicamera as arducam
 
 
 class cameraUC580:
@@ -21,6 +21,7 @@ class cameraUC580:
         self.camParams = camParams
         self.camera = arducam.mipi_camera()
         self.camera.rotation = camParams['rotation']
+        self.frame = None
         
         self.V4L2_CID_EXPOSURE = 9963793
         
@@ -29,8 +30,8 @@ class cameraUC580:
         self.camera.set_resolution(self.camParams['resolution'][0], self.camParams['resolution'][1])
         self.camera.set_control(self.V4L2_CID_EXPOSURE, 600)
         
-        fmt = self.camera.get_format()
-        print("Camera format is {}".format(fmt))
+        #fmt = self.camera.get_format()
+        #print("Camera format is {}".format(fmt))
         
         time.sleep(1)
         
@@ -45,13 +46,12 @@ class cameraUC580:
     def getImage(self):
         ''' Capture a single image from the Camera '''
         
-        frame = self.camera.capture(encoding = "i420")
-        image = frame.as_array.reshape(int(self.camera.resolution[1]*1.5), self.camera.resolution[0])
-        del frame
+        self.frame = self.camera.capture(encoding = "i420")
+        image = self.frame.as_array.reshape(int(self.camParams['resolution'][1]*1.5), self.camParams['resolution'][0])
         
         # Convert to greyscale and crop
         cv2.cvtColor(image, cv2.COLOR_YUV2GRAY_I420)
-        imageCrop = image[0:self.camera.resolution[1], 0:self.camera.resolution[0]]
+        imageCrop = image[0:self.camParams['resolution'][1], 0:self.camParams['resolution'][0]]
         
         # Rotate if required
         if self.camParams['rotation'] == 180:
@@ -65,3 +65,4 @@ class cameraUC580:
     def close(self):
         ''' close the camera'''
         self.camera.close_camera()
+        del self.frame

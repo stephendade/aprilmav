@@ -50,7 +50,7 @@ if __name__ == '__main__':
         print("Time to capture = {0:.0f}ms".format((time.time() - myStart)*1000))
 
         # write image to file - don't time this
-        cv2.imwrite(os.path.join(".", args.folder, "capture_{:02d}.jpg".format(i)),imageBW, [cv2.IMWRITE_JPEG_QUALITY, 99])
+        cv2.imwrite(os.path.join(".", args.folder, "capture_{:04d}.jpg".format(i)),imageBW, [cv2.IMWRITE_JPEG_QUALITY, 99])
 
     # close camera
     camera.close()

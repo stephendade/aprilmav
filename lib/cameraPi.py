@@ -8,7 +8,7 @@ import time
 
 from picamera import PiCamera
 
-class cameraPi:
+class camera:
     '''A Camera setup and capture class for the PiCamV2'''
     
     def __init__(self, camParams):

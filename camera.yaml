@@ -1,5 +1,6 @@
 # Camera settings
 PiCamV2LowRes:
+  cam_name: "cameraPi"
   cam_params: !!python/tuple [818.0968859467251, 817.2573949039664, 433.78963953637407, 254.56860763807128]
   resolution: !!python/tuple [800, 608]
   rotation: 180
@@ -8,6 +9,7 @@ PiCamV2LowRes:
   framerate: 30
   
 PiCamV2FullFoV:
+  cam_name: "cameraPi"
   cam_params: !!python/tuple [646.7895716876668, 648.0066280321572, 402.3718061406127, 301.7492204982478]
   resolution: !!python/tuple [832, 608]
   rotation: 180
@@ -16,6 +18,7 @@ PiCamV2FullFoV:
   framerate: 25
   
 PiCamV2FullFoVHD:
+  cam_name: "cameraPi"
   cam_params: !!python/tuple [948.081890418443, 950.8362449958827, 637.9904659268185, 439.9205249003001]
   resolution: !!python/tuple [1216, 912]
   rotation: 180
@@ -24,6 +27,12 @@ PiCamV2FullFoVHD:
   framerate: 20
 
 ArduCamUC580:
+  cam_name: "cameraArduCamUC580"
   cam_params: !!python/tuple [575.050025465585, 576.0340242775162, 633.6703247238864, 389.606653533928]
   resolution: !!python/tuple [1280, 800]
+  rotation: 0
+  
+GenericUSB:
+  cam_name: "cameraGenericUSB"
+  resolution: !!python/tuple [1280, 720]
   rotation: 0

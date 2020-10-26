@@ -8,7 +8,7 @@ import time
 from . import arducam_mipicamera as arducam
 
 
-class cameraUC580:
+class camera:
     '''A Camera setup and capture class for the ArduCam UC580'''
     
     def __init__(self, camParams):

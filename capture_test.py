@@ -7,19 +7,36 @@ All images will be stored as "capture_N.jpg"
 '''
 
 import time
-import numpy
 import cv2
 import argparse
 import yaml
 import os
-import json
+import sys
+import queue
+import threading
 
-from lib import cameraArduCamUC580
+from importlib import import_module
 
+save_queue = queue.Queue()
+shouldExit = False
+
+# Separate thread for saving images, in order to not delay image capture
+def save_threadfunc():
+    while True:
+        if save_queue.empty():
+            continue
+        (image, filename) = save_queue.get()
+        cv2.imwrite(filename, image, [cv2.IMWRITE_JPEG_QUALITY, 99])
+        print("Saved {0}".format(filename))
+        if save_queue.empty() and shouldExit:
+            break
+    print("Exited save thread")
+        
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-camera", type=str, default="ArduCamUC580", help="Camera profile in camera.yaml")
+    parser.add_argument("-profile", type=str, default="GenericUSB", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=20, help="Capture this many frames")
+    parser.add_argument("-delay", type=int, default=0, help="Delay by N millisec between frame captures")
     parser.add_argument("-folder", type=str, default="capture", help="Put capture into this folder")
     args = parser.parse_args()
     
@@ -36,9 +53,20 @@ if __name__ == '__main__':
         pass
     
     # initialize the camera
-    camera = cameraArduCamUC580.cameraUC580(parameters[args.camera])
+    camera = None
+    try:
+        print(parameters[args.profile]['cam_name'])
+        mod = import_module("lib." + parameters[args.profile]['cam_name'])
+        camera = mod.camera(parameters[args.profile])
+    except (ImportError, KeyError):
+        print('No camera with the name {0}, exiting'.format(args.profile))
+        sys.exit(0)
         
     print("Starting {0} image capture...".format(args.loop))
+    
+    worker = threading.Thread(target=save_threadfunc, args=())
+    worker.setDaemon(True)
+    worker.start()
     
 
     for i in range(args.loop):
@@ -47,11 +75,18 @@ if __name__ == '__main__':
         imageBW = camera.getImage()
 
         # get time to capture and convert
-        print("Time to capture = {0:.0f}ms".format((time.time() - myStart)*1000))
+        print("Captured {1:04d}.jpg in {0:.0f}ms".format((time.time() - myStart)*1000, i))
+        
+        time.sleep(args.delay/1000)
 
-        # write image to file - don't time this
-        cv2.imwrite(os.path.join(".", args.folder, "capture_{:04d}.jpg".format(i)),imageBW, [cv2.IMWRITE_JPEG_QUALITY, 99])
+        # write image to save queue as (image, filename) tuple
+        save_queue.put((imageBW, os.path.join(".", args.folder, "capture_{:04d}.jpg".format(i))))
 
     # close camera
     camera.close()
+    
+    # wait for images to finish saving
+    shouldExit = True
+    worker.join()
+    
     

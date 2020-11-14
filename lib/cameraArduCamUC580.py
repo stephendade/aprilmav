@@ -50,7 +50,7 @@ class camera:
         image = self.frame.as_array.reshape(int(self.camParams['resolution'][1]*1.5), self.camParams['resolution'][0])
         
         # Convert to greyscale and crop
-        cv2.cvtColor(image, cv2.COLOR_YUV2GRAY_I420)
+        image = cv2.cvtColor(image, cv2.COLOR_YUV2GRAY_I420)
         imageCrop = image[0:self.camParams['resolution'][1], 0:self.camParams['resolution'][0]]
         
         # Rotate if required

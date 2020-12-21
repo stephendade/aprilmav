@@ -28,7 +28,7 @@ PiCamV2FullFoVHD:
 
 ArduCamUC580:
   cam_name: "cameraArduCamUC580"
-  cam_params: !!python/tuple [575.050025465585, 576.0340242775162, 633.6703247238864, 389.606653533928]
+  cam_params: !!python/tuple [540, 540, 640, 400]
   resolution: !!python/tuple [1280, 800]
   rotation: 0
   

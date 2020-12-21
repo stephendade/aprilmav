@@ -143,7 +143,7 @@ class tagDB:
                 #print("Tag rot (Tag {1})= {0} deg".format(getRotation(Ttprevtocur), tagid))
                 #print("Tag T (Tag {1})= {0} deg".format([Ttprevtocur[0,3],Ttprevtocur[1,3],Ttprevtocur[2,3]], tagid))
                 if lowestCost > summeddist: #and mag(getPos(Ttprevtocur)) < 2:
-                    print("Using tag {0} with error {1:.3f}".format(tagid, summeddist))
+                    print("Using tag {0} with error {1:.3f}m".format(tagid, summeddist))
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur
                     

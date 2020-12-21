@@ -62,7 +62,7 @@ if __name__ == '__main__':
     # how many loops
     loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
     
-    for i in range(args.loop):
+    for i in range(loops):
         # grab an image from the camera
         grey = camera.getImage()
         
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     
     # and process
     if len(imgpoints) < 50:
-        print("Error: Less than 15 images with detected chessboard. Aborting")
+        print("Error: Less than 50 images with detected (Got {0})chessboard. Aborting".format(imgpoints))
     else:
         print("Got images, processing...")
         ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, shape, None, None)

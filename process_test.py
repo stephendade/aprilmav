@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=10, help="Process this many frames")
-    parser.add_argument("-tagSize", type=int, default=200, help="Apriltag size in mm")
+    parser.add_argument("-tagSize", type=int, default=96, help="Apriltag size in mm")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("-outfile", type=str, default="processed.csv", help="Output tag data to this file")
     args = parser.parse_args()
@@ -62,7 +62,8 @@ if __name__ == '__main__':
     
     outfile = open(args.outfile,"w+")
     outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)", "PosZ (fwd)", "RotX (pitch)", "RotY (yaw)", "RotZ (roll)", "PoseErr"))
-
+    zs = []
+    
     for i in range(loops):
         print("--------------------------------------")
         myStart = time.time()
@@ -83,6 +84,8 @@ if __name__ == '__main__':
         
         # get time to capture and convert
         print("Time to capture and detect = {0:.3f} sec, found {1} tags".format(time.time() - myStart, len(tags)))
+        
+        
 
         for tag in tags:
                         
@@ -90,7 +93,7 @@ if __name__ == '__main__':
             tagrot = getRotation(getTransform(tag))
             
             print("Tag {0} pos = {1} m, Rot = {2} deg".format(tag.tag_id, tagpos.round(3), tagrot.round(1)))
-            
+            zs.append(tagpos[2])
             outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
                                                                      tag.tag_id,
                                                                      tagpos[0],
@@ -103,5 +106,6 @@ if __name__ == '__main__':
             
 
         #cv2.imwrite("detect_{0}.jpg".format(i), imageBW)
+    print("Avg={0}\nStd.p={1}".format(numpy.mean(zs), numpy.std(zs)))
     outfile.close()
 

@@ -24,12 +24,12 @@ from lib.geo import tagDB
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-tagSize", type=int, default=200, help="Apriltag size in mm")
+    parser.add_argument("-tagSize", type=int, default=96, help="Apriltag size in mm")
     parser.add_argument("-camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=20, help="Capture and process this many frames")
-    parser.add_argument("-maxerror", type=int, default=500, help="Maximum pose error to use, in n*E-8 units")
+    parser.add_argument("-maxerror", type=int, default=800, help="Maximum pose error to use, in n*E-8 units")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
-    parser.add_argument("-outfile", type=str, default="positions.csv", help="Output tag data to this file")
+    parser.add_argument("-outfile", type=str, default="geo_test_results.csv", help="Output tag data to this file")
     parser.add_argument('--gui', dest='gui', default=True, action='store_true')
     args = parser.parse_args()
     
@@ -57,7 +57,7 @@ if __name__ == '__main__':
                            quad_decimate=1.0,
                            quad_sigma=0.4,
                            refine_edges=1,
-                           decode_sharpening=0,
+                           decode_sharpening=1,
                            debug=0)
 
     # All tags live in here
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     print("Starting {0} image capture and process...".format(loops))
     
     outfile = open(args.outfile,"w+")
-    outfile.write("{0},{1},{2},{3}\n".format("Filename", "PosX (left)", "PosY (up)", "PosZ (fwd)"))
+    outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format("Filename", "PosX (left)", "PosY (up)", "PosZ (fwd)", "RotX", "RotY", "RotZ"))
     
     #GUI
     fig = None
@@ -128,7 +128,8 @@ if __name__ == '__main__':
         print("File {1} with {0}/{2} tags".format(tagsused, file, len(tags)))
         
         posn = tagPlacement.getCurrentPosition()
-        outfile.write("{0},{1:.3f},{2:.3f},{3:.3f}\n".format(file, posn[0], posn[1], posn[2]))
+        rot = tagPlacement.getCurrentRotation()
+        outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posn[0], posn[1], posn[2], rot[0], rot[1], rot[2]))
         
         #Update the live graph
         coordsX.append(posn[2])

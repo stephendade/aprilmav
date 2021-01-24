@@ -7,7 +7,7 @@ import cv2
 import os
 
 class FileCamera:
-    '''A Camera setup and capture class for the PiCamV2'''
+    '''A Camera setup and capture class'''
     
     def __init__(self, dir="."):
         '''Initialise the camera, based on a dict of settings'''

@@ -10,12 +10,17 @@ in a variety of rotations and skew angles.
 
 All chessboard detected images will be stored as "cal_N.jpg"
 
+This can either run over the Ras Pi camera in realtime OR over
+a folder of pre-captured images from any camera
+
 '''
 import argparse
 import numpy
 import cv2
 import time
 import sys
+import os
+import glob
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -23,12 +28,13 @@ if __name__ == '__main__':
     parser.add_argument("-cbrow", type=int, default=9, help="Number of chessboard rows-1")
     parser.add_argument("-mode", type=int, default=4, help="PiCam sensor mode")
     parser.add_argument("-framerate", type=int, default=25, help="PiCam framerate")
-    parser.add_argument("-rotation", type=int, default=180, help="PiCam rotation (roll) (degrees)")
+    parser.add_argument("-rotation", type=int, default=0, help="PiCam rotation (roll) (degrees)")
     parser.add_argument("-hres", type=int, default=832, help="PiCam vertical resolution")
     parser.add_argument("-vres", type=int, default=608, help="PiCam horizontal resolution")
     parser.add_argument("-staticmode", action="store_true", help="Use photo rather than video mode")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("-loop", type=int, default=100, help="Capture and process this many frames")
+    parser.add_argument("-fisheye", action="store_true", help="Use Fisheye calibration model")
     args = parser.parse_args()
     
     # initialize the camera
@@ -48,10 +54,13 @@ if __name__ == '__main__':
     # Chessboard rows and cols
     cbcol = args.cbcol
     cbrow = args.cbrow
+    
+    #Image dimensions
+    imgDim = None
 
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-    objp = numpy.zeros((cbrow * cbcol, 3), numpy.float32)
-    objp[:, :2] = numpy.mgrid[0:cbcol, 0:cbrow].T.reshape(-1, 2)
+    objp = numpy.zeros((1, cbrow*cbcol, 3), numpy.float32)
+    objp[0,:,:2] = numpy.mgrid[0:cbcol, 0:cbrow].T.reshape(-1, 2)
     shape = None
     
     objpoints = [] # 3d point in real world space
@@ -65,6 +74,10 @@ if __name__ == '__main__':
     for i in range(loops):
         # grab an image from the camera
         grey = camera.getImage()
+        
+        if i == 0:
+            # get image dimensions
+            imgDim = grey.shape[::-1]
         
         # we're out of images
         if grey is None:
@@ -88,21 +101,62 @@ if __name__ == '__main__':
     camera.close()
     
     # and process
-    if len(imgpoints) < 50:
-        print("Error: Less than 50 images with detected (Got {0})chessboard. Aborting".format(imgpoints))
+    if len(imgpoints) < 10:
+        print("Error: Less than 10 (Got {0}) images with detected chessboard. Aborting".format(len(imgpoints)))
     else:
         print("Got images, processing...")
-        ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, shape, None, None)
+        K = numpy.zeros((3, 3))
+        D = numpy.zeros((4, 1))
+        rvecs = [numpy.zeros((1, 1, 3), dtype=numpy.float64) for i in range(len(imgpoints))]
+        tvecs = [numpy.zeros((1, 1, 3), dtype=numpy.float64) for i in range(len(imgpoints))]
+        
+        if args.fisheye:
+            calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC+cv2.fisheye.CALIB_CHECK_COND+cv2.fisheye.CALIB_FIX_SKEW
+            
+            rms, _, _, _, _ = \
+                cv2.fisheye.calibrate(
+                    objpoints,
+                    imgpoints,
+                    grey.shape[::-1],
+                    K,
+                    D,
+                    rvecs,
+                    tvecs,
+                    calibration_flags,
+                    (cv2.TERM_CRITERIA_EPS+cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-6)
+                )        
+        else:
+            ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, shape, None, None)
         
         print("------Calibration success-------")
         print("K = {0}".format(K))
         print("CameraParams = {0}".format(( K[0,0], K[1,1], K[0,2], K[1,2] )))
+        if args.fisheye:
+            print("D = {0}".format(D))
+            print("CameraParamsD = {0}".format(( D[0][0], D[1][0], D[2][0], D[3][0] )))
         
         print("Put the following in camera.yaml:")
         print("<profilename>:")
         print("  cam_params: !!python/tuple [{0}, {1}, {2}, {3}]".format(K[0,0], K[1,1], K[0,2], K[1,2]))
-        print("  resolution: !!python/tuple [{0}, {1}]".format(args.hres, args.vres))
+        print("  cam_paramsD: !!python/tuple [[{0}], [{1}], [{2}], [{3}]]".format( D[0][0], D[1][0], D[2][0], D[3][0]))
+        print("  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0], imgDim[1]))
         print("  rotation: {0}".format(args.rotation))
-        print("  use_video_port: {0}".format(not args.staticmode))
-        print("  sensor_mode: {0}".format(args.mode))
-        print("  framerate: {0}".format(args.framerate))
+        if args.folder == None:
+            print("  use_video_port: {0}".format(not args.staticmode))
+            print("  sensor_mode: {0}".format(args.mode))
+            print("  framerate: {0}".format(args.framerate))
+        print("  fisheye: {0}".format(args.fisheye))
+        
+        
+        if args.fisheye:
+            # Show un-distortion of fisheye to user
+            img = cv2.imread(glob.glob(os.path.join(args.folder, "*.jpg"))[0])
+            dim1 = img.shape[:2][::-1]  #dim1 is the dimension of input image to un-distort
+            map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
+            undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+
+            cv2.imshow("undistorted", undistorted_img)
+            cv2.imshow("none undistorted", img)
+            print("Type 0 into image window to exit")
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()

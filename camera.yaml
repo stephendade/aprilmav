@@ -7,6 +7,7 @@ PiCamV2LowRes:
   use_video_port: True
   sensor_mode: 5
   framerate: 30
+  fisheye: False
   
 PiCamV2FullFoV:
   cam_name: "cameraPi"
@@ -16,6 +17,7 @@ PiCamV2FullFoV:
   use_video_port: True
   sensor_mode: 4
   framerate: 25
+  fisheye: False
   
 PiCamV2FullFoVHD:
   cam_name: "cameraPi"
@@ -25,6 +27,7 @@ PiCamV2FullFoVHD:
   use_video_port: True
   sensor_mode: 4
   framerate: 20
+  fisheye: False
 
 ArduCamUC580:
   cam_name: "cameraArduCamUC580"
@@ -32,8 +35,10 @@ ArduCamUC580:
   cam_paramsD: !!python/tuple [[0.007600850431421323], [-0.052276055918063793], [0.15806197443706363], [-0.12319549316927544]]
   resolution: !!python/tuple [1280, 800]
   rotation: 0
+  fisheye: True
   
 GenericUSB:
   cam_name: "cameraGenericUSB"
   resolution: !!python/tuple [1280, 720]
   rotation: 0
+  fisheye: False

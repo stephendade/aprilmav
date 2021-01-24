@@ -112,8 +112,41 @@ if __name__ == '__main__':
         if imageBW is None:
             break
             
-        # AprilDetect
-        tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
+        # AprilDetect, after accounting for distortion (if fisheye)
+        if camParams['fisheye']:
+            dim1 = imageBW.shape[:2][::-1]  #dim1 is the dimension of input image to un-distort
+            imgDim = imageBW.shape[::-1]
+            
+            map1, map2 = cv2.fisheye.initUndistortRectifyMap(camParams['cam_params'], camParams['cam_paramsD'], numpy.eye(3), camParams['cam_params'], dim1, cv2.CV_16SC2)
+            undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+            
+            # We calculate the undistorted focal length:
+            #
+            #         h
+            # -----------------
+            #  \      |      /
+            #    \    | f  /
+            #     \   |   /
+            #      \ fov /
+            #        \|/
+            stereo_fov_rad = 83 * (numpy.pi()/180)    # desired fov degree, 90 seems to work ok 166deg (2.9R) at 1280
+            #stereo_height_px = 300              # 300x300 pixel stereo output
+            stereo_focal_px = imgDim[0]/2 / numpy.tan(stereo_fov_rad/2)
+            stereo_focal_py = imgDim[1]/2 / numpy.tan(stereo_fov_rad/2)
+
+            # The stereo algorithm needs max_disp extra pixels in order to produce valid
+            # disparity on the desired output region. This changes the width, but the
+            # center of projection should be on the center of the cropped image
+            #stereo_width_px = stereo_height_px + max_disp
+            #stereo_size = (stereo_width_px, stereo_height_px)
+            stereo_cx = (imgDim[0] - 1)/2
+            stereo_cy = (imgDim[1] - 1)/2
+        
+            camera_params = [stereo_focal_px, stereo_focal_py, stereo_cx, stereo_cy]
+            
+            tags = at_detector.detect(undistorted_img, True, camera_params, args.tagSize/1000)
+        else:
+            tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
         # add any new tags to database, or existing one to duplicates
         tagsused = 0

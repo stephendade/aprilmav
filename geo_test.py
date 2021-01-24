@@ -19,7 +19,6 @@ import yaml
 import argparse
 
 from dt_apriltags import Detector
-from transforms3d.euler import mat2euler
 from lib.geo import tagDB
 
 if __name__ == '__main__':
@@ -27,10 +26,10 @@ if __name__ == '__main__':
     parser.add_argument("-tagSize", type=int, default=96, help="Apriltag size in mm")
     parser.add_argument("-camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
     parser.add_argument("-loop", type=int, default=20, help="Capture and process this many frames")
-    parser.add_argument("-maxerror", type=int, default=800, help="Maximum pose error to use, in n*E-8 units")
+    parser.add_argument("-maxerror", type=int, default=400, help="Maximum pose error to use, in n*E-8 units")
     parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("-outfile", type=str, default="geo_test_results.csv", help="Output tag data to this file")
-    parser.add_argument('--gui', dest='gui', default=True, action='store_true')
+    parser.add_argument('--gui', dest='gui', default=False, action='store_true')
     args = parser.parse_args()
     
     print("Initialising")
@@ -99,6 +98,20 @@ if __name__ == '__main__':
 
         plt.show(block = False)
 
+    # Need to reconstruct K and D
+    if camParams['fisheye']:
+        K = numpy.zeros((3, 3))
+        D = numpy.zeros((4, 1))
+        K[0,0] = camParams['cam_params'][0]
+        K[1,1] = camParams['cam_params'][1]
+        K[0,2] = camParams['cam_params'][2]
+        K[1,2] = camParams['cam_params'][3]
+        K[2,2] = 1
+        D[0][0] = camParams['cam_paramsD'][0]
+        D[1][0] = camParams['cam_paramsD'][1]
+        D[2][0] = camParams['cam_paramsD'][2]
+        D[3][0] = camParams['cam_paramsD'][3]
+        
     for i in range(loops):
         print("--------------------------------------")
         
@@ -115,36 +128,9 @@ if __name__ == '__main__':
         # AprilDetect, after accounting for distortion (if fisheye)
         if camParams['fisheye']:
             dim1 = imageBW.shape[:2][::-1]  #dim1 is the dimension of input image to un-distort
-            imgDim = imageBW.shape[::-1]
-            
-            map1, map2 = cv2.fisheye.initUndistortRectifyMap(camParams['cam_params'], camParams['cam_paramsD'], numpy.eye(3), camParams['cam_params'], dim1, cv2.CV_16SC2)
-            undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-            
-            # We calculate the undistorted focal length:
-            #
-            #         h
-            # -----------------
-            #  \      |      /
-            #    \    | f  /
-            #     \   |   /
-            #      \ fov /
-            #        \|/
-            stereo_fov_rad = 83 * (numpy.pi()/180)    # desired fov degree, 90 seems to work ok 166deg (2.9R) at 1280
-            #stereo_height_px = 300              # 300x300 pixel stereo output
-            stereo_focal_px = imgDim[0]/2 / numpy.tan(stereo_fov_rad/2)
-            stereo_focal_py = imgDim[1]/2 / numpy.tan(stereo_fov_rad/2)
-
-            # The stereo algorithm needs max_disp extra pixels in order to produce valid
-            # disparity on the desired output region. This changes the width, but the
-            # center of projection should be on the center of the cropped image
-            #stereo_width_px = stereo_height_px + max_disp
-            #stereo_size = (stereo_width_px, stereo_height_px)
-            stereo_cx = (imgDim[0] - 1)/2
-            stereo_cy = (imgDim[1] - 1)/2
-        
-            camera_params = [stereo_focal_px, stereo_focal_py, stereo_cx, stereo_cy]
-            
-            tags = at_detector.detect(undistorted_img, True, camera_params, args.tagSize/1000)
+            map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
+            undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)      
+            tags = at_detector.detect(undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
         else:
             tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
@@ -165,18 +151,19 @@ if __name__ == '__main__':
         outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posn[0], posn[1], posn[2], rot[0], rot[1], rot[2]))
         
         #Update the live graph
-        coordsX.append(posn[2])
-        coordsY.append(posn[0])
-        coordsZ.append(posn[1])
-        coordsFile.append(i)
-        lineVehicle.set_xdata(coordsX)
-        lineVehicle.set_ydata(coordsY)
-        lineTag.set_xdata(tagPlacement.getTagPoints(2))
-        lineTag.set_ydata(tagPlacement.getTagPoints(0))
-        lineHeight.set_xdata(coordsFile)
-        lineHeight.set_ydata(coordsZ)
-        plt.draw()
-        fig.canvas.flush_events()
+        if args.gui:
+            coordsX.append(posn[2])
+            coordsY.append(posn[0])
+            coordsZ.append(posn[1])
+            coordsFile.append(i)
+            lineVehicle.set_xdata(coordsX)
+            lineVehicle.set_ydata(coordsY)
+            lineTag.set_xdata(tagPlacement.getTagPoints(2))
+            lineTag.set_ydata(tagPlacement.getTagPoints(0))
+            lineHeight.set_xdata(coordsFile)
+            lineHeight.set_ydata(coordsZ)
+            plt.draw()
+            fig.canvas.flush_events()
 
         #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
         
@@ -186,7 +173,8 @@ if __name__ == '__main__':
         #cv2.imwrite("detect_{0}.jpg".format(i), image)
 
 # Tags
-for tagid, tag in tagPlacement.getTagdb().items():
-    axMap.annotate("T{0} ({1:.3f})m".format(tagid, tag[1,3]), (tag[2,3]+0.1, tag[0,3]+0.1))
-print("Waiting for plot window to be closed")
-plt.show()
+if args.gui:
+    for tagid, tag in tagPlacement.getTagdb().items():
+        axMap.annotate("T{0} ({1:.3f})m".format(tagid, tag[1,3]), (tag[2,3]+0.1, tag[0,3]+0.1))
+    print("Waiting for plot window to be closed")
+    plt.show()

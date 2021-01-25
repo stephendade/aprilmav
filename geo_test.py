@@ -18,6 +18,7 @@ import cv2
 import yaml
 import argparse
 
+from importlib import import_module
 from dt_apriltags import Detector
 from lib.geo import tagDB
 
@@ -40,12 +41,18 @@ if __name__ == '__main__':
     camParams = parameters[args.camera]
         
     # initialize the camera
-    if args.folder == None:
-        from lib import cameraPi
-        camera = cameraPi.cameraPi(parameters[args.camera])
-    else:
+    camera = None
+    if args.folder:
         from lib import cameraFile
         camera = cameraFile.FileCamera(args.folder)
+    else:
+        try:
+            print(parameters[args.camera]['cam_name'])
+            mod = import_module("lib." + parameters[args.camera]['cam_name'])
+            camera = mod.camera(parameters[args.camera])
+        except (ImportError, KeyError):
+            print('No camera with the name {0}, exiting'.format(args.camera))
+            sys.exit(0)
 
     # allow the camera to warmup
     time.sleep(2)
@@ -143,8 +150,8 @@ if __name__ == '__main__':
                               
         tagPlacement.getBestTransform()
 
-        #x = left
-        print("File {1} with {0}/{2} tags".format(tagsused, file, len(tags)))
+        if file:
+            print("File: {0}".format(file))
         
         posn = tagPlacement.getCurrentPosition()
         rot = tagPlacement.getCurrentRotation()
@@ -165,7 +172,7 @@ if __name__ == '__main__':
             plt.draw()
             fig.canvas.flush_events()
 
-        #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
+        print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
         
         tagPlacement.newFrame()
                 

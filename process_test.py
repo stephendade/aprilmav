@@ -15,6 +15,7 @@ import cv2
 import yaml
 import argparse
 
+from importlib import import_module
 from dt_apriltags import Detector
 from lib.geo import getPos, getTransform, getRotation
 
@@ -36,12 +37,18 @@ if __name__ == '__main__':
     camParams = parameters[args.camera]
 
     # initialize the camera
-    if args.folder == None:
-        from lib import cameraPi
-        camera = cameraPi.cameraPi(parameters[args.camera])
-    else:
+    camera = None
+    if args.folder:
         from lib import cameraFile
         camera = cameraFile.FileCamera(args.folder)
+    else:
+        try:
+            print(parameters[args.camera]['cam_name'])
+            mod = import_module("lib." + parameters[args.camera]['cam_name'])
+            camera = mod.camera(parameters[args.camera])
+        except (ImportError, KeyError):
+            print('No camera with the name {0}, exiting'.format(args.camera))
+            sys.exit(0)
     
     # allow the camera to warmup
     time.sleep(2)
@@ -62,7 +69,6 @@ if __name__ == '__main__':
     
     outfile = open(args.outfile,"w+")
     outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)", "PosZ (fwd)", "RotX (pitch)", "RotY (yaw)", "RotZ (roll)", "PoseErr"))
-    zs = []
 
     # Need to reconstruct K and D
     if camParams['fisheye']:
@@ -100,21 +106,18 @@ if __name__ == '__main__':
         else:
             tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
             
-        # write image to file with tag details - don't time this
-        print("File: {0}".format(file))
+        if file:
+            print("File: {0}".format(file))
         
         # get time to capture and convert
         print("Time to capture and detect = {0:.3f} sec, found {1} tags".format(time.time() - myStart, len(tags)))
         
-        
-
         for tag in tags:
                         
             tagpos = getPos(getTransform(tag))
             tagrot = getRotation(getTransform(tag))
             
             print("Tag {0} pos = {1} m, Rot = {2} deg".format(tag.tag_id, tagpos.round(3), tagrot.round(1)))
-            zs.append(tagpos[2])
             outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
                                                                      tag.tag_id,
                                                                      tagpos[0],
@@ -126,7 +129,5 @@ if __name__ == '__main__':
                                                                      tag.pose_err))
             
 
-        #cv2.imwrite("detect_{0}.jpg".format(i), imageBW)
-    print("Avg={0}\nStd.p={1}".format(numpy.mean(zs), numpy.std(zs)))
     outfile.close()
 

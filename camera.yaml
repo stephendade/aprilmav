@@ -40,5 +40,6 @@ ArduCamUC580:
 GenericUSB:
   cam_name: "cameraGenericUSB"
   resolution: !!python/tuple [1280, 720]
+  cam_params: !!python/tuple [650, 650, 640, 480]
   rotation: 0
   fisheye: False

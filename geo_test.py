@@ -5,8 +5,6 @@ calulates the camera's rotation and position as a
 transformation matrix T_CamToWorld, relative to it's
 starting location.
 
-Requires a Raspberry Pi Camera V2.
-
 Note camera settings are specific to the camera model and
 settings. Use cameracal.py to generate new settings and put
 into camera.yaml
@@ -60,7 +58,7 @@ if __name__ == '__main__':
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
                            families='tagStandard41h12',
                            nthreads=3,
-                           quad_decimate=1.0,
+                           quad_decimate=4.0,
                            quad_sigma=0.4,
                            refine_edges=1,
                            decode_sharpening=1,

@@ -6,7 +6,6 @@ For debugging, also shows distance to each detected tag.
 
 Distance is relative to the camera's sensor in 3 dimensions.
 
-All images will be stored as "process_N.jpg".
 '''
 
 import time
@@ -56,7 +55,7 @@ if __name__ == '__main__':
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
                            families='tagStandard41h12',
                            nthreads=3,
-                           quad_decimate=2.0,
+                           quad_decimate=4.0,
                            quad_sigma=0.0,
                            refine_edges=1,
                            decode_sharpening=0.25,

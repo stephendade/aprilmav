@@ -41,12 +41,13 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
     
-    def __init__(self, deltax=0, deltay=0, deltaz=0):
+    def __init__(self, deltax=0, deltay=0, deltaz=0, debug=True):
         self.T_CamToWorld = numpy.array( numpy.eye((4)) )
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
         self.T_CamtoVeh = numpy.array( numpy.eye((4)) )
+        self.debug = debug
         #self.P_CamtoVeh = numpy.array([deltax, deltay, deltaz])
         
     def newFrame(self):
@@ -61,9 +62,8 @@ class tagDB:
             T_TagToCam = getTransform(tag)
             #T_TagToCam[0:3, 3] = T_TagToCam[0:3, 3]
             self.tagnewT[tag.tag_id] = T_TagToCam
-            
-            #print("Added Tag ID {0}, Qual {2}, T =\n {1}".format(tag.tag_id, tagPlacement[tag.tag_id].round(3), tag.pose_err))
-            print("New Tag ID {0} at pos {1}, rot {2}".format(tag.tag_id, getPos(self.tagnewT[tag.tag_id]).round(3), getRotation(self.tagnewT[tag.tag_id]).round(1)))
+            if self.debug:
+                print("New Tag ID {0} at pos {1}, rot {2}".format(tag.tag_id, getPos(self.tagnewT[tag.tag_id]).round(3), getRotation(self.tagnewT[tag.tag_id]).round(1)))
         else:
             # get tag's last pos, in camera frame
             T_TagToCam = getTransform(tag)
@@ -71,14 +71,9 @@ class tagDB:
             
             # save tag positions in Camera frame at time t for the duplicate
             self.tagDuplicatesT[tag.tag_id] = T_TagToCam
-            print("Duplicate Tag ID {0} at pos {1}, rot {2}".format(tag.tag_id, getPos(self.tagDuplicatesT[tag.tag_id]).round(3), getRotation(self.tagDuplicatesT[tag.tag_id]).round(1)))
-            
-        #print("R =\n{0}".format(tag.pose_R))
-        #print("T =\n{0}".format(tag.pose_t))
-        #print("Tag =\n{0}".format(T_TagToCam@[[0],[0],[0],[1]]))
-            
-        #print("Got Tag ID {0}, Qual {2}, T =\n {1}".format(tag.tag_id, numpy.format_float_positional(T_TagToCam.round(3)), tag.pose_err))
-            
+            if self.debug:
+                print("Duplicate Tag ID {0} at pos {1}, rot {2}".format(tag.tag_id, getPos(self.tagDuplicatesT[tag.tag_id]).round(3), getRotation(self.tagDuplicatesT[tag.tag_id]).round(1)))
+
     def getCurrentPosition(self):
         '''get the vehicle's current position in xyz'''
         T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld
@@ -114,7 +109,8 @@ class tagDB:
             lowestCost = 999
             # Use each tag pair as a guess for the correct transform - lowest cost wins
             for tagid, tagT in self.tagDuplicatesT.items():
-                print("Trying tag {0}".format(tagid))
+                if self.debug:
+                    print("Trying tag {0}".format(tagid))
                 # t is the time now, t-1 is the previous frame - where T_CamToWorld is at this point
                 # tag is the same world position at both orig and duplicate
                 # World frame is time-independent
@@ -143,7 +139,8 @@ class tagDB:
                 #print("Tag rot (Tag {1})= {0} deg".format(getRotation(Ttprevtocur), tagid))
                 #print("Tag T (Tag {1})= {0} deg".format([Ttprevtocur[0,3],Ttprevtocur[1,3],Ttprevtocur[2,3]], tagid))
                 if lowestCost > summeddist: #and mag(getPos(Ttprevtocur)) < 2:
-                    print("Using tag {0} with error {1:.3f}m".format(tagid, summeddist))
+                    if self.debug:
+                        print("Using tag {0} with error {1:.3f}m".format(tagid, summeddist))
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur
                     
@@ -168,9 +165,10 @@ class tagDB:
             self.T_CamToWorld = self.T_CamToWorld @ numpy.linalg.inv(bestTransform)
             #print("self.T_CamToWorld(new) =\n{0}".format(self.T_CamToWorld))
             #print((euler_angles_from_rotation_matrix(self.T_CamToWorld)))
-
-            print("Delta {0}, Rot = {1}".format(getPos(bestTransform).round(3), getRotation(bestTransform).round(1)))
-        print("New Pos {0}, Rot = {2} with {1} tags".format(self.getCurrentPosition().round(3), len(self.tagDuplicatesT), self.getCurrentRotation().round(1)))
+            if self.debug:
+                print("Delta {0}, Rot = {1}".format(getPos(bestTransform).round(3), getRotation(bestTransform).round(1)))
+        if self.debug:
+            print("New Pos {0}, Rot = {2} with {1} tags".format(self.getCurrentPosition().round(3), len(self.tagDuplicatesT), self.getCurrentRotation().round(1)))
         
         # finally add any new tags
         for tagid, tagT in self.tagnewT.items(): 
@@ -179,5 +177,6 @@ class tagDB:
             dist = math.sqrt(math.pow(tagT[0,3], 2) + math.pow(tagT[1,3], 2) + math.pow(tagT[2,3], 2))
             #print("Added Tag ID {0} at {2:.3}, T(world) =\n {1}".format(tagid, self.tagPlacement[tagid].round(3), dist))
             #print("Added Tag ID {0} at pos {1}, rot {2}".format(tagid, getPos(self.tagPlacement[tagid]), getRotation(self.tagPlacement[tagid])))
-            print("Added Tag ID {0} at pos {1}, rot {2}".format(tagid, getPos(self.tagPlacement[tagid]).round(3), getRotation(self.tagPlacement[tagid]).round(1)))
+            if self.debug:
+                print("Added Tag ID {0} at pos {1}, rot {2}".format(tagid, getPos(self.tagPlacement[tagid]).round(3), getRotation(self.tagPlacement[tagid]).round(1)))
             #         print("Pos {0}, Rot = {3} in {1} with {4}/{2} tags".format(tagPlacement.getCurrentPosition().round(3), file, len(tags), tagPlacement.getCurrentRotation().round(0), tagsused))

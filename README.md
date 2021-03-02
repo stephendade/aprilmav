@@ -7,7 +7,7 @@ developed by [AprilRobotics](https://april.eecs.umich.edu/))
 The advantage of this method is that it does not require any expensive
 or complicated equipment. All you need is:
 - Printed April tags on a ~A4 paper mounted around the areas of travel
-- Small embedded computer (Raspberry Pi + PiCam V2) with camera
+- Small embedded computer (Raspberry Pi or similar) with camera
 
 This library uses the the [Apriltags Python bindings](https://github.com/duckietown/dt-apriltags) by Duckietown
 
@@ -51,3 +51,18 @@ for confirming the camera calibration.:
 $ geo_test.py
 ```
 [Use the --gui option to get a plot of the tag and vehicle locations]
+
+## Running
+
+To send data to ArduPilot in realtime, use ``aprilmav.py``.
+
+## Camera compatilibty:
+
+The following cameras have been tested as compatible with Aprilmav:
+
+- Raspberry Pi Camera V2 (needs to be used in a very well lit room. Is not accurate in Apriltag pose detection)
+- Arducam 1MP OV9281 (works quite well)
+
+Cameras with global shutters are preferred, as they give much more accurate position solutions.
+
+

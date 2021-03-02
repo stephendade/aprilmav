@@ -148,10 +148,10 @@ class mavThread(threading.Thread):
     def sendPos(self, x, y, z, roll, pitch, yaw, t):
         # Send a vision pos estimate
         # https://mavlink.io/en/messages/common.html#VISION_POSITION_ESTIMATE
-        # Frame is NED?
+        # ArduPilot Frame is NED - so need to convert from AprilMAV's (left, up, fwd)
         #if self.getTimestamp() > 0:
         if self.goodToSend:
-            self.conn.mav.vision_position_estimate_send(t, x, y, z, roll, pitch, yaw, covariance=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], reset_counter=0)
+            self.conn.mav.vision_position_estimate_send(t, z, -x, -y, roll, -pitch, -yaw, covariance=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], reset_counter=0)
             return True
         else:
             return False

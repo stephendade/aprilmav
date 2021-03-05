@@ -52,7 +52,7 @@ class saveThread(threading.Thread):
             cv2.imwrite(filename, imageColour, [cv2.IMWRITE_JPEG_QUALITY, 99])
 
             #print("Saved {0}".format(filename))
-            if exit_event.wait(timeout=0.1):
+            if exit_event.wait(timeout=0.01):
                 return
                 
     def labelTags(self, image, tags):
@@ -151,7 +151,10 @@ class mavThread(threading.Thread):
         # ArduPilot Frame is NED - so need to convert from AprilMAV's (left, up, fwd)
         #if self.getTimestamp() > 0:
         if self.goodToSend:
-            self.conn.mav.vision_position_estimate_send(t, z, -x, -y, roll, -pitch, -yaw, covariance=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], reset_counter=0)
+            # estimate error - approx 0.005 in pos and 2 in angle
+            #posErr = cbrtf(sq(covariance[0])+sq(covariance[6])+sq(covariance[11]));
+            #angErr = cbrtf(sq(covariance[15])+sq(covariance[18])+sq(covariance[20]));
+            self.conn.mav.vision_position_estimate_send(t, z, -x, -y, roll, -pitch, -yaw, covariance=[0.005,0,0,0,0,0,0.005,0,0,0,0,0.005,0,0,0,2,0,0,2,0,2], reset_counter=0)
             return True
         else:
             return False
@@ -293,5 +296,9 @@ if __name__ == '__main__':
         
         # Get ready for next frame
         tagPlacement.newFrame()
+        
+        if exit_event.is_set():
+            break
+
 
 

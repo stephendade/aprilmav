@@ -24,6 +24,14 @@ Install the dt-apriltag, PyYAML and transforms3d libraries: ``pip install dt-apr
 If you are not using a Raspberry Pi Camera V2, you will need to calibrate your
 camera:
 
+### Note for the Raspberry Pi
+
+In some cases, the default OpenCV for the Raspberry Pi may not process frames fast enough.
+
+See https://qengineering.eu/install-opencv-4.4-on-raspberry-pi-4.html for building an optimised
+version of OpenCV.
+
+
 ```
 $ CameraCal.py
 ```
@@ -56,7 +64,7 @@ $ geo_test.py
 
 To send data to ArduPilot in realtime, use ``aprilmav.py``.
 
-## Camera compatilibty:
+## Camera compatibility:
 
 The following cameras have been tested as compatible with Aprilmav:
 

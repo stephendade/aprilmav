@@ -28,9 +28,12 @@ def getPos(T_tag):
     '''output the transformation matrix position as xyz tuple'''
     return numpy.array([T_tag[0,3], T_tag[1,3], T_tag[2,3]])
 
-def getRotation(T_Tag):
+def getRotation(T_Tag, useRadians=False):
     '''Get the vehicle's current rotation in Euler ZYX degrees'''
-    return numpy.array(numpy.rad2deg(mat2euler(T_Tag[0:3][0:3], 'sxyz')))
+    if useRadians:
+        return numpy.array(mat2euler(T_Tag[0:3][0:3], 'sxyz'))    
+    else:
+        return numpy.array(numpy.rad2deg(mat2euler(T_Tag[0:3][0:3], 'sxyz')))
 
 def isclose(x, y, rtol=1.e-5, atol=1.e-8):
     return abs(x-y) <= atol + rtol * abs(y)
@@ -80,10 +83,10 @@ class tagDB:
         #[0:3, 3]
         return getPos(T_VehToWorld)
         
-    def getCurrentRotation(self):
+    def getCurrentRotation(self, radians=False):
         '''get the vehicle's current position in xyz'''
         T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld
-        return getRotation(T_VehToWorld)
+        return getRotation(T_VehToWorld, radians)
         
     def getTagdb(self):
         '''get coords of all tags by axis'''

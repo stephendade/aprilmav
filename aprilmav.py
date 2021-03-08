@@ -112,6 +112,7 @@ class mavThread(threading.Thread):
         self.lock = threading.Lock()
         self.conn = None
         self.goodToSend = False
+        self.reset_counter = True
         
     def run(self):
         # Start mavlink connection
@@ -145,16 +146,19 @@ class mavThread(threading.Thread):
         with self.lock:
             return self.timestamp
             
-    def sendPos(self, x, y, z, roll, pitch, yaw, t):
+    def sendPos(self, x, y, z, rx, ry, rz, t):
         # Send a vision pos estimate
         # https://mavlink.io/en/messages/common.html#VISION_POSITION_ESTIMATE
         # ArduPilot Frame is NED - so need to convert from AprilMAV's (left, up, fwd)
+        # left, up, fwd, pitch, yaw, roll ---> fwd, -left, -up, roll, -pitch, -yaw 
         #if self.getTimestamp() > 0:
         if self.goodToSend:
             # estimate error - approx 0.005 in pos and 2 in angle
             #posErr = cbrtf(sq(covariance[0])+sq(covariance[6])+sq(covariance[11]));
             #angErr = cbrtf(sq(covariance[15])+sq(covariance[18])+sq(covariance[20]));
-            self.conn.mav.vision_position_estimate_send(t, z, -x, -y, roll, -pitch, -yaw, covariance=[0.005,0,0,0,0,0,0.005,0,0,0,0,0.005,0,0,0,2,0,0,2,0,2], reset_counter=0)
+            self.conn.mav.vision_position_estimate_send(t, z, -x, -y, rz, -rx, -ry, covariance=[0.005,0,0,0,0,0,0.005,0,0,0,0,0.005,0,0,0,2,0,0,2,0,2], reset_counter=self.reset_counter)
+            #Reset counter only needs be be true for first sent packet
+            self.reset_counter = False
             return True
         else:
             return False
@@ -207,7 +211,8 @@ if __name__ == '__main__':
     tagPlacement = tagDB(0, 0, 0, False)
     
     outfile = open(args.outfile,"w+")
-    outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format("Filename", "PosX (left)", "PosY (up)", "PosZ (fwd)", "RotX", "RotY", "RotZ"))
+    # left, up, fwd, pitch, yaw, roll
+    outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format("Filename", "PosX (m)", "PosY (m)", "PosZ (m)", "RotX (rad)", "RotY (rad)", "RotZ (rad)"))
 
     # Need to reconstruct K and D
     if camParams['fisheye']:
@@ -282,7 +287,7 @@ if __name__ == '__main__':
             print("File: {0}".format(file))
         
         posn = tagPlacement.getCurrentPosition()
-        rot = tagPlacement.getCurrentRotation()
+        rot = tagPlacement.getCurrentRotation(radians=True)
         outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posn[0], posn[1], posn[2], rot[0], rot[1], rot[2]))
 
         #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))

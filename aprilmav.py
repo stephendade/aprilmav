@@ -83,11 +83,15 @@ class statusThread(threading.Thread):
         threading.Thread.__init__(self)
         self.lastFiveProTimes = deque(maxlen=5)
         self.pos = (0,0,0)
+        self.rot = (0,0,0)
         self.pktSent = 0
         
-    def updateData(self, proTime, newPos, pktWasSent):
+    def updateData(self, proTime, newPos, newRot, pktWasSent):
         self.lastFiveProTimes.append(proTime)
-        self.pos = newPos
+        # left, up, fwd, pitch, yaw, roll ---> fwd, -left, -up, roll, -pitch, -yaw 
+        #z, -x, -y, rz, -rx, -ry
+        self.pos = (newPos[2], -newPos[0], -newPos[1])
+        self.rot = numpy.rad2deg((newRot[2], -newRot[0], -newRot[1]))
         if pktWasSent:
             self.pktSent += 1
             
@@ -97,7 +101,7 @@ class statusThread(threading.Thread):
                 fps = 1/mean(self.lastFiveProTimes)
             else:
                 fps = 0
-            print("Status: {0:.1f}fps, Pos = {1}, Packets sent = {2}".format(fps, self.pos, self.pktSent))
+            print("Status: {0:.1f}fps, PosNED = {1}, PosRPY = {2}, Packets sent = {3}".format(fps, self.pos, self.rot, self.pktSent))
             if exit_event.wait(timeout=2):
                 return
         
@@ -297,7 +301,7 @@ if __name__ == '__main__':
         wasSent = thread1.sendPos(posn[0], posn[1], posn[2], rot[0], rot[1], rot[2], timestamp)
         
         # Send to status thread
-        threadStatus.updateData(time.time() - myStart, (posn[0], posn[1], posn[2]), wasSent)
+        threadStatus.updateData(time.time() - myStart, (posn[0], posn[1], posn[2]), (rot[0], rot[1], rot[2]), wasSent)
         
         # Send to save thread
         if threadSave:

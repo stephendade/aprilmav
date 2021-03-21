@@ -130,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument("--baud", type=int, default=115200, help="MAVLink baud rate, if using serial")
     parser.add_argument("--source-system", type=int, default=255, help="MAVLink Source system")
     parser.add_argument("--imageFolder", type=str, default="", help="Save processed images to this folder")
-    parser.add_argument("--video", type=int, default=5000, help="Output video to port, 0 to disable")
+    parser.add_argument("--video", type=int, default=0, help="Output video to port, 0 to disable")
     args = parser.parse_args()
     
     print("Initialising")

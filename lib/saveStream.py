@@ -2,6 +2,7 @@
 Simple thread to output OpenCV stream file
 '''
 
+import os
 import queue
 import threading
 import cv2

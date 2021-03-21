@@ -62,7 +62,15 @@ $ geo_test.py
 
 ## Running
 
-To send data to ArduPilot in realtime, use ``aprilmav.py``.
+To send data to ArduPilot in realtime, use ``aprilmav.py``. See source code for the required arguments.
+
+There are options for saving the captured images to file or a live video stream.
+
+Note if you are using the ``--video`` option, you will likely require to build OpenCV from source, as most pre-built
+packages do not include GStreamer support. See https://linuxize.com/post/how-to-install-opencv-on-ubuntu-20-04/ for
+details.
+
+To check if your OpenCV has GStreamer support, see https://learnopencv.com/get-opencv-build-information-getbuildinformation/
 
 ## Camera compatibility:
 
@@ -72,5 +80,4 @@ The following cameras have been tested as compatible with Aprilmav:
 - Arducam 1MP OV9281 (works quite well)
 
 Cameras with global shutters are preferred, as they give much more accurate position solutions.
-
 

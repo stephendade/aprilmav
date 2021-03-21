@@ -13,7 +13,7 @@ class videoThread(threading.Thread):
     def __init__(self, port, exit_event):
         threading.Thread.__init__(self)
         self.frame_queue = queue.Queue()
-        self.port = port
+        self.port = str(port)
         self.exit_event = exit_event
         
     def run(self):
@@ -28,7 +28,7 @@ class videoThread(threading.Thread):
             cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             # Start video server if not already started
             if not vidOut:
-                vidOut = cv2.VideoWriter('appsrc ! video/x-raw, format=BGR ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ! udpsink host=127.0.0.1 port=5000', cv2.CAP_GSTREAMER, 0, 20, imageColour.shape[:2][::-1], True)
+                vidOut = cv2.VideoWriter('appsrc ! video/x-raw, format=BGR ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ! udpsink host=0.0.0.0 port=' + self.port + '', cv2.CAP_GSTREAMER, 0, 20, imageColour.shape[:2][::-1], True)
                 if not vidOut.isOpened():
                     print("Error opening video stream. Ensure OpenCV is built with GStreamer support")
                     return

@@ -107,7 +107,7 @@ class tagDB:
         # get the least cost transform from the common points at time t-1 to time t
         # cost is the sum of position error between the common points, with the t-1 points
         # projected forward to t
-        if len(self.tagDuplicatesT) == 0 && len(self.tagPlacement) != 0:
+        if len(self.tagDuplicatesT) == 0 and len(self.tagPlacement) != 0:
             print("WARNING: No tags in view")
         elif len(self.tagDuplicatesT) == 1:
             print("WARNING: Only 1 duplicate tag in view")

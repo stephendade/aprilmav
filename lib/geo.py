@@ -107,6 +107,11 @@ class tagDB:
         # get the least cost transform from the common points at time t-1 to time t
         # cost is the sum of position error between the common points, with the t-1 points
         # projected forward to t
+        if len(self.tagDuplicatesT) == 0 && len(self.tagPlacement) != 0:
+            print("WARNING: No tags in view")
+        elif len(self.tagDuplicatesT) == 1:
+            print("WARNING: Only 1 duplicate tag in view")
+            
         if len(self.tagDuplicatesT) > 0:
             bestTransform = numpy.array( numpy.eye((4)) )
             lowestCost = 999
@@ -164,14 +169,17 @@ class tagDB:
             #we have the lowest cost transform (need inverse)
             # T(World <- Cam_t) = T(World <- Cam_t-1) * T(Cam_t <- Cam_t-1)^-1
             #print(numpy.linalg.inv(bestTransform))
-
-            self.T_CamToWorld = self.T_CamToWorld @ numpy.linalg.inv(bestTransform)
-            #print("self.T_CamToWorld(new) =\n{0}".format(self.T_CamToWorld))
-            #print((euler_angles_from_rotation_matrix(self.T_CamToWorld)))
+            if lowestCost > 30:
+                print("WARNING: bad position estimate. Ignoring this frame.")
+            else:
+                self.T_CamToWorld = self.T_CamToWorld @ numpy.linalg.inv(bestTransform)
+                #print("self.T_CamToWorld(new) =\n{0}".format(self.T_CamToWorld))
+                #print((euler_angles_from_rotation_matrix(self.T_CamToWorld)))
+                if self.debug:
+                    print("Delta {0}, Rot = {1}".format(getPos(bestTransform).round(3), getRotation(bestTransform).round(1)))
             if self.debug:
-                print("Delta {0}, Rot = {1}".format(getPos(bestTransform).round(3), getRotation(bestTransform).round(1)))
-        if self.debug:
-            print("New Pos {0}, Rot = {2} with {1} tags".format(self.getCurrentPosition().round(3), len(self.tagDuplicatesT), self.getCurrentRotation().round(1)))
+                print("New Pos {0}, Rot = {2} with {1} tags".format(self.getCurrentPosition().round(3), len(self.tagDuplicatesT), self.getCurrentRotation().round(1)))
+
         
         # finally add any new tags
         for tagid, tagT in self.tagnewT.items(): 

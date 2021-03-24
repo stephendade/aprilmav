@@ -1,7 +1,7 @@
 '''
 Simple thread to output OpenCV stream to Gstreamer
 
-Use gst-launch-1.0 -v udpsrc port=5000 ! application/x-rtp ! rtph264depay ! decodebin ! videoconvert ! autovideosink
+Use gst-launch-1.0 -v udpsrc uri=udp://0.0.0.0:5000 ! application/x-rtp,payload=96,encoding-name=H264 ! rtph264depay ! decodebin ! videoconvert ! autovideosink
  to view stream
 '''
 
@@ -22,6 +22,7 @@ class videoThread(threading.Thread):
             if self.frame_queue.empty():
                 continue
             (image, posn, rot, tags) = self.frame_queue.get()
+            #process B&W image to colour and add text
             imageColour = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
             imageColour = self.labelTags(imageColour, tags)
             cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
@@ -32,6 +33,7 @@ class videoThread(threading.Thread):
                 if not vidOut.isOpened():
                     print("Error opening video stream. Ensure OpenCV is built with GStreamer support")
                     return
+            # Send processed image to video stream
             vidOut.write(imageColour)
 
             if self.exit_event.wait(timeout=0.01):

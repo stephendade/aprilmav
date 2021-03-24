@@ -42,7 +42,7 @@ class statusThread(threading.Thread):
         # left, up, fwd, pitch, yaw, roll ---> fwd, -left, -up, roll, -pitch, -yaw
         #z, -x, -y, rz, -rx, -ry
         self.pos = (newPos[2], -newPos[0], -newPos[1])
-        self.rot = numpy.rad2deg((newRot[2], -newRot[0], -newRot[1]))
+        self.rot = (newRot[2], -newRot[0], -newRot[1])
         if pktWasSent:
             self.pktSent += 1
 
@@ -156,7 +156,7 @@ if __name__ == '__main__':
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
                            families='tagStandard41h12',
                            nthreads=3,
-                           quad_decimate=4.0,
+                           quad_decimate=2.0,
                            quad_sigma=0.4,
                            refine_edges=1,
                            decode_sharpening=1,

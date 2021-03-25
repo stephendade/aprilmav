@@ -21,11 +21,11 @@ from lib.geo import getPos, getTransform, getRotation
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
-    parser.add_argument("-loop", type=int, default=10, help="Process this many frames")
-    parser.add_argument("-tagSize", type=int, default=96, help="Apriltag size in mm")
-    parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
-    parser.add_argument("-outfile", type=str, default="processed.csv", help="Output tag data to this file")
+    parser.add_argument("--camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
+    parser.add_argument("--loop", type=int, default=10, help="Process this many frames")
+    parser.add_argument("--tagSize", type=int, default=96, help="Apriltag size in mm")
+    parser.add_argument("--folder", type=str, default=None, help="Use a folder of images instead of camera")
+    parser.add_argument("--outfile", type=str, default="processed.csv", help="Output tag data to this file")
     args = parser.parse_args()
     
     print("Initialising")
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
                            families='tagStandard41h12',
                            nthreads=3,
-                           quad_decimate=4.0,
+                           quad_decimate=2.0,
                            quad_sigma=0.0,
                            refine_edges=1,
                            decode_sharpening=0.25,

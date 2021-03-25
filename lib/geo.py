@@ -169,7 +169,7 @@ class tagDB:
             #we have the lowest cost transform (need inverse)
             # T(World <- Cam_t) = T(World <- Cam_t-1) * T(Cam_t <- Cam_t-1)^-1
             #print(numpy.linalg.inv(bestTransform))
-            if lowestCost > 30:
+            if lowestCost > 1:
                 print("WARNING: bad position estimate. Ignoring this frame.")
             else:
                 self.T_CamToWorld = self.T_CamToWorld @ numpy.linalg.inv(bestTransform)

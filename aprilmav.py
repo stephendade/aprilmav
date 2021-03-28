@@ -66,7 +66,7 @@ class mavThread(threading.Thread):
         self.lock = threading.Lock()
         self.conn = None
         self.goodToSend = False
-        self.reset_counter = True
+        self.reset_counter = 0
         
     def run(self):
         # Start mavlink connection
@@ -87,6 +87,7 @@ class mavThread(threading.Thread):
                 return
         
         print("Got Heartbeat from APM (system %u component %u)" % (self.conn.target_system, self.conn.target_system))
+        self.send_msg_to_gcs("Starting")
         
         while not exit_event.is_set():
             msg = self.conn.recv_match(blocking=True, timeout=0.5)
@@ -95,10 +96,17 @@ class mavThread(threading.Thread):
                     print("Reset timestamp")
                     with self.lock:
                         self.timestamp = self.conn.timestamp
+        self.send_msg_to_gcs("Stopping")
             
     def getTimestamp(self):
         with self.lock:
             return self.timestamp
+
+    # https://mavlink.io/en/messages/common.html#STATUSTEXT
+    def send_msg_to_gcs(self, text_to_be_sent):
+        # MAV_SEVERITY: 0=EMERGENCY 1=ALERT 2=CRITICAL 3=ERROR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG, 8=ENUM_END
+        text_msg = 'AprilMAV: ' + text_to_be_sent
+        self.conn.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO, text_msg.encode())
             
     def sendPos(self, x, y, z, rx, ry, rz, t):
         # Send a vision pos estimate
@@ -110,9 +118,18 @@ class mavThread(threading.Thread):
             # estimate error - approx 0.005 in pos and 2 in angle
             #posErr = cbrtf(sq(covariance[0])+sq(covariance[6])+sq(covariance[11]));
             #angErr = cbrtf(sq(covariance[15])+sq(covariance[18])+sq(covariance[20]));
-            self.conn.mav.vision_position_estimate_send(t, z, -x, -y, rz, -rx, -ry, covariance=[0.005, 0, 0, 0, 0, 0, 0.005, 0, 0, 0, 0, 0.005, 0, 0, 0, 2, 0, 0, 2, 0, 2], reset_counter=self.reset_counter)
+            cov_pose    = 0.05
+            cov_twist   = 0.05
+            covariance  = numpy.array([cov_pose, 0, 0, 0, 0, 0,
+                                       cov_pose, 0, 0, 0, 0,
+                                          cov_pose, 0, 0, 0,
+                                            cov_twist, 0, 0,
+                                               cov_twist, 0,
+                                                  cov_twist])
+
+            self.conn.mav.vision_position_estimate_send(t, z, -x, -y, rz, -rx, -ry, covariance, reset_counter=self.reset_counter)
             #Reset counter only needs be be true for first sent packet
-            self.reset_counter = False
+            self.reset_counter = 1
             return True
         else:
             return False

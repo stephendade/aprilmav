@@ -55,11 +55,11 @@ if __name__ == '__main__':
     # initialize the camera
     camera = None
     try:
-        print(parameters[args.profile]['cam_name'])
-        mod = import_module("lib." + parameters[args.profile]['cam_name'])
-        camera = mod.camera(parameters[args.profile])
+        print(parameters[args.camera]['cam_name'])
+        mod = import_module("lib." + parameters[args.camera]['cam_name'])
+        camera = mod.camera(parameters[args.camera])
     except (ImportError, KeyError):
-        print('No camera with the name {0}, exiting'.format(args.profile))
+        print('No camera with the name {0}, exiting'.format(args.camera))
         sys.exit(0)
         
     print("Starting {0} image capture...".format(args.loop))

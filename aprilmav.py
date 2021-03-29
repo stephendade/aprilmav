@@ -145,7 +145,7 @@ if __name__ == '__main__':
     parser.add_argument("--outfile", type=str, default="geo_test_results.csv", help="Output tag data to this file")
     parser.add_argument("--device", type=str, default="udpin:127.0.0.1:14550", help="MAVLink connection string")
     parser.add_argument("--baud", type=int, default=115200, help="MAVLink baud rate, if using serial")
-    parser.add_argument("--source-system", type=int, default=255, help="MAVLink Source system")
+    parser.add_argument("--source-system", type=int, default=1, help="MAVLink Source system")
     parser.add_argument("--imageFolder", type=str, default="", help="Save processed images to this folder")
     parser.add_argument("--video", type=int, default=0, help="Output video to port, 0 to disable")
     args = parser.parse_args()

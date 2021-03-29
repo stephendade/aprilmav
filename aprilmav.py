@@ -115,11 +115,12 @@ class mavThread(threading.Thread):
         # left, up, fwd, pitch, yaw, roll ---> fwd, -left, -up, roll, -pitch, -yaw 
         #if self.getTimestamp() > 0:
         if self.goodToSend:
-            # estimate error - approx 0.005 in pos and 2 in angle
+            # estimate error - approx 0.05m in pos and 2deg in angle
+            # cov = sum((xi - x)*(xi-x))/(N-1)
             #posErr = cbrtf(sq(covariance[0])+sq(covariance[6])+sq(covariance[11]));
             #angErr = cbrtf(sq(covariance[15])+sq(covariance[18])+sq(covariance[20]));
-            cov_pose    = 0.05
-            cov_twist   = 0.05
+            cov_pose    = 0.01
+            cov_twist   = 0.01
             covariance  = numpy.array([cov_pose, 0, 0, 0, 0, 0,
                                        cov_pose, 0, 0, 0, 0,
                                           cov_pose, 0, 0, 0,

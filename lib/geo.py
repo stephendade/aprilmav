@@ -77,6 +77,17 @@ class tagDB:
             if self.debug:
                 print("Duplicate Tag ID {0} at pos {1}, rot {2}".format(tag.tag_id, getPos(self.tagDuplicatesT[tag.tag_id]).round(3), getRotation(self.tagDuplicatesT[tag.tag_id]).round(1)))
 
+    def getArduPilotNED(self, radians=False):
+        '''get the vehicle's current position in ArduPilot NED format,
+        noting that Apriltag is coords are right,down,fwd (EDN)'''
+        T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld
+        posn = getPos(T_VehToWorld)
+        rotn = getRotation(T_VehToWorld, radians)
+        #T_NED = [[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]] @ T_VehToWorld
+        
+        #return tuple of rotation and position
+        return ((posn[2], posn[0], posn[1]), (rotn[2], rotn[0], rotn[1]))
+
     def getCurrentPosition(self):
         '''get the vehicle's current position in xyz'''
         T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld

@@ -39,10 +39,8 @@ class statusThread(threading.Thread):
 
     def updateData(self, proTime, newPos, newRot, pktWasSent):
         self.lastFiveProTimes.append(proTime)
-        # left, up, fwd, pitch, yaw, roll ---> fwd, -left, -up, roll, -pitch, -yaw
-        #z, -x, -y, rz, -rx, -ry
-        self.pos = (newPos[2], -newPos[0], -newPos[1])
-        self.rot = (newRot[2], -newRot[0], -newRot[1])
+        self.pos = newPos
+        self.rot = newRot
         if pktWasSent:
             self.pktSent += 1
 
@@ -111,14 +109,9 @@ class mavThread(threading.Thread):
     def sendPos(self, x, y, z, rx, ry, rz, t):
         # Send a vision pos estimate
         # https://mavlink.io/en/messages/common.html#VISION_POSITION_ESTIMATE
-        # ArduPilot Frame is NED - so need to convert from AprilMAV's (left, up, fwd)
-        # left, up, fwd, pitch, yaw, roll ---> fwd, -left, -up, roll, -pitch, -yaw 
         #if self.getTimestamp() > 0:
         if self.goodToSend:
-            # estimate error - approx 0.05m in pos and 2deg in angle
-            # cov = sum((xi - x)*(xi-x))/(N-1)
-            #posErr = cbrtf(sq(covariance[0])+sq(covariance[6])+sq(covariance[11]));
-            #angErr = cbrtf(sq(covariance[15])+sq(covariance[18])+sq(covariance[20]));
+            # estimate error - approx 0.01m in pos and 2deg in angle
             cov_pose    = 0.01
             cov_twist   = 0.01
             covariance  = numpy.array([cov_pose, 0, 0, 0, 0, 0,
@@ -128,7 +121,7 @@ class mavThread(threading.Thread):
                                                cov_twist, 0,
                                                   cov_twist])
 
-            self.conn.mav.vision_position_estimate_send(t, z, -x, -y, rz, -rx, -ry, covariance, reset_counter=self.reset_counter)
+            self.conn.mav.vision_position_estimate_send(t, x, y, z, rx, ry, rz, covariance, reset_counter=self.reset_counter)
             #Reset counter only needs be be true for first sent packet
             self.reset_counter = 1
             return True
@@ -138,6 +131,11 @@ class mavThread(threading.Thread):
         #    #print("Can't send")
         #    return False
 
+    #def sendPosDelta(self, x, y, z, rx, ry, rz, t):
+    #    # https://mavlink.io/en/messages/ardupilotmega.html#VISION_POSITION_DELTA
+    #    # Send a delta position, which is better supported in ArduPilot
+    #    self.conn.mav.vision_position_delta_send(self, time_usec, time_delta_usec, angle_delta, position_delta, confidence)
+        
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--tagSize", type=int, default=96, help="Apriltag size in mm")
@@ -265,19 +263,20 @@ if __name__ == '__main__':
         if file:
             print("File: {0}".format(file))
         
-        posn = tagPlacement.getCurrentPosition()
-        rot = tagPlacement.getCurrentRotation(radians=True)
-        rotDeg = tagPlacement.getCurrentRotation()
-        outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posn[0], posn[1], posn[2], rot[0], rot[1], rot[2]))
+        #get current location and rotation state of vehicle in ArduPilot NED format (rel camera)
+        (posD, rotD) = tagPlacement.getArduPilotNED()
+        (posR, rotR) = tagPlacement.getArduPilotNED(radians=True)
+
+        outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2]))
 
         #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
         
-        
         # Create and send MAVLink packet
-        wasSent = thread1.sendPos(posn[0], posn[1], posn[2], rot[0], rot[1], rot[2], timestamp)
+        (pos, rotR) = tagPlacement.getArduPilotNED()
+        wasSent = thread1.sendPos(posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2], timestamp)
         
         # Send to status thread
-        threadStatus.updateData(time.time() - myStart, (posn[0], posn[1], posn[2]), (rotDeg[0], rotDeg[1], rotDeg[2]), wasSent)
+        threadStatus.updateData(time.time() - myStart, (posD[0], posD[1], posD[2]), (rotD[0], rotD[1], rotD[2]), wasSent)
         
         # Send to save thread
         if threadSave:

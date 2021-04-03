@@ -73,7 +73,7 @@ if __name__ == '__main__':
     print("Starting {0} image capture and process...".format(loops))
     
     outfile = open(args.outfile,"w+")
-    outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format("Filename", "PosX (left)", "PosY (up)", "PosZ (fwd)", "RotX", "RotY", "RotZ"))
+    outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format("Filename", "PosX (North)", "PosY (East)", "PosZ (Down)", "RotX (Roll)", "RotY (Pitch)", "RotZ (Yaw)"))
     
     #GUI
     fig = None
@@ -151,8 +151,7 @@ if __name__ == '__main__':
         if file:
             print("File: {0}".format(file))
         
-        posn = tagPlacement.getCurrentPosition()
-        rot = tagPlacement.getCurrentRotation()
+        (posn, rot) = tagPlacement.getArduPilotNED()
         outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posn[0], posn[1], posn[2], rot[0], rot[1], rot[2]))
         
         #Update the live graph

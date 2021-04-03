@@ -272,7 +272,6 @@ if __name__ == '__main__':
         #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
         
         # Create and send MAVLink packet
-        (pos, rotR) = tagPlacement.getArduPilotNED()
         wasSent = thread1.sendPos(posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2], timestamp)
         
         # Send to status thread
@@ -280,14 +279,14 @@ if __name__ == '__main__':
         
         # Send to save thread
         if threadSave:
-            threadSave.save_queue.put((imageBW, os.path.join(".", args.imageFolder, "processed_{:04d}.jpg".format(i)), posn, rotDeg, tags))
+            threadSave.save_queue.put((imageBW, os.path.join(".", args.imageFolder, "processed_{:04d}.jpg".format(i)), posD, rotD, tags))
         
         # Get ready for next frame
         tagPlacement.newFrame()
         
         # Send to video stream, if option
         if threadVideo:
-            threadVideo.frame_queue.put((imageBW, posn, rotDeg, tags))
+            threadVideo.frame_queue.put((imageBW, posD, rotD, tags))
 
         if exit_event.is_set():
             break

@@ -26,6 +26,7 @@ if __name__ == '__main__':
     parser.add_argument("--tagSize", type=int, default=96, help="Apriltag size in mm")
     parser.add_argument("--folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("--outfile", type=str, default="processed.csv", help="Output tag data to this file")
+    parser.add_argument("--decimation", type=int, default=2, help="Apriltag decimation")
     args = parser.parse_args()
     
     print("Initialising")
@@ -55,7 +56,7 @@ if __name__ == '__main__':
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
                            families='tagStandard41h12',
                            nthreads=3,
-                           quad_decimate=2.0,
+                           quad_decimate=args.decimation,
                            quad_sigma=0.0,
                            refine_edges=1,
                            decode_sharpening=0.25,

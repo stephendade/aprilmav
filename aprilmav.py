@@ -41,11 +41,10 @@ class statusThread(threading.Thread):
         self.lastFiveProTimes.append(proTime)
         self.pos = newPos
         self.rot = newRot
-        if pktWasSent:
-            self.pktSent += 1
+        self.pktSent = pktWasSent
 
     def run(self):
-        while(True):
+        while True:
             if len(self.lastFiveProTimes) > 0:
                 fps = 1/mean(self.lastFiveProTimes)
             else:
@@ -65,7 +64,17 @@ class mavThread(threading.Thread):
         self.conn = None
         self.goodToSend = False
         self.reset_counter = 0
-        
+        self.pos = (0, 0, 0)
+        self.rot = (0, 0, 0)
+        self.time = 0
+        self.pktSent = 0
+
+    def updateData(self, newPos, newRot, t):
+        with self.lock:
+            self.pos = newPos
+            self.rot = newRot
+            self.time = t
+                            
     def run(self):
         # Start mavlink connection
         try:
@@ -87,18 +96,23 @@ class mavThread(threading.Thread):
         print("Got Heartbeat from APM (system %u component %u)" % (self.conn.target_system, self.conn.target_system))
         self.send_msg_to_gcs("Starting")
         
-        while not exit_event.is_set():
+        while True:
             msg = self.conn.recv_match(blocking=True, timeout=0.5)
-            if msg != None:
-                if self.conn.timestamp < self.timestamp:
-                    print("Reset timestamp")
-                    with self.lock:
-                        self.timestamp = self.conn.timestamp
-        self.send_msg_to_gcs("Stopping")
+            time.sleep(0.0333) #33.3ms, 30Hz 
+            #print(self.pktSent)
+            #if msg != None:
+            #    if self.conn.timestamp < self.timestamp:
+            #        print("Reset timestamp")
+            #        with self.lock:
+            #            self.timestamp = self.conn.timestamp
+            self.sendPos()
+            if exit_event.is_set():
+                self.send_msg_to_gcs("Stopping")
+                return
             
-    def getTimestamp(self):
+    def getPktSent(self):
         with self.lock:
-            return self.timestamp
+            return self.pktSent
 
     # https://mavlink.io/en/messages/common.html#STATUSTEXT
     def send_msg_to_gcs(self, text_to_be_sent):
@@ -106,30 +120,25 @@ class mavThread(threading.Thread):
         text_msg = 'AprilMAV: ' + text_to_be_sent
         self.conn.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO, text_msg.encode())
             
-    def sendPos(self, x, y, z, rx, ry, rz, t):
+    def sendPos(self):
         # Send a vision pos estimate
         # https://mavlink.io/en/messages/common.html#VISION_POSITION_ESTIMATE
         #if self.getTimestamp() > 0:
         if self.goodToSend:
-            # estimate error - approx 0.01m in pos and 2deg in angle
+            # estimate error - approx 0.01m in pos and 0.5deg in angle
             cov_pose    = 0.01
-            cov_twist   = 0.01
+            cov_twist   = 0.5
             covariance  = numpy.array([cov_pose, 0, 0, 0, 0, 0,
                                        cov_pose, 0, 0, 0, 0,
                                           cov_pose, 0, 0, 0,
                                             cov_twist, 0, 0,
                                                cov_twist, 0,
                                                   cov_twist])
-
-            self.conn.mav.vision_position_estimate_send(t, x, y, z, rx, ry, rz, covariance, reset_counter=self.reset_counter)
-            #Reset counter only needs be be true for first sent packet
-            self.reset_counter = 1
-            return True
-        else:
-            return False
-        #else:
-        #    #print("Can't send")
-        #    return False
+            with self.lock:
+                self.conn.mav.vision_position_estimate_send(self.time, self.pos[0], self.pos[1], self.pos[2], self.rot[0], self.rot[1], self.rot[1], covariance, reset_counter=self.reset_counter)
+                #Reset counter only needs be be true for first sent packet
+                self.reset_counter = 1
+                self.pktSent += 1
 
     #def sendPosDelta(self, x, y, z, rx, ry, rz, t):
     #    # https://mavlink.io/en/messages/ardupilotmega.html#VISION_POSITION_DELTA
@@ -204,8 +213,8 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     
     # Start MAVLink comms thread
-    thread1 = mavThread(args.device, args.baud, args.source_system)
-    thread1.start()
+    threadMavlink = mavThread(args.device, args.baud, args.source_system)
+    threadMavlink.start()
     
     # Start Status thread
     threadStatus = statusThread()
@@ -217,7 +226,7 @@ if __name__ == '__main__':
         threadSave = saveThread(args.imageFolder, exit_event)
         threadSave.start()    
       
-    # video stream out  
+    # video stream out, if desired
     threadVideo = None
     if args.video != 0:
         threadVideo = videoThread(args.video, exit_event)
@@ -272,10 +281,11 @@ if __name__ == '__main__':
         #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
         
         # Create and send MAVLink packet
-        wasSent = thread1.sendPos(posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2], timestamp)
+        threadMavlink.updateData(posR, rotR, timestamp)
+        #wasSent = threadMavlink.sendPos(posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2], timestamp)
         
         # Send to status thread
-        threadStatus.updateData(time.time() - myStart, (posD[0], posD[1], posD[2]), (rotD[0], rotD[1], rotD[2]), wasSent)
+        threadStatus.updateData(time.time() - myStart, (posD[0], posD[1], posD[2]), (rotD[0], rotD[1], rotD[2]), threadMavlink.getPktSent())
         
         # Send to save thread
         if threadSave:

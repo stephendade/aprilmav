@@ -5,18 +5,18 @@ Geometrical functions
 import math
 import numpy
 
-from transforms3d.euler import mat2euler 
+from transforms3d.euler import mat2euler
 
 def getTransform(tag):
     '''tag pose to transformation matrix'''
-    T_Tag = numpy.array( numpy.eye((4)) )
+    T_Tag = numpy.array(numpy.eye((4)))
     T_Tag[0:3, 0:3] = numpy.array(tag.pose_R)
     tag.pose_t = numpy.array(tag.pose_t)
     T_Tag[0:3, 3] = tag.pose_t.reshape(3)
-    
+
     # flip x axis
     #T_Tag = [[-1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]] @ T_Tag
-    
+    #
     #now convert to NED coord frame
     # so x-90, y+90, z in order
     # https://www.andre-gaschler.com/rotationconverter/
@@ -26,38 +26,39 @@ def getTransform(tag):
 
 def getPos(T_tag):
     '''output the transformation matrix position as xyz tuple'''
-    return numpy.array([T_tag[0,3], T_tag[1,3], T_tag[2,3]])
+    return numpy.array([T_tag[0, 3], T_tag[1, 3], T_tag[2, 3]])
 
 def getRotation(T_Tag, useRadians=False):
     '''Get the vehicle's current rotation in Euler ZYX degrees'''
     if useRadians:
-        return numpy.array(mat2euler(T_Tag[0:3][0:3], 'sxyz'))    
+        return numpy.array(mat2euler(T_Tag[0:3][0:3], 'sxyz'))
     else:
         return numpy.array(numpy.rad2deg(mat2euler(T_Tag[0:3][0:3], 'sxyz')))
 
 def isclose(x, y, rtol=1.e-5, atol=1.e-8):
     return abs(x-y) <= atol + rtol * abs(y)
-    
-def mag(x): 
+
+def mag(x):
     return math.sqrt(sum(i**2 for i in x))
-    
+
 class tagDB:
     '''Database of all detected tags'''
-    
-    def __init__(self, deltax=0, deltay=0, deltaz=0, debug=True):
-        self.T_CamToWorld = numpy.array( numpy.eye((4)) )
+
+    def __init__(self, debug=True):
+        self.T_CamToWorld = numpy.array(numpy.eye((4)))
+        self.T_CamToWorldPrev = numpy.array(numpy.eye((4)))
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
-        self.T_CamtoVeh = numpy.array( numpy.eye((4)) )
+        self.T_CamtoVeh = numpy.array(numpy.eye((4)))
         self.debug = debug
         #self.P_CamtoVeh = numpy.array([deltax, deltay, deltaz])
-        
+
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''
         self.tagDuplicatesT = {}
         self.tagnewT = {}
-        
+
     def addTag(self, tag):
         '''Add tag to database'''
         if tag.tag_id not in self.tagPlacement:
@@ -84,7 +85,18 @@ class tagDB:
         posn = getPos(T_VehToWorld)
         rotn = getRotation(T_VehToWorld, radians)
         #T_NED = [[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]] @ T_VehToWorld
-        
+
+        #return tuple of rotation and position
+        return ((posn[2], posn[0], posn[1]), (rotn[2], rotn[0], rotn[1]))
+
+    def getArduPilotNEDDelta(self, radians=False):
+        '''get the vehicle's delta (current - prev frame) position in ArduPilot NED format,
+        noting that Apriltag is coords are right,down,fwd (EDN)'''
+        T_VehToWorldDelta = (self.T_CamtoVeh @ self.T_CamToWorld) - (self.T_CamtoVeh @ self.T_CamToWorldPrev)
+        posn = getPos(T_VehToWorldDelta)
+        rotn = getRotation(T_VehToWorldDelta, radians)
+        #T_NED = [[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]] @ T_VehToWorld
+
         #return tuple of rotation and position
         return ((posn[2], posn[0], posn[1]), (rotn[2], rotn[0], rotn[1]))
 
@@ -93,12 +105,12 @@ class tagDB:
         T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld
         #[0:3, 3]
         return getPos(T_VehToWorld)
-        
+
     def getCurrentRotation(self, radians=False):
         '''get the vehicle's current position in xyz'''
         T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld
         return getRotation(T_VehToWorld, radians)
-        
+
     def getTagdb(self):
         '''get coords of all tags by axis'''
         #xcoord = []
@@ -111,7 +123,7 @@ class tagDB:
         for tagid, tag in self.tagPlacement.items():
             xcoord.append(tag[axis,3])
         return xcoord
-        
+
     def getBestTransform(self):
         '''Given the current self.tagDuplicatesT, what is the best fitting transform
         back to self.tagPlacement'''
@@ -183,6 +195,7 @@ class tagDB:
             if lowestCost > 1:
                 print("WARNING: bad position estimate. Ignoring this frame.")
             else:
+                self.T_CamToWorldPrev = self.T_CamToWorld
                 self.T_CamToWorld = self.T_CamToWorld @ numpy.linalg.inv(bestTransform)
                 #print("self.T_CamToWorld(new) =\n{0}".format(self.T_CamToWorld))
                 #print((euler_angles_from_rotation_matrix(self.T_CamToWorld)))
@@ -191,12 +204,11 @@ class tagDB:
             if self.debug:
                 print("New Pos {0}, Rot = {2} with {1} tags".format(self.getCurrentPosition().round(3), len(self.tagDuplicatesT), self.getCurrentRotation().round(1)))
 
-        
         # finally add any new tags
         for tagid, tagT in self.tagnewT.items(): 
             # T(World <- tag) = T(World <- Cam_t) * T(Cam_t <- tag)
             self.tagPlacement[tagid] = self.T_CamToWorld @ tagT
-            dist = math.sqrt(math.pow(tagT[0,3], 2) + math.pow(tagT[1,3], 2) + math.pow(tagT[2,3], 2))
+            #dist = math.sqrt(math.pow(tagT[0,3], 2) + math.pow(tagT[1,3], 2) + math.pow(tagT[2,3], 2))
             #print("Added Tag ID {0} at {2:.3}, T(world) =\n {1}".format(tagid, self.tagPlacement[tagid].round(3), dist))
             #print("Added Tag ID {0} at pos {1}, rot {2}".format(tagid, getPos(self.tagPlacement[tagid]), getRotation(self.tagPlacement[tagid])))
             if self.debug:

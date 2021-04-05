@@ -66,14 +66,18 @@ class mavThread(threading.Thread):
         self.reset_counter = 0
         self.pos = (0, 0, 0)
         self.rot = (0, 0, 0)
+        self.posDelta = (0, 0, 0)
+        self.rotDelta = (0, 0, 0)
         self.time = 0
         self.pktSent = 0
 
-    def updateData(self, newPos, newRot, t):
+    def updateData(self, newPos, newRot, t, posDelta, rotDelta):
         with self.lock:
             self.pos = newPos
             self.rot = newRot
             self.time = t
+            self.posDelta = posDelta
+            self.rotDelta = rotDelta
                             
     def run(self):
         # Start mavlink connection
@@ -109,6 +113,7 @@ class mavThread(threading.Thread):
             #        with self.lock:
             #            self.timestamp = self.conn.timestamp
             self.sendPos()
+            self.sendPosDelta()
             self.sendHeartbeat()
             if exit_event.is_set():
                 self.send_msg_to_gcs("Stopping")
@@ -133,7 +138,27 @@ class mavThread(threading.Thread):
         # MAV_SEVERITY: 0=EMERGENCY 1=ALERT 2=CRITICAL 3=ERROR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG, 8=ENUM_END
         text_msg = 'AprilMAV: ' + text_to_be_sent
         self.conn.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO, text_msg.encode())
-            
+
+
+    def sendPosDelta(self):
+        # Send a vision pos delta
+        # https://mavlink.io/en/messages/ardupilotmega.html#VISION_POSITION_DELTA
+        if self.goodToSend:
+            with self.lock:
+                current_time_us = int(round(time.time() * 1000000))
+                delta_time_us = current_time_us - self.time
+                current_confidence_level = 80
+                
+                # Send the message
+                self.conn.mav.vision_position_delta_send(
+                    current_time_us,    # us: Timestamp (UNIX time or time since system boot)
+                    delta_time_us,	    # us: Time since last reported camera frame
+                    self.rotDelta,    # float[3] in radian: Defines a rotation vector in body frame that rotates the vehicle from the previous to the current orientation
+                    self.posDelta,   # float[3] in m: Change in position from previous to current frame rotated into body frame (0=forward, 1=right, 2=down)
+                    current_confidence_level # Normalized confidence value from 0 to 100. 
+                )
+                self.pktSent += 1
+                    
     def sendPos(self):
         # Send a vision pos estimate
         # https://mavlink.io/en/messages/common.html#VISION_POSITION_ESTIMATE
@@ -291,13 +316,14 @@ if __name__ == '__main__':
         #get current location and rotation state of vehicle in ArduPilot NED format (rel camera)
         (posD, rotD) = tagPlacement.getArduPilotNED()
         (posR, rotR) = tagPlacement.getArduPilotNED(radians=True)
+        (posRDelta, rotRDelta) = tagPlacement.getArduPilotNEDDelta(radians=True)
 
         outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2]))
 
         #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
         
         # Create and send MAVLink packet
-        threadMavlink.updateData(posR, rotR, timestamp)
+        threadMavlink.updateData(posR, rotR, timestamp, posRDelta, rotRDelta)
         #wasSent = threadMavlink.sendPos(posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2], timestamp)
         
         # Send to status thread

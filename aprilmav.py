@@ -195,7 +195,7 @@ if __name__ == '__main__':
     
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
                            families='tagStandard41h12',
-                           nthreads=3,
+                           nthreads=4,
                            quad_decimate=args.decimation,
                            quad_sigma=0.4,
                            refine_edges=1,
@@ -253,9 +253,10 @@ if __name__ == '__main__':
         
         myStart = time.time()
 
-        # grab an image (and timestamp) from the camera
+        # grab an image (and timestamp in usec) from the camera
+        # estimate 50usec from timestamp to frame capture on next line
+        timestamp = int(round(time.time() * 1000000)) + 50
         file = camera.getFileName()
-        timestamp = int(round(time.time() * 1000000))
         #print("Timestamp of capture = {0}".format(timestamp))
         imageBW = camera.getImage()
         i += 1

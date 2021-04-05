@@ -59,7 +59,7 @@ class mavThread(threading.Thread):
         self.device = device
         self.baud = baud
         self.source_system = source_system
-        self.timestamp = 0
+        self.heartbeatTimestamp = time.time()
         self.lock = threading.Lock()
         self.conn = None
         self.goodToSend = False
@@ -79,13 +79,15 @@ class mavThread(threading.Thread):
         # Start mavlink connection
         try:
             self.conn = mavutil.mavlink_connection(self.device, autoreconnect=True, source_system=self.source_system,
-                                                   baud=self.baud, force_connected=False)
+                                                   baud=self.baud, force_connected=False, source_component=mavutil.mavlink.MAV_COMP_ID_VISUAL_INERTIAL_ODOMETRY)
         except Exception as msg:
             print("Failed to start mavlink connection on %s: %s" % (self.device, msg,))
             raise
             
         # wait for the heartbeat msg to find the system ID. Need to exit from here too
+        # We are sending a heartbeat signal too, to allow ardupilot to init the comms channel
         while True:
+            self.sendHeartbeat()
             if self.conn.wait_heartbeat(timeout=0.5) != None:
                 # Got a hearbeart, go to next loop
                 self.goodToSend = True
@@ -98,7 +100,8 @@ class mavThread(threading.Thread):
         
         while True:
             msg = self.conn.recv_match(blocking=True, timeout=0.5)
-            time.sleep(0.0333) #33.3ms, 30Hz 
+            # loop at 30 Hz
+            time.sleep(0.0333)
             #print(self.pktSent)
             #if msg != None:
             #    if self.conn.timestamp < self.timestamp:
@@ -106,9 +109,20 @@ class mavThread(threading.Thread):
             #        with self.lock:
             #            self.timestamp = self.conn.timestamp
             self.sendPos()
+            self.sendHeartbeat()
             if exit_event.is_set():
                 self.send_msg_to_gcs("Stopping")
                 return
+
+    def sendHeartbeat(self):  
+        # send heartbeat message if more than 1 sec since last message
+        if (self.heartbeatTimestamp + 1) < time.time():
+            self.conn.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
+                            mavutil.mavlink.MAV_AUTOPILOT_GENERIC,
+                            0,
+                            0,
+                            0)
+            self.heartbeatTimestamp = time.time()
             
     def getPktSent(self):
         with self.lock:

@@ -24,32 +24,15 @@ import glob
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-cbcol", type=int, default=6, help="Number of chessboard columns-1")
-    parser.add_argument("-cbrow", type=int, default=9, help="Number of chessboard rows-1")
-    parser.add_argument("-mode", type=int, default=4, help="PiCam sensor mode")
-    parser.add_argument("-framerate", type=int, default=25, help="PiCam framerate")
-    parser.add_argument("-rotation", type=int, default=0, help="PiCam rotation (roll) (degrees)")
-    parser.add_argument("-hres", type=int, default=832, help="PiCam vertical resolution")
-    parser.add_argument("-vres", type=int, default=608, help="PiCam horizontal resolution")
-    parser.add_argument("-staticmode", action="store_true", help="Use photo rather than video mode")
-    parser.add_argument("-folder", type=str, default=None, help="Use a folder of images instead of camera")
-    parser.add_argument("-loop", type=int, default=100, help="Capture and process this many frames")
-    parser.add_argument("-fisheye", action="store_true", help="Use Fisheye calibration model")
+    parser.add_argument("--cbcol", type=int, default=6, help="Number of chessboard columns-1")
+    parser.add_argument("--cbrow", type=int, default=9, help="Number of chessboard rows-1")
+    parser.add_argument("--folder", type=str, default=None, help="Use a folder of images instead of camera")
+    parser.add_argument("--fisheye", action="store_true", help="Use Fisheye calibration model")
     args = parser.parse_args()
     
     # initialize the camera
-    if args.folder == None:
-        from lib import cameraPi
-        params = {}
-        params['sensor_mode'] = args.mode
-        params['resolution'] = [args.hres, args.vres]
-        params['framerate'] = args.framerate
-        params['rotation'] = args.rotation
-        params['use_video_port'] = args.staticmode
-        camera = cameraPi.cameraPi(params)
-    else:
-        from lib import cameraFile
-        camera = cameraFile.FileCamera(args.folder)
+    from lib import cameraFile
+    camera = cameraFile.FileCamera(args.folder)
     
     # Chessboard rows and cols
     cbcol = args.cbcol
@@ -69,7 +52,7 @@ if __name__ == '__main__':
     print("Starting 30 image capture at ~1/sec...")
 
     # how many loops
-    loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
+    loops = camera.getNumberImages()
     
     for i in range(loops):
         # grab an image from the camera
@@ -140,11 +123,6 @@ if __name__ == '__main__':
         print("  cam_params: !!python/tuple [{0}, {1}, {2}, {3}]".format(K[0,0], K[1,1], K[0,2], K[1,2]))
         print("  cam_paramsD: !!python/tuple [[{0}], [{1}], [{2}], [{3}]]".format( D[0][0], D[1][0], D[2][0], D[3][0]))
         print("  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0], imgDim[1]))
-        print("  rotation: {0}".format(args.rotation))
-        if args.folder == None:
-            print("  use_video_port: {0}".format(not args.staticmode))
-            print("  sensor_mode: {0}".format(args.mode))
-            print("  framerate: {0}".format(args.framerate))
         print("  fisheye: {0}".format(args.fisheye))
         
         

@@ -228,7 +228,7 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(0, 0, 0, False)
+    tagPlacement = tagDB(False)
     
     outfile = open(args.outfile, "w+")
     # left, up, fwd, pitch, yaw, roll

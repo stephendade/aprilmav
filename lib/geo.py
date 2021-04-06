@@ -80,25 +80,25 @@ class tagDB:
 
     def getArduPilotNED(self, radians=False):
         '''get the vehicle's current position in ArduPilot NED format,
-        noting that Apriltag is coords are right,down,fwd (EDN)'''
+        noting that Apriltag is coords are right, fwd, down (END)
+        This assumes camera is on top of vehicle, bottom of camera facing fwd'''
         T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld
         posn = getPos(T_VehToWorld)
         rotn = getRotation(T_VehToWorld, radians)
-        #T_NED = [[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]] @ T_VehToWorld
 
         #return tuple of rotation and position
-        return ((posn[2], posn[0], posn[1]), (rotn[2], rotn[0], rotn[1]))
+        return ((posn[1], posn[0], posn[2]), (rotn[1], rotn[0], rotn[2]))
 
     def getArduPilotNEDDelta(self, radians=False):
         '''get the vehicle's delta (current - prev frame) position in ArduPilot NED format,
-        noting that Apriltag is coords are right,down,fwd (EDN)'''
+        noting that Apriltag is coords are right, fwd, down (END)
+        This assumes camera is on top of vehicle, bottom of camera facing fwd'''
         T_VehToWorldDelta = (self.T_CamtoVeh @ self.T_CamToWorld) - (self.T_CamtoVeh @ self.T_CamToWorldPrev)
         posn = getPos(T_VehToWorldDelta)
         rotn = getRotation(T_VehToWorldDelta, radians)
-        #T_NED = [[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]] @ T_VehToWorld
 
         #return tuple of rotation and position
-        return ((posn[2], posn[0], posn[1]), (rotn[2], rotn[0], rotn[1]))
+        return ((posn[1], posn[0], posn[2]), (rotn[1], rotn[0], rotn[2]))
 
     def getCurrentPosition(self):
         '''get the vehicle's current position in xyz'''

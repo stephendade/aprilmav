@@ -21,7 +21,13 @@ Note for the ArduCam, use ``sudo apt install i2c-tools`` and ensure ``dtparam=i2
 
 Install the dt-apriltag, PyYAML and transforms3d libraries: ``pip install dt-apriltags transforms3d PyYAML pymavlink``.
 
+Print the Apriltags (``tagStandard41h12.pdf``) and place on the ceiling of the travel area of the robot. A density of 2-4 tags per m^2 is recommended, the idea being that the camera is able to see 3+ tags at any one time.
+
+The camera should be mounted such that it has an unobstructed view of the tags on the ceiling.
+
 If you are not using one of the currently supported cameras, you will need to calibrate the camera (see Adding a New Camera below).
+
+Run the ``capture_test.py`` to check the image quality, particularly when the vehicle is moving and turning. ``process_test.py`` can then be used to confirm if the Apriltags are detectable.
 
 ### Note for the Raspberry Pi
 
@@ -51,7 +57,8 @@ $ process_test.py
 ```
 
 Localisation test. Estimates the vehicles current position based on Apriltags. Useful
-for confirming the camera calibration.:
+for confirming the camera calibration.
+
 ```
 $ geo_test.py
 ```
@@ -63,16 +70,16 @@ $ geo_test.py
 $ aprilmav.py
 ```
 
-``--tagSize``       Apriltag size in mm
-``--camera``        Camera profile in camera.yaml
-``--maxerror``      Maximum pose error to use, in n*E-8 units
-``--outfile``       Output tag data to this file
-``--device``        MAVLink connection string
-``--baud``          MAVLink baud rate, if using serial port in ``--device``
-``--source-system`` MAVLink Source system
-``--imageFolder``   Save processed images to this folder
-``--video``         Output video to port, 0 to disable
-``--decimation``    Apriltag decimation. Tradeoff against detection speed and accuracy.
+- ``--tagSize``       Apriltag size in mm
+- ``--camera``        Camera profile in camera.yaml
+- ``--maxerror``      Maximum pose error to use, in n*E-8 units
+- ``--outfile``       Output tag data to this file
+- ``--device``        MAVLink connection string
+- ``--baud``          MAVLink baud rate, if using serial port in ``--device``
+- ``--source-system`` MAVLink Source system
+- ``--imageFolder``   Save processed images to this folder
+- ``--video``         Output video to port, 0 to disable
+- ``--decimation``    Apriltag decimation. Tradeoff against detection speed and accuracy.
     
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.
@@ -80,12 +87,18 @@ to a connected ArduPilot.
 It will send a heartbeat, plus the VISION_POSITION_DELTA and VISION_POSITION_ESTIMATE messages. By default, these messages will be sent to ``udp:127.0.0.1:14550``, but can be changed via the ``--device`` argument.
 
 The following parameters will need to be set in ArduPilot:
+
+```
 VISO_TYPE        1
+VISO_ORIENT      0
 EK3_SRC1_POSXY   6
 EK3_SRC1_POSZ    1
 EK3_SRC1_VELXY   6
 EK3_SRC1_VELZ    6
 EK3_SRC1_YAW     6
+```
+
+Note that, assuming the camera is mounted facing up (to the ceiling) with the bottom of the image towards the front of the vehicle, then ``VISO_ORIENT`` should be 0. The coordinate frame conversion takes places within aprilmav.
 
 The ``VISO_DELAY_MS`` should be set to 1000/framerate (ie 7fps gives a ``VISO_DELAY_MS`` of 142).
 

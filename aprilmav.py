@@ -174,15 +174,10 @@ class mavThread(threading.Thread):
                                                cov_twist, 0,
                                                   cov_twist])
             with self.lock:
-                self.conn.mav.vision_position_estimate_send(self.time, self.pos[0], self.pos[1], self.pos[2], self.rot[0], self.rot[1], self.rot[1], covariance, reset_counter=self.reset_counter)
+                self.conn.mav.vision_position_estimate_send(self.time, self.pos[0], self.pos[1], self.pos[2], self.rot[0], self.rot[1], self.rot[2], covariance, reset_counter=self.reset_counter)
                 #Reset counter only needs be be true for first sent packet
                 self.reset_counter = 1
                 self.pktSent += 1
-
-    #def sendPosDelta(self, x, y, z, rx, ry, rz, t):
-    #    # https://mavlink.io/en/messages/ardupilotmega.html#VISION_POSITION_DELTA
-    #    # Send a delta position, which is better supported in ArduPilot
-    #    self.conn.mav.vision_position_delta_send(self, time_usec, time_delta_usec, angle_delta, position_delta, confidence)
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

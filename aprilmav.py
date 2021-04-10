@@ -70,6 +70,10 @@ class mavThread(threading.Thread):
         self.rotDelta = (0, 0, 0)
         self.time = 0
         self.pktSent = 0
+        self.target_system = 1
+        self.origin_lat = -35.363261
+        self.origin_lon = 149.165230
+        self.origin_alt = 0
 
     def updateData(self, newPos, newRot, t, posDelta, rotDelta):
         with self.lock:
@@ -91,7 +95,7 @@ class mavThread(threading.Thread):
         # wait for the heartbeat msg to find the system ID. Need to exit from here too
         # We are sending a heartbeat signal too, to allow ardupilot to init the comms channel
         while True:
-            self.sendHeartbeat()
+            self.sendHeartbeatAndEKFOrigin()
             if self.conn.wait_heartbeat(timeout=0.5) != None:
                 # Got a hearbeart, go to next loop
                 self.goodToSend = True
@@ -114,19 +118,20 @@ class mavThread(threading.Thread):
             #            self.timestamp = self.conn.timestamp
             self.sendPos()
             self.sendPosDelta()
-            self.sendHeartbeat()
+            self.sendHeartbeatAndEKFOrigin()
             if exit_event.is_set():
                 self.send_msg_to_gcs("Stopping")
                 return
 
-    def sendHeartbeat(self):  
-        # send heartbeat message if more than 1 sec since last message
+    def sendHeartbeatAndEKFOrigin(self):  
+        # send heartbeat and EKF origin messages if more than 1 sec since last message
         if (self.heartbeatTimestamp + 1) < time.time():
             self.conn.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
                             mavutil.mavlink.MAV_AUTOPILOT_GENERIC,
                             0,
                             0,
                             0)
+            self.set_default_global_origin()
             self.heartbeatTimestamp = time.time()
             
     def getPktSent(self):
@@ -140,6 +145,15 @@ class mavThread(threading.Thread):
         self.conn.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO, text_msg.encode())
 
 
+    # Send a mavlink SET_GPS_GLOBAL_ORIGIN message (http://mavlink.org/messages/common#SET_GPS_GLOBAL_ORIGIN), for the EKF origin
+    def set_default_global_origin(self):
+        current_time_us = int(round(time.time() * 1000000))
+        self.conn.mav.set_gps_global_origin_send(self.target_system,
+                                           int(self.origin_lat*1.0e7),
+                                           int(self.origin_lon*1.0e7),
+                                           int(self.origin_alt*1.0e3),
+                                           current_time_us)
+    
     def sendPosDelta(self):
         # Send a vision pos delta
         # https://mavlink.io/en/messages/ardupilotmega.html#VISION_POSITION_DELTA

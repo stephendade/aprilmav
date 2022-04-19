@@ -34,9 +34,8 @@ class camera:
         
     def getImage(self):
         ''' Capture a single image from the Camera '''
-
         return_value, image = self.camera.read()
-
+        
         # Rotate if required
         if self.camParams['rotation'] == 180:
             image = cv2.rotate(image, cv2.ROTATE_180)

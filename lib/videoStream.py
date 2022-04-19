@@ -25,8 +25,8 @@ class videoThread(threading.Thread):
             #process B&W image to colour and add text
             imageColour = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
             imageColour = self.labelTags(imageColour, tags)
-            cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
-            cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+            cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 3)
+            cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 3)
             # Start video server if not already started
             if not vidOut:
                 vidOut = cv2.VideoWriter('appsrc ! video/x-raw, format=BGR ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ! udpsink host=0.0.0.0 port=' + self.port + '', cv2.CAP_GSTREAMER, 0, 20, imageColour.shape[:2][::-1], True)

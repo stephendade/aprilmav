@@ -13,6 +13,7 @@ import numpy
 import cv2
 import yaml
 import argparse
+import sys
 
 from importlib import import_module
 from dt_apriltags import Detector
@@ -27,6 +28,7 @@ if __name__ == '__main__':
     parser.add_argument("--folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("--outfile", type=str, default="processed.csv", help="Output tag data to this file")
     parser.add_argument("--decimation", type=int, default=2, help="Apriltag decimation")
+    parser.add_argument("--opencl", help="Use OpenCL Acceleration", action='store_true', default=False)
     args = parser.parse_args()
     
     print("Initialising")
@@ -83,6 +85,8 @@ if __name__ == '__main__':
         D[1][0] = camParams['cam_paramsD'][1]
         D[2][0] = camParams['cam_paramsD'][2]
         D[3][0] = camParams['cam_paramsD'][3]
+        
+        dim1 = None
             
     for i in range(loops):
         print("--------------------------------------")
@@ -95,17 +99,20 @@ if __name__ == '__main__':
         # we're out of images
         if imageBW is None:
             break
-            
+        
         # AprilDetect, after accounting for distortion  (if fisheye)
-        if camParams['fisheye']:
+        if camParams['fisheye'] and dim1 is None:
             dim1 = imageBW.shape[:2][::-1]  #dim1 is the dimension of input image to un-distort
             map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
-            undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-           
+        if camParams['fisheye']:
+            if args.opencl:
+                undistorted_img = cv2.remap(cv2.UMat(imageBW), map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+                undistorted_img = cv2.UMat.get(undistorted_img)
+            else:
+                undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
             tags = at_detector.detect(undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
         else:
             tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
-            
         if file:
             print("File: {0}".format(file))
         

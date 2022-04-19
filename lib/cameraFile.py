@@ -27,12 +27,11 @@ class FileCamera:
         if len(self.images) == 0:
             print("Warning: FileCamera out of images")
             return None
-        
+            
         img = cv2.imread(self.images.pop(0), cv2.IMREAD_GRAYSCALE)
-        #img = cv2.fastNlMeansDenoising(img,None, 3, 5, 17)
         
         return img
-    
+            
     def getFileName(self):
         '''Get current file in camera'''
         return self.images[0]

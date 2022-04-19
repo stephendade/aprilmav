@@ -39,11 +39,11 @@ class camera:
         
     def getImage(self):
         ''' Capture a single image from the Camera '''
-        
         self.camera.capture(self.image, format="bgr", use_video_port=self.camParams['use_video_port'])
         
         # and convert to OpenCV greyscale format
         self.image = self.image.reshape((self.camera.resolution[1], self.camera.resolution[0], 3))
+        
         return cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY) 
         
     def close(self):

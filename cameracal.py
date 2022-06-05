@@ -28,6 +28,7 @@ if __name__ == '__main__':
     parser.add_argument("--cbrow", type=int, default=9, help="Number of chessboard rows-1")
     parser.add_argument("--folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("--fisheye", action="store_true", help="Use Fisheye calibration model")
+    parser.add_argument("--halfres", action="store_true", help="Use half resolution")
     args = parser.parse_args()
     
     # initialize the camera
@@ -57,6 +58,9 @@ if __name__ == '__main__':
     for i in range(loops):
         # grab an image from the camera
         grey = camera.getImage()
+        
+        if args.halfres:
+            grey = cv2.resize(grey, None, fx= 0.5, fy= 0.5, interpolation= cv2.INTER_AREA)
         
         if i == 0:
             # get image dimensions
@@ -122,13 +126,19 @@ if __name__ == '__main__':
         print("<profilename>:")
         print("  cam_params: !!python/tuple [{0}, {1}, {2}, {3}]".format(K[0,0], K[1,1], K[0,2], K[1,2]))
         print("  cam_paramsD: !!python/tuple [[{0}], [{1}], [{2}], [{3}]]".format( D[0][0], D[1][0], D[2][0], D[3][0]))
-        print("  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0], imgDim[1]))
+        if args.halfres:
+            print("  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0]*2, imgDim[1]*2))
+        else:
+            print("  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0], imgDim[1]))
         print("  fisheye: {0}".format(args.fisheye))
+        print("  halfres: {0}".format(args.halfres))
         
         
         if args.fisheye:
             # Show un-distortion of fisheye to user
             img = cv2.imread(glob.glob(os.path.join(args.folder, "*.jpg"))[0])
+            if args.halfres:
+                img = cv2.resize(img, None, fx= 0.5, fy= 0.5, interpolation= cv2.INTER_AREA)
             dim1 = img.shape[:2][::-1]  #dim1 is the dimension of input image to un-distort
             map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
             undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)

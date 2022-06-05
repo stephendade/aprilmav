@@ -36,6 +36,16 @@ ArduCamUC580:
   resolution: !!python/tuple [1280, 800]
   rotation: 0
   fisheye: True
+  halfres: False
+  
+ArduCamUC580Half:
+  cam_name: "cameraArduCamUC580Half"
+  cam_params: !!python/tuple [287.65621303404754, 288.1190029513685, 316.6282203036185, 195.399352432793]
+  cam_paramsD: !!python/tuple [[0.007534020441721305], [-0.05422419845713151], [0.1605053805855317], [-0.1231473727170638]]
+  resolution: !!python/tuple [1280, 800]
+  rotation: 0
+  fisheye: True
+  halfres: True
   
 GenericUSB:
   cam_name: "cameraGenericUSB"

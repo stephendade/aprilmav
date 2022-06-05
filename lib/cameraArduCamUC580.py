@@ -21,6 +21,7 @@ class camera:
         self.camParams = camParams
         self.camera = arducam.mipi_camera()
         self.camera.rotation = camParams['rotation']
+        self.camera.halfres = camParams['halfres']
         self.frame = None
         
         self.V4L2_CID_EXPOSURE = 9963793
@@ -52,6 +53,10 @@ class camera:
         # Convert to greyscale and crop
         image = cv2.cvtColor(image, cv2.COLOR_YUV2GRAY_I420)
         imageCrop = image[0:self.camParams['resolution'][1], 0:self.camParams['resolution'][0]]
+        
+        # Halve the resolution
+        if self.camera.halfres:
+            imageCrop = cv2.resize(imageCrop, None, fx= 0.5, fy= 0.5, interpolation= cv2.INTER_AREA)
         
         # Rotate if required
         if self.camParams['rotation'] == 180:

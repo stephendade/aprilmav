@@ -80,11 +80,11 @@ class mavThread(threading.Thread):
 
     def updateData(self, newPos, newRot, t):
         with self.lock:
-            self.pos = newPos
-            self.rot = newRot
             if self.time != 0:
                 # time is in usec here, remember to convert to sec
                 self.speed = (newPos - self.pos) / (1E-6 * (t - self.time))
+            self.pos = newPos
+            self.rot = newRot
             self.time = t
 
     def run(self):
@@ -187,7 +187,7 @@ class mavThread(threading.Thread):
                                       cov_pose, 0, 0])
             with self.lock:
                 self.conn.mav.vision_speed_estimate_send(
-                    current_time_us, self.pos[0], self.pos[1], self.pos[2], covariance, reset_counter=self.reset_counter)
+                    current_time_us, self.speed[0], self.speed[1], self.speed[2], covariance, reset_counter=self.reset_counter)
                 self.pktSent += 1
 
 

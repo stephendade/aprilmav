@@ -183,8 +183,8 @@ class mavThread(threading.Thread):
             # estimate error - approx 0.05m/s in pos
             cov_pose = 0.05
             covariance = numpy.array([cov_pose, 0, 0,
-                                      cov_pose, 0, 0,
-                                      cov_pose, 0, 0])
+                                      0, cov_pose, 0,
+                                      0, 0, cov_pose])
             with self.lock:
                 self.conn.mav.vision_speed_estimate_send(
                     current_time_us, self.speed[0], self.speed[1], self.speed[2], covariance, reset_counter=self.reset_counter)

@@ -84,7 +84,7 @@ class mavThread(threading.Thread):
         with self.lock:
             if self.time != 0:
                 # time is in usec here, remember to convert to sec
-                self.speed = (numpy.array(newPos) - numpy.array(self.pos)) / (1E-6 * (t - self.time))
+                self.speed = numpy.array(posDelta)/ (1E-6 * (t - self.time))
             self.pos = newPos
             self.rot = newRot
             self.time = t
@@ -122,7 +122,7 @@ class mavThread(threading.Thread):
             time.sleep(0.05)
             self.sendPos()
             self.sendSpeed()
-            self.sendPosDelta()
+            #self.sendPosDelta()
             self.sendHeartbeatAndEKFOrigin()
             if exit_event.is_set():
                 self.send_msg_to_gcs("Stopping")
@@ -185,8 +185,8 @@ class mavThread(threading.Thread):
         # https://mavlink.io/en/messages/common.html#VISION_SPEED_ESTIMATE
         if self.goodToSend:
             current_time_us = int(round(time.time() * 1000000))
-            # estimate error - approx 0.2m/s in pos
-            cov_pose = 0.2
+            # estimate error - approx 0.05m/s in pos
+            cov_pose = 0.05
             covariance = numpy.array([cov_pose, 0, 0,
                                       0, cov_pose, 0,
                                       0, 0, cov_pose])

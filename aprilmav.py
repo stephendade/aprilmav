@@ -23,6 +23,7 @@ from pymavlink import mavutil
 from lib.geo import tagDB
 from lib.videoStream import videoThread
 from lib.saveStream import saveThread
+from lib.optflow import OptFlow
 
 exit_event = threading.Event()
 
@@ -269,6 +270,9 @@ if __name__ == '__main__':
 
     # All tags live in here
     tagPlacement = tagDB(False)
+    
+    # Optical flow lives here
+    flow = OptFlow(False)
 
     outfile = open(args.outfile, "w+")
     # left, up, fwd, pitch, yaw, roll
@@ -354,6 +358,9 @@ if __name__ == '__main__':
                 tagPlacement.addTag(tag)
 
         tagPlacement.getBestTransform()
+        
+        # Optical flow for movement
+        flow.newFrame(imageBW, timestamp)
 
         if file:
             print("File: {0}".format(file))

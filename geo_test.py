@@ -19,6 +19,7 @@ import argparse
 from importlib import import_module
 from dt_apriltags import Detector
 from lib.geo import tagDB
+from lib.optflow import OptFlow
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -66,7 +67,10 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(0, 0, 0)
+    tagPlacement = tagDB(False)
+    
+    # Optical flow lives here
+    flow = OptFlow(False)
     
     # how many loops
     loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
@@ -74,7 +78,7 @@ if __name__ == '__main__':
     print("Starting {0} image capture and process...".format(loops))
     
     outfile = open(args.outfile,"w+")
-    outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format("Filename", "PosX (North)", "PosY (East)", "PosZ (Down)", "RotX (Roll)", "RotY (Pitch)", "RotZ (Yaw)"))
+    outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "PosX (North)", "PosY (East)", "PosZ (Down)", "RotX (Roll)", "RotY (Pitch)", "RotZ (Yaw)", "FlowX", "FlowY"))
     
     #GUI
     fig = None
@@ -137,9 +141,11 @@ if __name__ == '__main__':
             map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
             undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)      
             tags = at_detector.detect(undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
+            flow.newFrame(undistorted_img, None)
         else:
             tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
-
+            flow.newFrame(imageBW, None)
+        
         # add any new tags to database, or existing one to duplicates
         tagsused = 0
         for tag in tags:
@@ -153,7 +159,7 @@ if __name__ == '__main__':
             print("File: {0}".format(file))
         
         (posn, rot) = tagPlacement.getArduPilotNED()
-        outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posn[0], posn[1], posn[2], rot[0], rot[1], rot[2]))
+        outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f},{7:.0f},{8:.0f}\n".format(file, posn[0], posn[1], posn[2], rot[0], rot[1], rot[2], flow.flowspeed[0], flow.flowspeed[1]))
         
         #Update the live graph
         if args.gui:

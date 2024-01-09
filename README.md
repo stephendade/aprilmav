@@ -13,13 +13,20 @@ This library uses the the [Apriltags Python bindings](https://github.com/duckiet
 
 ## How to get started
 
-Install OpenCV and Matplotlib: ``sudo apt install python3-matplotlib python3-opencv``.
+Note for the ArduCam, use ``sudo apt install i2c-tools`` and ensure ``dtparam=i2c_vc=on`` is in ``/boot/config.txt``.
 
-Note for the Raspberry Pi, use ``pip install opencv-python`` instead.
+Note for using libcamera, ensure that the picamera2 package is installed via ``sudo apt install -y python3-picamera2 --no-install-recommends``
+before creating the virtual environment.
 
-Note for the ArduCam, use ``sudo apt install i2c-tools`` and ensure ``dtparam=i2c_vc=on`` is in ``/boot/config.txt``
+Set up the virtual environment and install the required packages:
 
-Install the dt-apriltag, PyYAML and transforms3d libraries: ``pip install dt-apriltags transforms3d PyYAML pymavlink``.
+```
+python -m venv --system-site-packages .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Users running in a headless environment may need to also ``sudo apt install ffmpeg libsm6 libxext6``.
 
 Print the Apriltags (``tagStandard41h12.pdf``) and place on the ceiling of the travel area of the robot. A density of 2-4 tags per m^2 is recommended, the idea being that the camera is able to see 3+ tags at any one time.
 

@@ -53,3 +53,11 @@ GenericUSB:
   cam_params: !!python/tuple [650, 650, 640, 480]
   rotation: 0
   fisheye: False
+
+imx296:
+  cam_name: "cameralibCamera"
+  model: "imx296"
+  resolution: !!python/tuple [1456, 1088]
+  cam_params: !!python/tuple [650, 650, 700, 500]
+  rotation: 180
+  fisheye: False

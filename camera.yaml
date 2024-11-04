@@ -58,6 +58,6 @@ imx296:
   cam_name: "cameralibCamera"
   model: "imx296"
   resolution: !!python/tuple [1456, 1088]
-  cam_params: !!python/tuple [650, 650, 700, 500]
+  cam_params: !!python/tuple [1780.1874386479185, 1781.1558505016183, 721.7475971693359, 571.4537912009705]
   rotation: 180
   fisheye: False

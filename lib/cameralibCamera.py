@@ -1,5 +1,6 @@
 '''
 Camera Interfacing for Libcamera
+4-7ms capture time for RPi GS Camera
 '''
 
 from picamera2 import Picamera2
@@ -31,13 +32,29 @@ class camera:
         self.frame = None
                 
         # Set camera settings
-        config = self.camera.create_still_configuration({"format": 'BGR888', "size": (self.camParams['resolution'][0], 
-                                                                                      self.camParams['resolution'][1])})
+        config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0], 
+                                                        self.camParams['resolution'][1]),},
+                                                        controls={'FrameRate': 50},
+                                                        buffer_count=2)
         self.camera.configure(config)
         self.camera.start()
-        
+
+        # Run for a second to get a reasonable "middle" exposure level.
         time.sleep(1)
-        
+        metadata = self.camera.capture_metadata()
+        exposure_normal = metadata["ExposureTime"]
+        gain = metadata["AnalogueGain"] * metadata["DigitalGain"]
+        self.camera.stop()
+        controls = {"ExposureTime": exposure_normal, "AnalogueGain": gain, 'FrameRate': 50}
+
+        # Set camera settings with new gains
+        config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0], 
+                                                        self.camParams['resolution'][1]),},
+                                                        controls=controls,
+                                                        buffer_count=2)
+        self.camera.configure(config)
+        self.camera.start()
+
     def getNumberImages(self):
         '''Get number of loaded images'''
         return None
@@ -50,11 +67,9 @@ class camera:
         ''' Capture a single image from the Camera '''
         
         self.frame = self.camera.capture_array()
-        #image = self.frame.as_array.reshape(int(self.camParams['resolution'][1]*1.5), self.camParams['resolution'][0])
         
-        # Convert to greyscale and crop
-        image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
-        #imageCrop = image[0:self.camParams['resolution'][1], 0:self.camParams['resolution'][0]]
+        # Convert to greyscale
+        image = cv2.cvtColor(self.frame, cv2.COLOR_RGB2GRAY)
         
         # Rotate if required
         if self.camParams['rotation'] == 180:

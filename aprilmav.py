@@ -17,7 +17,7 @@ import yaml
 import numpy
 import cv2
 
-from dt_apriltags import Detector
+from pyapriltags import Detector
 from pymavlink import mavutil
 
 from lib.geo import tagDB

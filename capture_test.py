@@ -20,6 +20,7 @@ from importlib import import_module
 save_queue = queue.Queue()
 shouldExit = False
 
+
 # Separate thread for saving images, in order to not delay image capture
 def save_threadfunc():
     while True:
@@ -31,7 +32,8 @@ def save_threadfunc():
         if save_queue.empty() and shouldExit:
             break
     print("Exited save thread")
-        
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--camera", type=str, default="GenericUSB", help="Camera profile in camera.yaml")
@@ -39,19 +41,19 @@ if __name__ == '__main__':
     parser.add_argument("--delay", type=int, default=0, help="Delay by N millisec between frame captures")
     parser.add_argument("--folder", type=str, default="capture", help="Put capture into this folder")
     args = parser.parse_args()
-    
+
     print("Initialising Camera")
 
     # Open camera settings
     with open('camera.yaml', 'r') as stream:
         parameters = yaml.load(stream, Loader=yaml.FullLoader)
-        
-    #create the capture folder if required
+
+    # create the capture folder if required
     try:
         os.makedirs(os.path.join(".", args.folder))
     except FileExistsError:
         pass
-    
+
     # initialize the camera
     camera = None
     try:
@@ -61,13 +63,12 @@ if __name__ == '__main__':
     except (ImportError, KeyError):
         print('No camera with the name {0}, exiting'.format(args.camera))
         sys.exit(0)
-        
+
     print("Starting {0} image capture...".format(args.loop))
-    
+
     worker = threading.Thread(target=save_threadfunc, args=())
     worker.daemon = True
     worker.start()
-    
 
     for i in range(args.loop):
         myStart = time.time()
@@ -76,7 +77,7 @@ if __name__ == '__main__':
 
         # get time to capture and convert
         print("Captured {1:04d}.jpg in {0:.0f}ms".format((time.time() - myStart)*1000, i))
-        
+
         time.sleep(args.delay/1000)
 
         # write image to save queue as (image, filename) tuple
@@ -84,9 +85,7 @@ if __name__ == '__main__':
 
     # close camera
     camera.close()
-    
+
     # wait for images to finish saving
     shouldExit = True
     worker.join()
-    
-    

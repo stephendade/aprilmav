@@ -95,7 +95,8 @@ class mavThread(threading.Thread):
         # Start mavlink connection
         try:
             self.conn = mavutil.mavlink_connection(self.device, autoreconnect=True, source_system=self.source_system,
-                                                   baud=self.baud, force_connected=False, source_component=mavutil.mavlink.MAV_COMP_ID_VISUAL_INERTIAL_ODOMETRY)
+                                                   baud=self.baud, force_connected=False,
+                                                   source_component=mavutil.mavlink.MAV_COMP_ID_VISUAL_INERTIAL_ODOMETRY)
         except Exception as msg:
             print("Failed to start mavlink connection on %s: %s" %
                   (self.device, msg,))
@@ -117,12 +118,12 @@ class mavThread(threading.Thread):
         self.send_msg_to_gcs("Starting")
 
         while True:
-            msg = self.conn.recv_match(blocking=True, timeout=0.5)
+            # self.conn.recv_match(blocking=True, timeout=0.5)
             # loop at 20 Hz
             time.sleep(0.05)
             self.sendPos()
             self.sendSpeed()
-            #self.sendPosDelta()
+            # self.sendPosDelta()
             self.sendHeartbeatAndEKFOrigin()
             if exit_event.is_set():
                 self.send_msg_to_gcs("Stopping")
@@ -177,7 +178,8 @@ class mavThread(threading.Thread):
                                       cov_twist])
             with self.lock:
                 self.conn.mav.vision_position_estimate_send(
-                    current_time_us, self.pos[0], self.pos[1], self.pos[2], self.rot[0], self.rot[1], self.rot[2], covariance, reset_counter=self.reset_counter)
+                    current_time_us, self.pos[0], self.pos[1], self.pos[2], self.rot[0], self.rot[1], self.rot[2],
+                    covariance, reset_counter=self.reset_counter)
                 self.pktSent += 1
 
     def sendSpeed(self):
@@ -192,7 +194,8 @@ class mavThread(threading.Thread):
                                       0, 0, cov_pose])
             with self.lock:
                 self.conn.mav.vision_speed_estimate_send(
-                    current_time_us, self.speed[0], self.speed[1], self.speed[2], covariance, reset_counter=self.reset_counter)
+                    current_time_us, self.speed[0], self.speed[1], self.speed[2], covariance,
+                    reset_counter=self.reset_counter)
                 self.pktSent += 1
 
     def sendPosDelta(self):
@@ -210,9 +213,10 @@ class mavThread(threading.Thread):
                     delta_time_us,	    # us: Time since last reported camera frame
                     self.rotDelta,    # float[3] in radian: Defines a rotation vector in body frame that rotates the vehicle from the previous to the current orientation
                     self.posDelta,   # float[3] in m: Change in position from previous to current frame rotated into body frame (0=forward, 1=right, 2=down)
-                    current_confidence_level # Normalized confidence value from 0 to 100. 
+                    current_confidence_level  # Normalized confidence value from 0 to 100. 
                 )
                 self.pktSent += 1
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -323,7 +327,7 @@ if __name__ == '__main__':
         # estimate 50usec from timestamp to frame capture on next line
         timestamp = int(round(time.time() * 1000000)) + 50
         file = camera.getFileName()
-        #print("Timestamp of capture = {0}".format(timestamp))
+        # print("Timestamp of capture = {0}".format(timestamp))
         imageBW = camera.getImage()
         i += 1
 
@@ -341,7 +345,7 @@ if __name__ == '__main__':
         if camParams['fisheye']:
             imageBW = cv2.remap(
                 imageBW, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-            #tags = at_detector.detect(undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
+            # tags = at_detector.detect(undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
         # else:
         tags = at_detector.detect(
             imageBW, True, camParams['cam_params'], args.tagSize/1000)
@@ -366,11 +370,11 @@ if __name__ == '__main__':
         outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(
             file, posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2]))
 
-        #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
+        # print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
 
         # Create and send MAVLink packet
         threadMavlink.updateData(posR, rotR, timestamp, posRDelta, rotRDelta)
-        #wasSent = threadMavlink.sendPos(posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2], timestamp)
+        # wasSent = threadMavlink.sendPos(posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2], timestamp)
 
         # Send to status thread
         threadStatus.updateData(time.time(

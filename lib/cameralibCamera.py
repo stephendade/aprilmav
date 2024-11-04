@@ -10,10 +10,10 @@ import time
 
 class camera:
     '''A Camera setup and capture class for Libcamera'''
-    
+
     def __init__(self, camParams):
         '''Initialise the camera, based on a dict of settings'''
-        
+
         # find the camera by name
         self.camera = None
         for cam in Picamera2.global_camera_info():
@@ -27,13 +27,13 @@ class camera:
             return
 
         self.camParams = camParams
-        
+
         self.camera.rotation = camParams['rotation']
         self.frame = None
-                
+
         # Set camera settings
-        config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0], 
-                                                        self.camParams['resolution'][1]),},
+        config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0],
+                                                        self.camParams['resolution'][1])},
                                                         controls={'FrameRate': 50},
                                                         buffer_count=2)
         self.camera.configure(config)
@@ -48,8 +48,8 @@ class camera:
         controls = {"ExposureTime": exposure_normal, "AnalogueGain": gain, 'FrameRate': 50}
 
         # Set camera settings with new gains
-        config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0], 
-                                                        self.camParams['resolution'][1]),},
+        config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0],
+                                                        self.camParams['resolution'][1])},
                                                         controls=controls,
                                                         buffer_count=2)
         self.camera.configure(config)
@@ -62,25 +62,25 @@ class camera:
     def getFileName(self):
         '''Get current file in camera'''
         return None
-        
+
     def getImage(self):
         ''' Capture a single image from the Camera '''
-        
+
         self.frame = self.camera.capture_array()
-        
+
         # Convert to greyscale
         image = cv2.cvtColor(self.frame, cv2.COLOR_RGB2GRAY)
-        
+
         # Rotate if required
         if self.camParams['rotation'] == 180:
             image = cv2.rotate(image, cv2.ROTATE_180)
         if self.camParams['rotation'] == 90:
             image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
         if self.camParams['rotation'] == 270:
-            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)            
+            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
         return image
-        
+
     def close(self):
         ''' close the camera'''
-        #self.camera.close_camera()
+        # self.camera.close_camera()
         del self.frame

@@ -1,6 +1,6 @@
-opencv-python==4.9.0.80
-dt-apriltags==3.1.7
-transforms3d==0.4.1
-PyYAML==6.0.1
-pymavlink==2.4.41
-matplotlib==3.8.2
+opencv-python==4.10.0.84
+pyapriltags==3.3.0.3
+transforms3d==0.4.2
+PyYAML==6.0.2
+pymavlink==2.4.42
+matplotlib==3.9.2

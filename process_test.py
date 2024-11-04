@@ -15,7 +15,7 @@ import yaml
 import argparse
 
 from importlib import import_module
-from dt_apriltags import Detector
+from pyapriltags import Detector
 from lib.geo import getPos, getTransform, getRotation
 
 

@@ -11,8 +11,8 @@ def getTransform(tag):
     '''tag pose to transformation matrix'''
     T_Tag = numpy.array(numpy.eye((4)))
     T_Tag[0:3, 0:3] = numpy.array(tag.pose_R)
-    tag.pose_t = numpy.array(tag.pose_t)
-    T_Tag[0:3, 3] = tag.pose_t.reshape(3)
+    pose_t = numpy.array(tag.pose_t)
+    T_Tag[0:3, 3] = pose_t.reshape(3)
 
     # flip x axis
     #T_Tag = [[-1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]] @ T_Tag

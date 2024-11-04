@@ -66,7 +66,7 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(0, 0, 0)
+    tagPlacement = tagDB()
 
     # how many loops
     loops = camera.getNumberImages() if camera.getNumberImages() else args.loop

@@ -54,7 +54,7 @@ GenericUSB:
   rotation: 0
   fisheye: False
 
-imx296:
+imx296-6mmlens:
   cam_name: "cameralibCamera"
   model: "imx296"
   resolution: !!python/tuple [1456, 1088]

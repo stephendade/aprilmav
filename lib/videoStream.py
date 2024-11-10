@@ -9,24 +9,27 @@ import queue
 import threading
 import cv2
 
+
 class videoThread(threading.Thread):
     def __init__(self, port, exit_event):
         threading.Thread.__init__(self)
         self.frame_queue = queue.Queue()
         self.port = str(port)
         self.exit_event = exit_event
-        
+
     def run(self):
         vidOut = None
         while True:
             if self.frame_queue.empty():
                 continue
             (image, posn, rot, tags) = self.frame_queue.get()
-            #process B&W image to colour and add text
+            # process B&W image to colour and add text
             imageColour = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
             imageColour = self.labelTags(imageColour, tags)
-            cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
-            cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+            cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+            cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             # Start video server if not already started
             if not vidOut:
                 vidOut = cv2.VideoWriter('appsrc ! video/x-raw, format=BGR ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ! udpsink host=0.0.0.0 port=' + self.port + '', cv2.CAP_GSTREAMER, 0, 20, imageColour.shape[:2][::-1], True)
@@ -40,7 +43,7 @@ class videoThread(threading.Thread):
                 if vidOut:
                     vidOut.release()
                 return
-                
+
     def labelTags(self, image, tags):
         # Label the tags in the image
         # loop over the AprilTag detection results
@@ -63,4 +66,3 @@ class videoThread(threading.Thread):
             # draw the tag ID 
             cv2.putText(image, str(r.tag_id), (ptA[0] + 10, ptA[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
         return image
-        

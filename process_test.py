@@ -24,7 +24,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
     parser.add_argument("--loop", type=int, default=10, help="Process this many frames")
-    parser.add_argument("--tagSize", type=int, default=96, help="Apriltag size in mm")
+    parser.add_argument("--tagSize", type=int, default=93, help="Apriltag size in mm")
     parser.add_argument("--folder", type=str, default=None, help="Use a folder of images instead of camera")
     parser.add_argument("--outfile", type=str, default="processed.csv", help="Output tag data to this file")
     parser.add_argument("--decimation", type=int, default=2, help="Apriltag decimation")
@@ -121,7 +121,9 @@ if __name__ == '__main__':
             tagpos = getPos(getTransform(tag))
             tagrot = getRotation(getTransform(tag))
 
-            print("Tag {0} pos = {1} m, Rot = {2} deg".format(tag.tag_id, tagpos.round(3), tagrot.round(1)))
+            print("Tag {0} pos = {1} m, Rot = {2} deg. ErrE8 = {3:.4f}".format(tag.tag_id, tagpos.round(3),
+                                                                               tagrot.round(1), tag.pose_err*1E8))
+
             outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
                                                                                                  tag.tag_id,
                                                                                                  tagpos[0],

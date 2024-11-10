@@ -57,7 +57,9 @@ GenericUSB:
 imx296-6mmlens:
   cam_name: "cameralibCamera"
   model: "imx296"
+  cam_params: !!python/tuple [1774.6877264643633, 1775.3791033847385, 739.1456554208937, 563.4015123976078]
+  cam_paramsD: !!python/tuple [-0.13392483734284377, -0.3733250143698285, 1.2448707776971588, -1.8040266655469723]
   resolution: !!python/tuple [1456, 1088]
-  cam_params: !!python/tuple [1780.1874386479185, 1781.1558505016183, 721.7475971693359, 571.4537912009705]
+  fisheye: True
   rotation: 180
-  fisheye: False
+  halfres: False

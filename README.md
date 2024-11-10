@@ -9,7 +9,7 @@ or complicated equipment. All you need is:
 - Printed April tags on a ~A4 paper mounted around the areas of travel
 - Small embedded computer (Raspberry Pi or similar) with camera (Global shutter preferred)
 
-This library uses the the [Apriltags Python bindings](https://github.com/duckietown/dt-apriltags) by Duckietown
+This library uses the the [Apriltags Python bindings](https://github.com/WillB97/pyapriltags).
 
 ## How to get started
 
@@ -34,11 +34,14 @@ The camera should be mounted such that it has an unobstructed view of the tags o
 
 If you are not using one of the currently supported cameras, you will need to calibrate the camera (see Adding a New Camera below).
 
-Run the ``capture_test.py`` to check the image quality, particularly when the vehicle is moving and turning. ``process_test.py`` can then be used to confirm if the Apriltags are detectable.
+Run the ``capture_test.py`` to check the image quality, particularly when the vehicle is moving and turning. ``process_test.py`` can then be used to confirm if the Apriltags are detectable and system performance.
 
 ### Note for the Raspberry Pi
 
-In some cases, the default OpenCV for the Raspberry Pi may not process frames fast enough.
+The Raspberry Pi 4 is *just* powerful enough to run aprilmav in realtime (~10fps). It is highly recommended
+to use the Raspberry Pi 5 instead, which can give ~30fps with a 1.5MP camera
+
+In some cases, the default OpenCV for the Raspberry Pi 4 may not process frames fast enough.
 
 In general, 5+ FPS is enough for a live feed to ArduPilot.
 
@@ -121,10 +124,10 @@ To check if your OpenCV has GStreamer support, see https://learnopencv.com/get-o
 
 The following cameras have been tested as compatible with Aprilmav:
 
-- Raspberry Pi Camera V2 (needs to be used in a very well lit room. Is not accurate in Apriltag pose detection)
-- Raspberry Pi Camera GS (IMX296)
-- Arducam 1MP OV9281 (works quite well, as it has a global shutter). Requires specific libraries. Run ``./lib/getArduCamfiles.sh`` to download the files.
-- Generic USB webcams. Will need a specific calibration and settings file for each camera model.
+- Raspberry Pi Camera V2 (needs to be used in a very well lit room. Is not accurate in Apriltag pose detection). Use ``--camera=PiCamV2FullFoVHD``
+- Raspberry Pi Camera GS (IMX296). The 6mm lens is quite narrow, so will need a greater density of Apriltags. Use ``--camera=imx296-6mmlens``
+- Arducam 1MP OV9281 (works quite well, as it has a global shutter). Requires specific libraries. Run ``./lib/getArduCamfiles.sh`` to download the files. Use ``--camera=ArduCamUC580``
+- Generic USB webcams. Will need a specific calibration and settings file for each camera model. Use ``--camera=GenericUSB``
 
 Cameras with global shutters are preferred, as they give much more accurate position solutions.
 

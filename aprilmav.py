@@ -76,7 +76,7 @@ class mavThread(threading.Thread):
         self.target_system = 1
         self.origin_lat = -35.363261
         self.origin_lon = 149.165230
-        self.origin_alt = 0
+        self.origin_alt = 0.001
         self.posDelta = (0, 0, 0)
         self.rotDelta = (0, 0, 0)
 

@@ -34,7 +34,7 @@ class camera:
         # Set camera settings
         config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0],
                                                         self.camParams['resolution'][1])},
-                                                        controls={'FrameRate': 50},
+                                                        controls={'FrameRate': 60},
                                                         buffer_count=2)
         self.camera.configure(config)
         self.camera.start()
@@ -42,10 +42,11 @@ class camera:
         # Run for a second to get a reasonable "middle" exposure level.
         time.sleep(1)
         metadata = self.camera.capture_metadata()
-        exposure_normal = metadata["ExposureTime"]
-        gain = metadata["AnalogueGain"] * metadata["DigitalGain"]
         self.camera.stop()
-        controls = {"ExposureTime": exposure_normal, "AnalogueGain": gain, 'FrameRate': 50}
+        controls = {"ExposureTime": metadata["ExposureTime"],
+                    "AnalogueGain": metadata["AnalogueGain"],
+                    "ColourGains": metadata["ColourGains"],
+                    'FrameRate': 60}
 
         # Set camera settings with new gains
         config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0],

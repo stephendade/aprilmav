@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--camera", type=str, default="GenericUSB", help="Camera profile in camera.yaml")
     parser.add_argument("--loop", type=int, default=20, help="Capture this many frames")
-    parser.add_argument("--delay", type=int, default=0, help="Delay by N millisec between frame captures")
+    parser.add_argument("--delay", type=int, default=50, help="Delay by N millisec between frame captures")
     parser.add_argument("--folder", type=str, default="capture", help="Put capture into this folder")
     args = parser.parse_args()
 

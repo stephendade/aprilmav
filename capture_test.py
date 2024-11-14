@@ -7,22 +7,21 @@ All images will be stored as "capture_N.jpg"
 '''
 
 import time
-import cv2
 import argparse
-import yaml
 import os
 import sys
 import queue
 import threading
-
 from importlib import import_module
+import cv2
+import yaml
 
 save_queue = queue.Queue()
 shouldExit = False
 
 
-# Separate thread for saving images, in order to not delay image capture
 def save_threadfunc():
+    '''Separate thread for saving images, in order to not delay image capture'''
     while True:
         if save_queue.empty():
             continue
@@ -36,16 +35,20 @@ def save_threadfunc():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--camera", type=str, default="GenericUSB", help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=20, help="Capture this many frames")
-    parser.add_argument("--delay", type=int, default=50, help="Delay by N millisec between frame captures")
-    parser.add_argument("--folder", type=str, default="capture", help="Put capture into this folder")
+    parser.add_argument("--camera", type=str, default="GenericUSB",
+                        help="Camera profile in camera.yaml")
+    parser.add_argument("--loop", type=int, default=20,
+                        help="Capture this many frames")
+    parser.add_argument("--delay", type=int, default=50,
+                        help="Delay by N millisec between frame captures")
+    parser.add_argument("--folder", type=str, default="capture",
+                        help="Put capture into this folder")
     args = parser.parse_args()
 
     print("Initialising Camera")
 
     # Open camera settings
-    with open('camera.yaml', 'r') as stream:
+    with open('camera.yaml', 'r', encoding="utf-8") as stream:
         parameters = yaml.load(stream, Loader=yaml.FullLoader)
 
     # create the capture folder if required
@@ -76,12 +79,14 @@ if __name__ == '__main__':
         imageBW = camera.getImage()
 
         # get time to capture and convert
-        print("Captured {1:04d}.jpg in {0:.0f}ms".format((time.time() - myStart)*1000, i))
+        print("Captured {1:04d}.jpg in {0:.0f}ms".format(
+            (time.time() - myStart)*1000, i))
 
         time.sleep(args.delay/1000)
 
         # write image to save queue as (image, filename) tuple
-        save_queue.put((imageBW, os.path.join(".", args.folder, "capture_{:04d}.jpg".format(i))))
+        save_queue.put((imageBW, os.path.join(
+            ".", args.folder, "capture_{:04d}.jpg".format(i))))
 
     # close camera
     camera.close()

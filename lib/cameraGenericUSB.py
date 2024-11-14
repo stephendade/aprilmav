@@ -2,8 +2,8 @@
 Camera Interfacing for a generic USB Camera via OpenCV
 '''
 
-import cv2
 import time
+import cv2
 
 
 class camera:
@@ -19,8 +19,10 @@ class camera:
         self.camParams = camParams
 
         self.camera = cv2.VideoCapture(0)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.camParams['resolution'][0])
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camParams['resolution'][1])
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH,
+                        self.camParams['resolution'][0])
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT,
+                        self.camParams['resolution'][1])
 
         time.sleep(2)
 
@@ -43,9 +45,9 @@ class camera:
         if self.camParams['rotation'] == 90:
             image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
         if self.camParams['rotation'] == 270:
-            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)            
+            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     def close(self):
         ''' close the camera'''

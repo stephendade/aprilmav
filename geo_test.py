@@ -10,32 +10,40 @@ settings. Use cameracal.py to generate new settings and put
 into camera.yaml
 '''
 import time
-import numpy
-import cv2
-import yaml
 import argparse
 import sys
-
 from importlib import import_module
+import yaml
+import numpy
+import cv2
+
 from pyapriltags import Detector
 from lib.geo import tagDB
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tagSize", type=int, default=96, help="Apriltag size in mm")
-    parser.add_argument("--camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=20, help="Capture and process this many frames")
-    parser.add_argument("--maxerror", type=int, default=400, help="Maximum pose error to use, in n*E-8 units")
-    parser.add_argument("--folder", type=str, default=None, help="Use a folder of images instead of camera")
-    parser.add_argument("--outfile", type=str, default="geo_test_results.csv", help="Output tag data to this file")
-    parser.add_argument('--gui', dest='gui', default=False, action='store_true')
-    parser.add_argument("--decimation", type=int, default=2, help="Apriltag decimation")
+    parser.add_argument("--tagSize", type=int, default=96,
+                        help="Apriltag size in mm")
+    parser.add_argument("--camera", type=str, default="PiCamV2FullFoV",
+                        help="Camera profile in camera.yaml")
+    parser.add_argument("--loop", type=int, default=20,
+                        help="Capture and process this many frames")
+    parser.add_argument("--maxerror", type=int, default=400,
+                        help="Maximum pose error to use, in n*E-8 units")
+    parser.add_argument("--folder", type=str, default=None,
+                        help="Use a folder of images instead of camera")
+    parser.add_argument("--outfile", type=str, default="geo_test_results.csv",
+                        help="Output tag data to this file")
+    parser.add_argument('--gui', dest='gui',
+                        default=False, action='store_true')
+    parser.add_argument("--decimation", type=int,
+                        default=2, help="Apriltag decimation")
     args = parser.parse_args()
 
     print("Initialising")
 
     # Open camera settings
-    with open('camera.yaml', 'r') as stream:
+    with open('camera.yaml', 'r', encoding="utf-8") as stream:
         parameters = yaml.load(stream, Loader=yaml.FullLoader)
     camParams = parameters[args.camera]
 
@@ -73,9 +81,9 @@ if __name__ == '__main__':
 
     print("Starting {0} image capture and process...".format(loops))
 
-    outfile = open(args.outfile, "w+")
-    outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format("Filename", "PosX (North)", "PosY (East)", "PosZ (Down)",
-                                                         "RotX (Roll)", "RotY (Pitch)", "RotZ (Yaw)"))
+    with open(args.outfile, "w+", encoding="utf-8") as outfile:
+        outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format("Filename", "PosX (North)", "PosY (East)", "PosZ (Down)",
+                                                             "RotX (Roll)", "RotY (Pitch)", "RotZ (Yaw)"))
 
     # GUI
     fig = None
@@ -91,7 +99,8 @@ if __name__ == '__main__':
     if args.gui:
         print("plotting")
         import matplotlib.pyplot as plt
-        fig, (axMap, axHeight) = plt.subplots(2)  # Create a figure containing a single axes.
+        # Create a figure containing a single axes.
+        fig, (axMap, axHeight) = plt.subplots(2)
         axMap.set_xlim(-4, 4)
         axMap.set_ylim(-4, 4)
         axMap.grid()
@@ -99,7 +108,8 @@ if __name__ == '__main__':
         axHeight.set_ylim(-4, 4)
         axMap.set(xlabel='Left (m)', ylabel='Fwd (m)', title='Horizonal Map')
         axHeight.set(xlabel='', ylabel='Up (m)', title='Vehicle Height')
-        lineVehicle, = axMap.plot(coordsX, coordsY)  # Plot some data on the axes.
+        # Plot some data on the axes.
+        lineVehicle, = axMap.plot(coordsX, coordsY)
         lineTag, = axMap.plot([], [], 'bs')
         lineHeight, = axHeight.plot([], [])
 
@@ -134,13 +144,17 @@ if __name__ == '__main__':
 
         # AprilDetect, after accounting for distortion (if fisheye)
         if camParams['fisheye']:
-            dim1 = imageBW.shape[:2][::-1]  # dim1 is the dimension of input image to un-distort
-            map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
+            # dim1 is the dimension of input image to un-distort
+            dim1 = imageBW.shape[:2][::-1]
+            map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+                K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
             undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR,
-                                        borderMode=cv2.BORDER_CONSTANT)      
-            tags = at_detector.detect(undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
+                                        borderMode=cv2.BORDER_CONSTANT)
+            tags = at_detector.detect(
+                undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
         else:
-            tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
+            tags = at_detector.detect(
+                imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
         # add any new tags to database, or existing one to duplicates
         tagsused = 0
@@ -155,9 +169,9 @@ if __name__ == '__main__':
             print("File: {0}".format(file))
 
         (posn, rot) = tagPlacement.getArduPilotNED()
-        outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posn[0], posn[1], posn[2],
-                                                                                     rot[0], rot[1], rot[2]))
-
+        with open(args.outfile, "w+", encoding="utf-8") as outfile:
+            outfile.write("{0},{1:.3f},{2:.3f},{3:.3f}".format(file, posn[0], posn[1], posn[2]))
+            outfile.write("{0:.1f},{1:.1f},{2:.1f}\n".format(rot[0], rot[1], rot[2]))
         # Update the live graph
         if args.gui:
             coordsX.append(posn[2])
@@ -173,9 +187,10 @@ if __name__ == '__main__':
             plt.draw()
             fig.canvas.flush_events()
 
-        print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart,
-                                                                                              len(tags),
-                                                                                              len(tagPlacement.tagDuplicatesT)))
+        print("Time to capture, detect, localise = {0:.3f} sec, {2}/{1} tags".format(time.time() - myStart,
+                                                                                     len(
+                                                                                         tags),
+                                                                                     len(tagPlacement.tagDuplicatesT)))
 
         tagPlacement.newFrame()
 
@@ -184,6 +199,7 @@ if __name__ == '__main__':
 # Tags
 if args.gui:
     for tagid, tag in tagPlacement.getTagdb().items():
-        axMap.annotate("T{0} ({1:.3f})m".format(tagid, tag[1, 3]), (tag[2, 3]+0.1, tag[0, 3]+0.1))
+        axMap.annotate("T{0} ({1:.3f})m".format(
+            tagid, tag[1, 3]), (tag[2, 3]+0.1, tag[0, 3]+0.1))
     print("Waiting for plot window to be closed")
     plt.show()

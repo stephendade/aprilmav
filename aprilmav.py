@@ -28,10 +28,16 @@ exit_event = threading.Event()
 
 
 def signal_handler(signum, frame):
+    """
+    Signal handler for exit
+    """
     exit_event.set()
 
 
 class statusThread(threading.Thread):
+    """
+    Thread for printing performance stats to console
+    """
     def __init__(self):
         threading.Thread.__init__(self)
         self.lastFiveProTimes = deque(maxlen=5)
@@ -40,6 +46,7 @@ class statusThread(threading.Thread):
         self.pktSent = 0
 
     def updateData(self, proTime, newPos, newRot, pktWasSent):
+        '''Sync data with thread'''
         self.lastFiveProTimes.append(proTime)
         self.pos = newPos
         self.rot = newRot
@@ -58,6 +65,7 @@ class statusThread(threading.Thread):
 
 
 class mavThread(threading.Thread):
+    '''Thread to handle all MAVLink communications with flight controller'''
     def __init__(self, device, baud, source_system):
         threading.Thread.__init__(self)
         self.device = device
@@ -81,10 +89,11 @@ class mavThread(threading.Thread):
         self.rotDelta = (0, 0, 0)
 
     def updateData(self, newPos, newRot, t, posDelta, rotDelta):
+        '''Sync data with thread'''
         with self.lock:
             if self.time != 0:
                 # time is in usec here, remember to convert to sec
-                self.speed = numpy.array(posDelta)/ (1E-6 * (t - self.time))
+                self.speed = numpy.array(posDelta) / (1E-6 * (t - self.time))
             self.pos = newPos
             self.rot = newRot
             self.time = t
@@ -129,13 +138,14 @@ class mavThread(threading.Thread):
                 self.send_msg_to_gcs("Stopping")
                 return
             # check if we need to send the EKF origin
-            msg = self.conn.recv_match(type='GLOBAL_POSITION_INT', blocking=False)
+            msg = self.conn.recv_match(
+                type='GLOBAL_POSITION_INT', blocking=False)
             if msg and msg.lat == 0 and msg.lon == 0:
                 print("Setting EKF origin")
                 self.set_default_global_origin()
 
     def sendHeartbeat(self):
-        # send heartbeat if more than 1 sec since last message
+        '''send heartbeat if more than 1 sec since last message'''
         if (self.heartbeatTimestamp + 1) < time.time():
             self.conn.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
                                          mavutil.mavlink.MAV_AUTOPILOT_GENERIC,
@@ -145,19 +155,23 @@ class mavThread(threading.Thread):
             self.heartbeatTimestamp = time.time()
 
     def getPktSent(self):
+        '''Return the last packet send'''
         with self.lock:
             return self.pktSent
 
-    # https://mavlink.io/en/messages/common.html#STATUSTEXT
     def send_msg_to_gcs(self, text_to_be_sent):
+        '''Send a STATUSTEXT message to the GCS
+        https://mavlink.io/en/messages/common.html#STATUSTEXT
+        '''
         # MAV_SEVERITY: 0=EMERGENCY 1=ALERT 2=CRITICAL 3=ERROR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG, 8=ENUM_END
         text_msg = 'AprilMAV: ' + text_to_be_sent
         self.conn.mav.statustext_send(
             mavutil.mavlink.MAV_SEVERITY_INFO, text_msg.encode())
 
-    # Send a mavlink SET_GPS_GLOBAL_ORIGIN message (http://mavlink.org/messages/common#SET_GPS_GLOBAL_ORIGIN), for the EKF origin
-
     def set_default_global_origin(self):
+        '''Send a mavlink SET_GPS_GLOBAL_ORIGIN message for the EKF origin
+        http://mavlink.org/messages/common#SET_GPS_GLOBAL_ORIGIN
+        '''
         current_time_us = int(round(time.time() * 1000000))
         self.conn.mav.set_gps_global_origin_send(self.target_system,
                                                  int(self.origin_lat*1.0e7),
@@ -166,8 +180,9 @@ class mavThread(threading.Thread):
                                                  current_time_us)
 
     def sendPos(self):
-        # Send a vision pos estimate
-        # https://mavlink.io/en/messages/common.html#VISION_POSITION_ESTIMATE
+        '''Send a vision pos estimate
+        https://mavlink.io/en/messages/common.html#VISION_POSITION_ESTIMATE
+        '''
         # if self.getTimestamp() > 0:
         if self.goodToSend:
             current_time_us = int(round(time.time() * 1000000))
@@ -187,8 +202,9 @@ class mavThread(threading.Thread):
                 self.pktSent += 1
 
     def sendSpeed(self):
-        # Send a vision speed estimate
-        # https://mavlink.io/en/messages/common.html#VISION_SPEED_ESTIMATE
+        '''Send a vision speed estimate
+        https://mavlink.io/en/messages/common.html#VISION_SPEED_ESTIMATE
+        '''
         if self.goodToSend:
             current_time_us = int(round(time.time() * 1000000))
             # estimate error - approx 0.05m/s in pos
@@ -203,8 +219,9 @@ class mavThread(threading.Thread):
                 self.pktSent += 1
 
     def sendPosDelta(self):
-        # Send a vision pos delta
-        # https://mavlink.io/en/messages/ardupilotmega.html#VISION_POSITION_DELTA
+        '''Send a vision pos delta
+        https://mavlink.io/en/messages/ardupilotmega.html#VISION_POSITION_DELTA
+        '''
         if self.goodToSend:
             with self.lock:
                 current_time_us = int(round(time.time() * 1000000))
@@ -213,11 +230,17 @@ class mavThread(threading.Thread):
 
                 # Send the message
                 self.conn.mav.vision_position_delta_send(
-                    current_time_us,    # us: Timestamp (UNIX time or time since system boot)
+                    # us: Timestamp (UNIX time or time since system boot)
+                    current_time_us,
                     delta_time_us,	    # us: Time since last reported camera frame
-                    self.rotDelta,    # float[3] in radian: Defines a rotation vector in body frame that rotates the vehicle from the previous to the current orientation
-                    self.posDelta,   # float[3] in m: Change in position from previous to current frame rotated into body frame (0=forward, 1=right, 2=down)
-                    current_confidence_level  # Normalized confidence value from 0 to 100.
+                    # float[3] in radian: Defines a rotation vector in body frame that rotates the vehicle from the
+                    # previous to the current orientation
+                    self.rotDelta,
+                    # float[3] in m: Change in position from previous to current frame rotated into body frame
+                    # (0=forward, 1=right, 2=down)
+                    self.posDelta,
+                    # Normalized confidence value from 0 to 100.
+                    current_confidence_level
                 )
                 self.pktSent += 1
 
@@ -249,7 +272,7 @@ if __name__ == '__main__':
     print("Initialising")
 
     # Open camera settings/
-    with open('camera.yaml', 'r') as stream:
+    with open('camera.yaml', 'r', encoding="utf-8") as stream:
         parameters = yaml.load(stream, Loader=yaml.FullLoader)
     camParams = parameters[args.camera]
 
@@ -278,12 +301,15 @@ if __name__ == '__main__':
     # All tags live in here
     tagPlacement = tagDB(False)
 
-    outfile = open(args.outfile, "w+")
     # left, up, fwd, pitch, yaw, roll
-    outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format(
-        "Filename", "PosX (m)", "PosY (m)", "PosZ (m)", "RotX (rad)", "RotY (rad)", "RotZ (rad)"))
+    with open(args.outfile, "w+", encoding="utf-8") as outfile:
+        outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format(
+            "Filename", "PosX (m)", "PosY (m)", "PosZ (m)", "RotX (rad)", "RotY (rad)", "RotZ (rad)"))
 
     # Need to reconstruct K and D if using fisheye lens
+    dim1 = None
+    map1 = None
+    map2 = None
     if camParams['fisheye']:
         K = numpy.zeros((3, 3))
         D = numpy.zeros((4, 1))
@@ -296,8 +322,6 @@ if __name__ == '__main__':
         D[1][0] = camParams['cam_paramsD'][1]
         D[2][0] = camParams['cam_paramsD'][2]
         D[3][0] = camParams['cam_paramsD'][3]
-
-        dim1 = None
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -371,10 +395,13 @@ if __name__ == '__main__':
         (posR, rotR) = tagPlacement.getArduPilotNED(radians=True)
         (posRDelta, rotRDelta) = tagPlacement.getArduPilotNEDDelta(radians=True)
 
-        outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(
-            file, posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2]))
+        with open(args.outfile, "w+", encoding="utf-8") as outfile:
+            outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(
+                file, posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2]))
 
-        # print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
+        # print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart,
+        # len(tags),
+        # len(tagPlacement.tagDuplicatesT)))
 
         # Create and send MAVLink packet
         threadMavlink.updateData(posR, rotR, timestamp, posRDelta, rotRDelta)

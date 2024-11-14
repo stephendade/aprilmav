@@ -3,9 +3,9 @@ Camera Interfacing for Libcamera
 4-7ms capture time for RPi GS Camera
 '''
 
-from picamera2 import Picamera2
-import cv2
 import time
+import cv2
+from picamera2 import Picamera2
 
 
 class camera:
@@ -34,7 +34,8 @@ class camera:
         # Set camera settings
         config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0],
                                                         self.camParams['resolution'][1])},
-                                                        controls={'FrameRate': 60},
+                                                        controls={
+                                                            'FrameRate': 60},
                                                         buffer_count=2)
         self.camera.configure(config)
         self.camera.start()

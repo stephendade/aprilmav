@@ -8,8 +8,10 @@ import threading
 import cv2
 
 
-# Separate thread for saving images, in order to not delay image capture
 class saveThread(threading.Thread):
+    """
+    Save images to a folder
+    """
     def __init__(self, folder, exit_event):
         threading.Thread.__init__(self)
         self.save_queue = queue.Queue()
@@ -28,7 +30,6 @@ class saveThread(threading.Thread):
             (image, filename, posn, rot, tags) = self.save_queue.get()
             # add in data (colour)
             imageColour = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-            # outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(file, posn[0], posn[1], posn[2], rot[0], rot[1], rot[2]))
             cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 40),
@@ -41,7 +42,9 @@ class saveThread(threading.Thread):
                 return
 
     def labelTags(self, image, tags):
-        # Label the tags in the image
+        """
+        Label the tags in the image
+        """
         # loop over the AprilTag detection results
         for r in tags:
             # extract the bounding box (x, y)-coordinates for the AprilTag
@@ -59,6 +62,7 @@ class saveThread(threading.Thread):
             # draw the center (x, y)-coordinates of the AprilTag
             (cX, cY) = (int(r.center[0]), int(r.center[1]))
             cv2.circle(image, (cX, cY), 5, (0, 0, 255), -1)
-            # draw the tag ID 
-            cv2.putText(image, str(r.tag_id), (ptA[0] + 10, ptA[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
+            # draw the tag ID
+            cv2.putText(image, str(
+                r.tag_id), (ptA[0] + 10, ptA[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
         return image

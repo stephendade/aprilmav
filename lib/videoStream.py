@@ -1,7 +1,8 @@
 '''
 Simple thread to output OpenCV stream to Gstreamer
 
-Use gst-launch-1.0 -v udpsrc uri=udp://0.0.0.0:5000 ! application/x-rtp,payload=96,encoding-name=H264 ! rtph264depay ! decodebin ! videoconvert ! autovideosink
+Use gst-launch-1.0 -v udpsrc uri=udp://0.0.0.0:5000 ! application/x-rtp,payload=96,encoding-name=H264 ! \
+    rtph264depay ! decodebin ! videoconvert ! autovideosink
  to view stream
 '''
 
@@ -11,6 +12,10 @@ import cv2
 
 
 class videoThread(threading.Thread):
+    """
+    A thread that takes in OpenCV images and streams then over RTP.
+    Detected Apriltags and other system data is overlaid
+    """
     def __init__(self, port, exit_event):
         threading.Thread.__init__(self)
         self.frame_queue = queue.Queue()
@@ -32,9 +37,13 @@ class videoThread(threading.Thread):
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             # Start video server if not already started
             if not vidOut:
-                vidOut = cv2.VideoWriter('appsrc ! video/x-raw, format=BGR ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ! udpsink host=0.0.0.0 port=' + self.port + '', cv2.CAP_GSTREAMER, 0, 20, imageColour.shape[:2][::-1], True)
+                vidOut = cv2.VideoWriter('appsrc ! video/x-raw, format=BGR ! videoconvert ! x264enc \
+                                         speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ! \
+                                         udpsink host=0.0.0.0 port=' +
+                                         self.port + '', cv2.CAP_GSTREAMER, 0, 20, imageColour.shape[:2][::-1], True)
                 if not vidOut.isOpened():
-                    print("Error opening video stream. Ensure OpenCV is built with GStreamer support")
+                    print(
+                        "Error opening video stream. Ensure OpenCV is built with GStreamer support")
                     return
             # Send processed image to video stream
             vidOut.write(imageColour)
@@ -45,7 +54,9 @@ class videoThread(threading.Thread):
                 return
 
     def labelTags(self, image, tags):
-        # Label the tags in the image
+        """
+        Label the tags in the image
+        """
         # loop over the AprilTag detection results
         for r in tags:
             # extract the bounding box (x, y)-coordinates for the AprilTag
@@ -63,6 +74,7 @@ class videoThread(threading.Thread):
             # draw the center (x, y)-coordinates of the AprilTag
             (cX, cY) = (int(r.center[0]), int(r.center[1]))
             cv2.circle(image, (cX, cY), 5, (0, 0, 255), -1)
-            # draw the tag ID 
-            cv2.putText(image, str(r.tag_id), (ptA[0] + 10, ptA[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
+            # draw the tag ID
+            cv2.putText(image, str(
+                r.tag_id), (ptA[0] + 10, ptA[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
         return image

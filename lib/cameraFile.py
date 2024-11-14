@@ -3,20 +3,21 @@ Camera Interfacing for a directory of images
 '''
 
 import glob
-import cv2
 import os
+import cv2
 
 
 class FileCamera:
     '''A Camera setup and capture class'''
 
-    def __init__(self, dir="."):
+    def __init__(self, folder="."):
         '''Initialise the camera, based on a dict of settings'''
 
-        self.images = glob.glob(os.path.join(dir, "*.jpg"))
+        self.images = glob.glob(os.path.join(folder, "*.jpg"))
         self.images.sort()
 
-        print("FileCamera: Found {0} images in folder".format(len(self.images)))
+        print("FileCamera: Found {0} images in folder".format(
+            len(self.images)))
 
     def getNumberImages(self):
         '''Get number of loaded images'''
@@ -40,4 +41,4 @@ class FileCamera:
 
     def close(self):
         ''' close the camera'''
-        pass
+        return

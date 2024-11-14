@@ -9,44 +9,50 @@ Distance is relative to the camera's sensor in 3 dimensions.
 '''
 
 import time
+import argparse
+import sys
+from importlib import import_module
 import numpy
 import cv2
 import yaml
-import argparse
-import sys
 
-from importlib import import_module
 from pyapriltags import Detector
 from lib.geo import getPos, getTransform, getRotation
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--camera", type=str, default="PiCamV2FullFoV", help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=10, help="Process this many frames")
-    parser.add_argument("--tagSize", type=int, default=93, help="Apriltag size in mm")
-    parser.add_argument("--folder", type=str, default=None, help="Use a folder of images instead of camera")
-    parser.add_argument("--outfile", type=str, default="processed.csv", help="Output tag data to this file")
-    parser.add_argument("--decimation", type=int, default=2, help="Apriltag decimation")
+    parser.add_argument("--camera", type=str, default="PiCamV2FullFoV",
+                        help="Camera profile in camera.yaml")
+    parser.add_argument("--loop", type=int, default=10,
+                        help="Process this many frames")
+    parser.add_argument("--tagSize", type=int, default=93,
+                        help="Apriltag size in mm")
+    parser.add_argument("--folder", type=str, default=None,
+                        help="Use a folder of images instead of camera")
+    parser.add_argument("--outfile", type=str, default="processed.csv",
+                        help="Output tag data to this file")
+    parser.add_argument("--decimation", type=int,
+                        default=2, help="Apriltag decimation")
     args = parser.parse_args()
 
     print("Initialising")
 
     # Open camera settings
-    with open('camera.yaml', 'r') as stream:
+    with open('camera.yaml', 'r', encoding="utf-8") as stream:
         parameters = yaml.load(stream, Loader=yaml.FullLoader)
     camParams = parameters[args.camera]
 
     # initialize the camera
-    camera = None
+    CAMERA = None
     if args.folder:
         from lib import cameraFile
-        camera = cameraFile.FileCamera(args.folder)
+        CAMERA = cameraFile.FileCamera(args.folder)
     else:
         try:
             print(parameters[args.camera]['cam_name'])
             mod = import_module("lib." + parameters[args.camera]['cam_name'])
-            camera = mod.camera(parameters[args.camera])
+            CAMERA = mod.camera(parameters[args.camera])
         except (ImportError, KeyError):
             print('No camera with the name {0}, exiting'.format(args.camera))
             sys.exit(0)
@@ -64,14 +70,14 @@ if __name__ == '__main__':
                            debug=0)
 
     # how many loops
-    loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
+    loops = CAMERA.getNumberImages() if CAMERA.getNumberImages() else args.loop
 
     print("Starting {0} image capture and process...".format(loops))
 
-    outfile = open(args.outfile, "w+")
-    outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)",
-                                                                 "PosZ (fwd)", "RotX (pitch)", "RotY (yaw)",
-                                                                 "RotZ (roll)", "PoseErr"))
+    with open(args.outfile, "w+", encoding="utf-8") as outfile:
+        outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)",
+                                                                    "PosZ (fwd)", "RotX (pitch)", "RotY (yaw)",
+                                                                    "RotZ (roll)", "PoseErr"))
 
     # Need to reconstruct K and D
     if camParams['fisheye']:
@@ -92,8 +98,8 @@ if __name__ == '__main__':
         myStart = time.time()
 
         # grab an image from the camera
-        file = camera.getFileName()
-        imageBW = camera.getImage()
+        file = CAMERA.getFileName()
+        imageBW = CAMERA.getImage()
 
         # we're out of images
         if imageBW is None:
@@ -101,20 +107,25 @@ if __name__ == '__main__':
 
         # AprilDetect, after accounting for distortion  (if fisheye)
         if camParams['fisheye']:
-            dim1 = imageBW.shape[:2][::-1]  # dim1 is the dimension of input image to un-distort
-            map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
+            # dim1 is the dimension of input image to un-distort
+            dim1 = imageBW.shape[:2][::-1]
+            map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+                K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
             undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR,
                                         borderMode=cv2.BORDER_CONSTANT)
 
-            tags = at_detector.detect(undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
+            tags = at_detector.detect(
+                undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
         else:
-            tags = at_detector.detect(imageBW, True, camParams['cam_params'], args.tagSize/1000)
+            tags = at_detector.detect(
+                imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
         if file:
             print("File: {0}".format(file))
 
         # get time to capture and convert
-        print("Time to capture and detect = {0:.3f} sec, found {1} tags".format(time.time() - myStart, len(tags)))
+        print("Time to capture and detect = {0:.3f} sec, found {1} tags".format(
+            time.time() - myStart, len(tags)))
 
         for tag in tags:
 
@@ -123,15 +134,13 @@ if __name__ == '__main__':
 
             print("Tag {0} pos = {1} m, Rot = {2} deg. ErrE8 = {3:.4f}".format(tag.tag_id, tagpos.round(3),
                                                                                tagrot.round(1), tag.pose_err*1E8))
-
-            outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
-                                                                                                 tag.tag_id,
-                                                                                                 tagpos[0],
-                                                                                                 tagpos[1],
-                                                                                                 tagpos[2],
-                                                                                                 tagrot[0],
-                                                                                                 tagrot[1],
-                                                                                                 tagrot[2],
-                                                                                                 tag.pose_err))
-
-    outfile.close()
+            with open(args.outfile, "w+", encoding="utf-8") as outfile:
+                outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
+                                                                                                     tag.tag_id,
+                                                                                                     tagpos[0],
+                                                                                                     tagpos[1],
+                                                                                                     tagpos[2],
+                                                                                                     tagrot[0],
+                                                                                                     tagrot[1],
+                                                                                                     tagrot[2],
+                                                                                                     tag.pose_err))

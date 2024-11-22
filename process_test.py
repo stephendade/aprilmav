@@ -26,7 +26,7 @@ if __name__ == '__main__':
                         help="Camera profile in camera.yaml")
     parser.add_argument("--loop", type=int, default=10,
                         help="Process this many frames")
-    parser.add_argument("--tagSize", type=int, default=93,
+    parser.add_argument("--tagSize", type=int, default=94,
                         help="Apriltag size in mm")
     parser.add_argument("--folder", type=str, default=None,
                         help="Use a folder of images instead of camera")

@@ -247,7 +247,7 @@ class mavThread(threading.Thread):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tagSize", type=int, default=93,
+    parser.add_argument("--tagSize", type=int, default=94,
                         help="Apriltag size in mm")
     parser.add_argument("--camera", type=str, default="GenericUSB",
                         help="Camera profile in camera.yaml")

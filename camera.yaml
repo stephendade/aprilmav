@@ -63,3 +63,13 @@ imx296-6mmlens:
   fisheye: True
   rotation: 180
   halfres: False
+
+imx296-2.7mmlens:
+  cam_name: "cameralibCamera"
+  model: "imx296"
+  cam_params: !!python/tuple [795.4029992555703, 795.4477210376713, 775.4438370155847, 565.7577495072217]
+  cam_paramsD: !!python/tuple [0.38022462011923563, 0.17177155308951406, -0.304145596718463, 0.20818278075277452]
+  resolution: !!python/tuple [1456, 1088]
+  fisheye: True
+  halfres: False
+  rotation: 180

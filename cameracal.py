@@ -137,19 +137,19 @@ if __name__ == '__main__':
 
         print("Put the following in camera.yaml:")
         print("<profilename>:")
-        print("  cam_params: !!python/tuple [{0}, {1}, {2}, {3}]".format(
-            K[0, 0], K[1, 1], K[0, 2], K[1, 2]))
+        print("  cam_params: !!python/tuple [{0}, {1}, {2}, {3}]".format(K[0, 0], K[1, 1], K[0, 2], K[1, 2]))
         if args.fisheye:
-            print("  cam_paramsD: !!python/tuple [[{0}], [{1}], [{2}], [{3}]]".format(D[0][0], D[1][0],
+            print("  cam_paramsD: !!python/tuple [{0}, {1}, {2}, {3}]".format(D[0][0], D[1][0],
                                                                                       D[2][0], D[3][0]))
         if args.halfres:
-            print(
-                "  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0]*2, imgDim[1]*2))
+            print("  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0]*2, imgDim[1]*2))
         else:
-            print(
-                "  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0], imgDim[1]))
+            print("  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0], imgDim[1]))
         print("  fisheye: {0}".format(args.fisheye))
         print("  halfres: {0}".format(args.halfres))
+        print("  rotation: 0")
+        print("  camname: <>")
+        print("  model: <>")
 
         if args.fisheye:
             # Show un-distortion of fisheye to user

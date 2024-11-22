@@ -125,7 +125,8 @@ To check if your OpenCV has GStreamer support, see https://learnopencv.com/get-o
 The following cameras have been tested as compatible with Aprilmav:
 
 - Raspberry Pi Camera V2 (needs to be used in a very well lit room. Is not accurate in Apriltag pose detection). Use ``--camera=PiCamV2FullFoVHD``
-- Raspberry Pi Camera GS (IMX296). The 6mm lens is quite narrow, so will need a greater density of Apriltags. Use ``--camera=imx296-6mmlens``
+- Raspberry Pi Camera GS (IMX296). The 6mm lens is quite narrow, so will need a greater density of Apriltags. Use ``--camera=imx296-6mmlens``. 
+- [ArduCam UC-717 (IMX296)](https://www.arducam.com/product/1-58mp-imx296-color-global-shutter-camera-module-with-m12-lens-for-raspberry-pi/). The default 6mm lens is too narrow. For a 2.7mm lens use ``--camera=imx296-2.7mmlens``
 - Arducam 1MP OV9281 (works quite well, as it has a global shutter). Requires specific libraries. Run ``./lib/getArduCamfiles.sh`` to download the files. Use ``--camera=ArduCamUC580``
 - Generic USB webcams. Will need a specific calibration and settings file for each camera model. Use ``--camera=GenericUSB``
 

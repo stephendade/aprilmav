@@ -303,8 +303,8 @@ if __name__ == '__main__':
 
     # left, up, fwd, pitch, yaw, roll
     with open(args.outfile, "w+", encoding="utf-8") as outfile:
-        outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format(
-            "Filename", "PosX (m)", "PosY (m)", "PosZ (m)", "RotX (rad)", "RotY (rad)", "RotZ (rad)"))
+        outfile.write("{0},{1},{2},{3},{4},{5},{6},{7}\n".format(
+            "Filename", "Timestamp", "PosX (m)", "PosY (m)", "PosZ (m)", "RotX (rad)", "RotY (rad)", "RotZ (rad)"))
 
     # Need to reconstruct K and D if using fisheye lens
     dim1 = None
@@ -346,6 +346,7 @@ if __name__ == '__main__':
         threadVideo.start()
 
     i = 0
+    prev_timestamp = time.time() - 0.1
     while True:
         # print("--------------------------------------")
 
@@ -394,10 +395,12 @@ if __name__ == '__main__':
         (posD, rotD) = tagPlacement.getArduPilotNED()
         (posR, rotR) = tagPlacement.getArduPilotNED(radians=True)
         (posRDelta, rotRDelta) = tagPlacement.getArduPilotNEDDelta(radians=True)
+        speed = numpy.array(posRDelta) / (1E-6 * (timestamp - prev_timestamp))
 
         with open(args.outfile, "w+", encoding="utf-8") as outfile:
-            outfile.write("{0},{1:.3f},{2:.3f},{3:.3f},{4:.1f},{5:.1f},{6:.1f}\n".format(
-                file, posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2]))
+            outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.3f},{6:.3f},{7:.3f}\n".format(
+                file, timestamp, posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2],
+                speed[0], speed[1], speed[2]))
 
         # print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart,
         # len(tags),
@@ -422,6 +425,9 @@ if __name__ == '__main__':
         # Send to video stream, if option
         if threadVideo:
             threadVideo.frame_queue.put((imageBW, posD, rotD, tags))
+
+        # Update the timestamp
+        prev_timestamp = timestamp
 
         if exit_event.is_set():
             break

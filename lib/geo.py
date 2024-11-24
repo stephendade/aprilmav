@@ -51,15 +51,16 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=True):
-        self.T_CamToWorld = numpy.array(numpy.eye((4)))
-        self.T_CamToWorldPrev = numpy.array(numpy.eye((4)))
+    def __init__(self, debug=True, maxjump=1):
+        self.T_CamToWorld = deque(maxlen=10)
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
         self.T_CamtoVeh = numpy.array(numpy.eye((4)))
         self.debug = debug
         # elf.P_CamtoVeh = numpy.array([deltax, deltay, deltaz])
+        self.T_CamToWorld.append(numpy.array(numpy.eye((4))))
+        self.T_CamToWorld.append(numpy.array(numpy.eye((4))))
 
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''
@@ -93,7 +94,8 @@ class tagDB:
         '''get the vehicle's current position in ArduPilot NED format,
         noting that Apriltag is coords are right, fwd, up (ENU)
         This assumes camera is on top of vehicle, bottom of camera facing fwd'''
-        T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld
+
+        T_VehToWorld = self.T_CamtoVeh @ (self.T_CamToWorld[-1])
         posn = getPos(T_VehToWorld)
         rotn = getRotation(T_VehToWorld, radians)
 
@@ -104,8 +106,8 @@ class tagDB:
         '''get the vehicle's delta (current - prev frame) position in ArduPilot NED format,
         noting that Apriltag is coords are right, fwd, up (ENU)
         This assumes camera is on top of vehicle, bottom of camera facing fwd'''
-        T_VehToWorldDelta = (self.T_CamtoVeh @ self.T_CamToWorld) - \
-            (self.T_CamtoVeh @ self.T_CamToWorldPrev)
+        T_VehToWorldDelta = (self.T_CamtoVeh @ self.T_CamToWorld[-1]) - \
+            (self.T_CamtoVeh @ self.T_CamToWorld[-2])
         posn = getPos(T_VehToWorldDelta)
         rotn = getRotation(T_VehToWorldDelta, radians)
 
@@ -114,13 +116,13 @@ class tagDB:
 
     def getCurrentPosition(self):
         '''get the vehicle's current position in xyz'''
-        T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld
+        T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld[-1]
         # [0:3, 3]
         return getPos(T_VehToWorld)
 
     def getCurrentRotation(self, radians=False):
         '''get the vehicle's current position in xyz'''
-        T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld
+        T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld[-1]
         return getRotation(T_VehToWorld, radians)
 
     def getTagdb(self):
@@ -152,6 +154,7 @@ class tagDB:
             bestTransform = numpy.array(numpy.eye((4)))
             lowestCost = 999
             # Use each tag pair as a guess for the correct transform - lowest cost wins
+            # Where "cost" is the least 3d distance between *all* tag pairs
             for tagid, tagT in self.tagDuplicatesT.items():
                 if self.debug:
                     print("Trying tag {0}".format(tagid))
@@ -176,16 +179,10 @@ class tagDB:
                 # and figure out summed distances between transformed new point to old (in world frame)
                 summeddist = 0
                 for tagidj, tagTj in self.tagDuplicatesT.items():
-                    # PosDelta = TOrig(World<-Tag) * [0,0,0] - T(World <- Cam_t-1) * T(Cam_t <- Cam_t-1)^-1 *
-                    # TDup(Cam_t<-Tag) * [0,0,0]
                     PosDelta = self.tagPlacement[tagidj] @ [[0], [0], [0], [
-                        1]] - self.T_CamToWorld @ numpy.linalg.inv(Ttprevtocur) @ tagTj @ [[0], [0], [0], [1]]
-                    # print(self.tagPlacement[tagidj] - (self.T_CamToWorld @ numpy.linalg.inv(Ttprevtocur) @ tagTj))
+                        1]] - self.T_CamToWorld[-1] @ numpy.linalg.inv(Ttprevtocur) @ tagTj @ [[0], [0], [0], [1]]
                     summeddist += mag(PosDelta)
 
-                # print("Tag rot (Tag {1})= {0} deg".format(getRotation(Ttprevtocur), tagid))
-                # print("Tag T (Tag {1})= {0} deg".format([Ttprevtocur[0,3],Ttprevtocur[1,3],Ttprevtocur[2,3]], tagid))
-                # and mag(getPos(Ttprevtocur)) < 2:
                 if lowestCost > summeddist:
                     if self.debug:
                         print("Using tag {0} with error {1:.3f}m".format(
@@ -193,32 +190,13 @@ class tagDB:
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur
 
-            # is it a based transform? If more than 5cm delta or summed 15deg rot
-            # print((euler_angles_from_rotation_matrix(self.T_CamToWorld)))
-            # print((euler_angles_from_rotation_matrix(numpy.linalg.inv(bestTransform))))
-            # print(mag(getPos(bestTransform)))
-            # print("self.bestTransform^-1 =\n{0}".format(numpy.linalg.inv(bestTransform)))
-            # print("Pos {0}, Rot = {1}".format(getPos(bestTransform), getRotation(bestTransform)))
-            # print("Pos {0}, Rot = {1}".format(getPos(numpy.linalg.inv(bestTransform)),
-            #       getRotation(numpy.linalg.inv(bestTransform))))
-            # print("self.bestTransform^-1 =\n{0}".format(numpy.linalg.inv(bestTransform)))
-            # f mag(getPos(bestTransform)) > 0.1:
-            #    print("Bad Translation")
-            #    bestTransform = numpy.array( numpy.eye((4)) )
-            # else:
-            #    print("Tag =\n{0}".format(bestTransform))
-            #    print("Tag =\n{0}".format(numpy.linalg.inv(bestTransform)))
-            # we have the lowest cost transform (need inverse)
-            # T(World <- Cam_t) = T(World <- Cam_t-1) * T(Cam_t <- Cam_t-1)^-1
-            # print(numpy.linalg.inv(bestTransform))
             if lowestCost > 1:
                 print("WARNING: bad position estimate. Ignoring this frame.")
             else:
-                self.T_CamToWorldPrev = self.T_CamToWorld
-                self.T_CamToWorld = self.T_CamToWorld @ numpy.linalg.inv(
-                    bestTransform)
-                # print("self.T_CamToWorld(new) =\n{0}".format(self.T_CamToWorld))
-                # print((euler_angles_from_rotation_matrix(self.T_CamToWorld)))
+                # We have our least-cost transform
+                self.T_CamToWorld.append(self.T_CamToWorld[-1] @ numpy.linalg.inv(
+                    bestTransform))
+
                 if self.debug:
                     print("Delta {0}, Rot = {1}".format(getPos(bestTransform).round(3),
                                                         getRotation(bestTransform).round(1)))
@@ -226,16 +204,10 @@ class tagDB:
                 print("New Pos {0}, Rot = {2} with {1} tags".format(self.getCurrentPosition().round(3),
                                                                     len(self.tagDuplicatesT),
                                                                     self.getCurrentRotation().round(1)))
-
         # finally add any new tags
         for tagid, tagT in self.tagnewT.items():
             # T(World <- tag) = T(World <- Cam_t) * T(Cam_t <- tag)
-            self.tagPlacement[tagid] = self.T_CamToWorld @ tagT
-            # dist = math.sqrt(math.pow(tagT[0,3], 2) + math.pow(tagT[1,3], 2) + math.pow(tagT[2,3], 2))
-            # print("Added Tag ID {0} at {2:.3}, T(world) =\n {1}".format(tagid, self.tagPlacement[tagid].round(3),
-            #                                                             dist))
-            # print("Added Tag ID {0} at pos {1}, rot {2}".format(tagid, getPos(self.tagPlacement[tagid]),
-            #                                                            getRotation(self.tagPlacement[tagid])))
+            self.tagPlacement[tagid] = self.T_CamToWorld[-1] @ tagT
             if self.debug:
                 print("Added Tag ID {0} at pos {1}, rot {2}".format(tagid, getPos(self.tagPlacement[tagid]).round(3),
                                                                     getRotation(self.tagPlacement[tagid]).round(1)))

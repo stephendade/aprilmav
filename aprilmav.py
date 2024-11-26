@@ -85,20 +85,14 @@ class mavThread(threading.Thread):
         self.origin_lat = -35.363261
         self.origin_lon = 149.165230
         self.origin_alt = 0.001
-        self.posDelta = (0, 0, 0)
-        self.rotDelta = (0, 0, 0)
 
-    def updateData(self, newPos, newRot, t, posDelta, rotDelta):
+    def updateData(self, newPos, newRot, t, speed):
         '''Sync data with thread'''
         with self.lock:
-            if self.time != 0:
-                # time is in usec here, remember to convert to sec
-                self.speed = numpy.array(posDelta) / (1E-6 * (t - self.time))
+            self.speed = speed
             self.pos = newPos
             self.rot = newRot
             self.time = t
-            self.posDelta = posDelta
-            self.rotDelta = rotDelta
 
     def run(self):
         # Start mavlink connection
@@ -132,7 +126,6 @@ class mavThread(threading.Thread):
             time.sleep(0.05)
             self.sendPos()
             self.sendSpeed()
-            # self.sendPosDelta()
             self.sendHeartbeat()
             if exit_event.is_set():
                 self.send_msg_to_gcs("Stopping")
@@ -218,32 +211,6 @@ class mavThread(threading.Thread):
                     reset_counter=self.reset_counter)
                 self.pktSent += 1
 
-    def sendPosDelta(self):
-        '''Send a vision pos delta
-        https://mavlink.io/en/messages/ardupilotmega.html#VISION_POSITION_DELTA
-        '''
-        if self.goodToSend:
-            with self.lock:
-                current_time_us = int(round(time.time() * 1000000))
-                delta_time_us = current_time_us - self.time
-                current_confidence_level = 80
-
-                # Send the message
-                self.conn.mav.vision_position_delta_send(
-                    # us: Timestamp (UNIX time or time since system boot)
-                    current_time_us,
-                    delta_time_us,	    # us: Time since last reported camera frame
-                    # float[3] in radian: Defines a rotation vector in body frame that rotates the vehicle from the
-                    # previous to the current orientation
-                    self.rotDelta,
-                    # float[3] in m: Change in position from previous to current frame rotated into body frame
-                    # (0=forward, 1=right, 2=down)
-                    self.posDelta,
-                    # Normalized confidence value from 0 to 100.
-                    current_confidence_level
-                )
-                self.pktSent += 1
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -267,6 +234,8 @@ if __name__ == '__main__':
                         help="Output video to port, 0 to disable")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
+    parser.add_argument("--maxjump", type=int,
+                        default=10, help="Maximum position change allowed between frames in cm")
     args = parser.parse_args()
 
     print("Initialising")
@@ -299,13 +268,14 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(False)
+    tagPlacement = tagDB(False, args.maxjump)
 
     # left, up, fwd, pitch, yaw, roll
     with open(args.outfile, "w+", encoding="utf-8") as outfile:
-        outfile.write("{0},{1},{2},{3},{4},{5},{6},{7}\n".format(
-            "Filename", "Timestamp", "PosX (m)", "PosY (m)", "PosZ (m)", "RotX (rad)", "RotY (rad)", "RotZ (rad)"))
-
+        outfile.write("Filename,Timestamp,")
+        outfile.write("PosX (m),PosY (m),PosZ (m),")
+        outfile.write("RotX (rad),RotY (rad),RotZ (rad),")
+        outfile.write("VelX (m/s),VelY (m/s), VelZ (m/s)\n")
     # Need to reconstruct K and D if using fisheye lens
     dim1 = None
     map1 = None
@@ -386,45 +356,42 @@ if __name__ == '__main__':
                 tagsused += 1
                 tagPlacement.addTag(tag)
 
-        tagPlacement.getBestTransform()
+        tagPlacement.getBestTransform(timestamp)
 
         if file:
             print("File: {0}".format(file))
 
         # get current location and rotation state of vehicle in ArduPilot NED format (rel camera)
-        (posD, rotD) = tagPlacement.getArduPilotNED()
-        (posR, rotR) = tagPlacement.getArduPilotNED(radians=True)
-        (posRDelta, rotRDelta) = tagPlacement.getArduPilotNEDDelta(radians=True)
-        speed = numpy.array(posRDelta) / (1E-6 * (timestamp - prev_timestamp))
+        posR = tagPlacement.reportedPos
+        rotR = tagPlacement.reportedRot
+        rotD = numpy.rad2deg(tagPlacement.reportedRot)
+        speed = tagPlacement.getReportedVelocity()
 
-        with open(args.outfile, "w+", encoding="utf-8") as outfile:
-            outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.3f},{6:.3f},{7:.3f}\n".format(
-                file, timestamp, posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2],
-                speed[0], speed[1], speed[2]))
-
+        with open(args.outfile, "a", encoding="utf-8") as outfile:
+            outfile.write("{0},{1},".format(file, timestamp))
+            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(posR[0], posR[1], posR[2]))
+            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
+            outfile.write("{0:.3f},{1:.3f},{2:.3f}\n".format(speed[0], speed[1], speed[2]))
         # print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart,
-        # len(tags),
-        # len(tagPlacement.tagDuplicatesT)))
 
         # Create and send MAVLink packet
-        threadMavlink.updateData(posR, rotR, timestamp, posRDelta, rotRDelta)
-        # wasSent = threadMavlink.sendPos(posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2], timestamp)
+        threadMavlink.updateData(posR, rotR, timestamp, speed)
 
         # Send to status thread
         threadStatus.updateData(time.time(
-        ) - myStart, (posD[0], posD[1], posD[2]), (rotD[0], rotD[1], rotD[2]), threadMavlink.getPktSent())
+        ) - myStart, (posR[0], posR[1], posR[2]), (rotD[0], rotD[1], rotD[2]), threadMavlink.getPktSent())
 
         # Send to save thread
         if threadSave:
             threadSave.save_queue.put((imageBW, os.path.join(
-                ".", args.imageFolder, "processed_{:04d}.jpg".format(i)), posD, rotD, tags))
+                ".", args.imageFolder, "processed_{:04d}.jpg".format(i)), posR, rotD, tags))
 
         # Get ready for next frame
         tagPlacement.newFrame()
 
         # Send to video stream, if option
         if threadVideo:
-            threadVideo.frame_queue.put((imageBW, posD, rotD, tags))
+            threadVideo.frame_queue.put((imageBW, posR, rotD, tags))
 
         # Update the timestamp
         prev_timestamp = timestamp

@@ -38,6 +38,8 @@ if __name__ == '__main__':
                         default=False, action='store_true')
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
+    parser.add_argument("--maxjump", type=int,
+                        default=20, help="Maximum position change allowed between frames in cm")
     args = parser.parse_args()
 
     print("Initialising")
@@ -74,7 +76,7 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB()
+    tagPlacement = tagDB(maxjump=args.maxjump/100)
 
     # how many loops
     loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
@@ -82,8 +84,10 @@ if __name__ == '__main__':
     print("Starting {0} image capture and process...".format(loops))
 
     with open(args.outfile, "w+", encoding="utf-8") as outfile:
-        outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format("Filename", "PosX (North)", "PosY (East)", "PosZ (Down)",
-                                                             "RotX (Roll)", "RotY (Pitch)", "RotZ (Yaw)"))
+        outfile.write("Filename,")
+        outfile.write("PosX (m),PosY (m),PosZ (m),")
+        outfile.write("RotX (rad),RotY (rad),RotZ (rad),")
+        outfile.write("VelX (m/s),VelY (m/s), VelZ (m/s)\n")
 
     # GUI
     fig = None
@@ -163,20 +167,27 @@ if __name__ == '__main__':
                 tagsused += 1
                 tagPlacement.addTag(tag)
 
-        tagPlacement.getBestTransform()
+        tagPlacement.getBestTransform(time.time())
 
         if file:
             print("File: {0}".format(file))
 
-        (posn, rot) = tagPlacement.getArduPilotNED()
-        with open(args.outfile, "w+", encoding="utf-8") as outfile:
-            outfile.write("{0},{1:.3f},{2:.3f},{3:.3f}".format(file, posn[0], posn[1], posn[2]))
-            outfile.write("{0:.1f},{1:.1f},{2:.1f}\n".format(rot[0], rot[1], rot[2]))
+        posR = tagPlacement.reportedPos
+        rotR = tagPlacement.reportedRot
+        rotD = numpy.rad2deg(tagPlacement.reportedRot)
+        speed = tagPlacement.getReportedVelocity()
+
+        with open(args.outfile, "a", encoding="utf-8") as outfile:
+            outfile.write("{0},".format(file))
+            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(posR[0], posR[1], posR[2]))
+            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
+            outfile.write("{0:.3f},{1:.3f},{2:.3f}\n".format(speed[0], speed[1], speed[2]))
+
         # Update the live graph
         if args.gui:
-            coordsX.append(posn[2])
-            coordsY.append(posn[0])
-            coordsZ.append(posn[1])
+            coordsX.append(posR[2])
+            coordsY.append(posR[0])
+            coordsZ.append(posR[1])
             coordsFile.append(i)
             lineVehicle.set_xdata(coordsX)
             lineVehicle.set_ydata(coordsY)

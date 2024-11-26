@@ -4,6 +4,7 @@ Geometrical functions
 
 import math
 import numpy
+from collections import deque
 
 from transforms3d.euler import mat2euler
 
@@ -51,16 +52,25 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=True, maxjump=1):
+    def __init__(self, debug=False, maxjump=1):
         self.T_CamToWorld = deque(maxlen=10)
+        self.T_CamToWorldFiltered = deque(maxlen=10)
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
         self.T_CamtoVeh = numpy.array(numpy.eye((4)))
         self.debug = debug
+        self.maxjump = maxjump
+        self.reportedPos = (0, 0, 0)
+        self.reportedRot = (0, 0, 0)
+        self.reportedVelocity = deque(maxlen=3)
+        self.prevTime = 0
         # elf.P_CamtoVeh = numpy.array([deltax, deltay, deltaz])
         self.T_CamToWorld.append(numpy.array(numpy.eye((4))))
         self.T_CamToWorld.append(numpy.array(numpy.eye((4))))
+        self.T_CamToWorldFiltered.append(numpy.array(numpy.eye((4))))
+        self.T_CamToWorldFiltered.append(numpy.array(numpy.eye((4))))
+        self.reportedVelocity.append((0, 0, 0))
 
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''
@@ -90,29 +100,59 @@ class tagDB:
                                                                     self.tagDuplicatesT[tag.tag_id]).round(3),
                                                                 getRotation(self.tagDuplicatesT[tag.tag_id]).round(1)))
 
-    def getArduPilotNED(self, radians=False):
-        '''get the vehicle's current position in ArduPilot NED format,
-        noting that Apriltag is coords are right, fwd, up (ENU)
-        This assumes camera is on top of vehicle, bottom of camera facing fwd'''
+    def is_large_jump(self, previous_transform, current_transform):
+        """
+        Check if the difference between two transformation matrices is larger than the threshold.
 
-        T_VehToWorld = self.T_CamtoVeh @ (self.T_CamToWorld[-1])
-        posn = getPos(T_VehToWorld)
-        rotn = getRotation(T_VehToWorld, radians)
+        Parameters:
+        - previous_transform: np.array, previous 4x4 transformation matrix
+        - current_transform: np.array, current 4x4 transformation matrix
+        - threshold: float, threshold for detecting a large jump (e.g., 0.1)
 
-        # return tuple of rotation and position
-        return ((posn[1], posn[0], -posn[2]), (rotn[1], rotn[0], -rotn[2]))
+        Returns:
+        - bool: True if the difference is considered a large jump, False otherwise
+        """
+        # Compute the Frobenius norm of the difference
+        diff = numpy.linalg.norm(current_transform - previous_transform, ord='fro')
 
-    def getArduPilotNEDDelta(self, radians=False):
-        '''get the vehicle's delta (current - prev frame) position in ArduPilot NED format,
-        noting that Apriltag is coords are right, fwd, up (ENU)
-        This assumes camera is on top of vehicle, bottom of camera facing fwd'''
-        T_VehToWorldDelta = (self.T_CamtoVeh @ self.T_CamToWorld[-1]) - \
-            (self.T_CamtoVeh @ self.T_CamToWorld[-2])
-        posn = getPos(T_VehToWorldDelta)
-        rotn = getRotation(T_VehToWorldDelta, radians)
+        # Check if the difference exceeds the threshold
+        return diff > self.maxjump
 
-        # return tuple of rotation and position
-        return ((posn[1], posn[0], -posn[2]), (rotn[1], rotn[0], -rotn[2]))
+    def generateReportedLoc(self, timestamp):
+        '''Generate the vehicle's current position
+         and velocity and rotation in ArduPilot NED format,
+         noting that Apriltag is coords are right, fwd, up (ENU).
+         This assumes camera is on top of vehicle, bottom of camera facing fwd'''
+        # Check for any large jumps in position between
+        # t and t-1 and t-2 and ignore accordingly
+        if (self.is_large_jump(self.T_CamToWorld[-1], self.T_CamToWorld[-2]) and
+           self.is_large_jump(self.T_CamToWorld[-2], self.T_CamToWorld[-3])):
+            if self.debug:
+                print("Ignoring jump1")
+            self.T_CamToWorldFiltered.append(self.T_CamToWorld[-3])
+        elif self.is_large_jump(self.T_CamToWorld[-1], self.T_CamToWorld[-2]):
+            if self.debug:
+                print("Ignoring jump2")
+            self.T_CamToWorldFiltered.append(self.T_CamToWorld[-2])
+        else:
+            self.T_CamToWorldFiltered.append(self.T_CamToWorld[-1])
+
+        # Generate position, rotation in ArduPilot format
+        T_VehToWorld = self.T_CamtoVeh @ (self.T_CamToWorldFiltered[-1])
+        self.reportedPos = getPos(T_VehToWorld)
+        self.reportedRot = getRotation(T_VehToWorld, True)
+
+        # Generate velocity in ArduPilot format
+        T_VehToWorldDelta = (self.T_CamtoVeh @ self.T_CamToWorldFiltered[-1]) - \
+            (self.T_CamtoVeh @ self.T_CamToWorldFiltered[-2])
+        delta = getPos(T_VehToWorldDelta)
+        if self.prevTime > 0:
+            velocity = numpy.array(delta) / (1E-6 * (timestamp - self.prevTime))
+            self.reportedVelocity.append(velocity)
+
+    def getReportedVelocity(self):
+        '''get the current reported velocity'''
+        return self.reportedVelocity[-1]
 
     def getCurrentPosition(self):
         '''get the vehicle's current position in xyz'''
@@ -139,9 +179,9 @@ class tagDB:
             xcoord.append(tag[axis, 3])
         return xcoord
 
-    def getBestTransform(self):
+    def getBestTransform(self, timestamp):
         '''Given the current self.tagDuplicatesT, what is the best fitting transform
-        back to self.tagPlacement'''
+        back to self.tagPlacement. timestamp is the time that the tags were captured'''
         # get the least cost transform from the common points at time t-1 to time t
         # cost is the sum of position error between the common points, with the t-1 points
         # projected forward to t
@@ -172,7 +212,7 @@ class tagDB:
                 # Thus
                 # T(Cam_t <- Cam_t-1) = TDup(Cam_t<-Tag) * TOrig(World<-Tag)^-1 * T(World <- Cam_t-1)
                 Ttprevtocur = tagT @ numpy.linalg.inv(
-                    self.tagPlacement[tagid]) @ self.T_CamToWorld
+                    self.tagPlacement[tagid]) @ self.T_CamToWorld[-1]
                 # print("tagT =\n{0}".format(tagT))
                 # print("self.tagPlacement[tagid]^-1 =\n{0}".format(numpy.linalg.inv(self.tagPlacement[tagid])))
                 # print("self.T_CamToWorld(old) =\n{0}".format(self.T_CamToWorld))
@@ -200,6 +240,10 @@ class tagDB:
                 if self.debug:
                     print("Delta {0}, Rot = {1}".format(getPos(bestTransform).round(3),
                                                         getRotation(bestTransform).round(1)))
+
+                # Update position, rotation, velocity
+                self.generateReportedLoc(timestamp)
+                self.prevTime = timestamp
             if self.debug:
                 print("New Pos {0}, Rot = {2} with {1} tags".format(self.getCurrentPosition().round(3),
                                                                     len(self.tagDuplicatesT),

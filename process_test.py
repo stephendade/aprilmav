@@ -95,11 +95,9 @@ if __name__ == '__main__':
 
     for i in range(loops):
         print("--------------------------------------")
-        myStart = time.time()
-
         # grab an image from the camera
         file = CAMERA.getFileName()
-        imageBW = CAMERA.getImage()
+        (imageBW, timestamp) = CAMERA.getImage()
 
         # we're out of images
         if imageBW is None:
@@ -124,8 +122,8 @@ if __name__ == '__main__':
             print("File: {0}".format(file))
 
         # get time to capture and convert
-        print("Time to capture and detect = {0:.3f} sec, found {1} tags".format(
-            time.time() - myStart, len(tags)))
+        print("Time to capture and detect = {0:.1f} ms, found {1} tags".format(
+            time.time()*1000 - timestamp, len(tags)))
 
         for tag in tags:
 

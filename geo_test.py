@@ -136,11 +136,9 @@ if __name__ == '__main__':
     for i in range(loops):
         print("--------------------------------------")
 
-        myStart = time.time()
-
         # grab an image from the camera
         file = camera.getFileName()
-        imageBW = camera.getImage()
+        (imageBW, timestamp) = camera.getImage()
 
         # we're out of images
         if imageBW is None:
@@ -198,14 +196,13 @@ if __name__ == '__main__':
             plt.draw()
             fig.canvas.flush_events()
 
-        print("Time to capture, detect, localise = {0:.3f} sec, {2}/{1} tags".format(time.time() - myStart,
-                                                                                     len(
-                                                                                         tags),
-                                                                                     len(tagPlacement.tagDuplicatesT)))
+        print("Time to capture, detect, localise = {0:.1f} ms, {2}/{1} tags".format(time.time()*1000 - timestamp,
+                                                                                    len(tags),
+                                                                                    len(tagPlacement.tagDuplicatesT)))
 
         tagPlacement.newFrame()
 
-        # cv2.imwrite("detect_{0}.jpg".format(i), image)
+        # cv2.imwrite("detect_{0}.png".format(i), image)
 
 # Tags
 if args.gui:

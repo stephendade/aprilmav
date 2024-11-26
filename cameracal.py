@@ -2,16 +2,13 @@
 '''
 Camera calibration.
 
-Whilst the capture loop is running, show a
+Use "capture_test.py" to capture images of a
 n*m chessboard in front on the camera.
 
 It is important that the camera sees the chessboard
 in a variety of rotations and skew angles.
 
-All chessboard detected images will be stored as "cal_N.jpg"
-
-This can either run over the Ras Pi camera in realtime OR over
-a folder of pre-captured images from any camera
+This can be run over a folder of pre-captured images from any camera
 
 '''
 import argparse
@@ -27,7 +24,7 @@ if __name__ == '__main__':
     parser.add_argument("--cbrow", type=int, default=9,
                         help="Number of chessboard rows-1")
     parser.add_argument("--folder", type=str, default=None,
-                        help="Use a folder of images instead of camera")
+                        help="Use a folder of images")
     parser.add_argument("--fisheye", action="store_true",
                         help="Use Fisheye calibration model")
     parser.add_argument("--halfres", action="store_true",
@@ -53,14 +50,12 @@ if __name__ == '__main__':
     objpoints = []  # 3d point in real world space
     imgpoints = []  # 2d points in image plane.
 
-    print("Starting 30 image capture at ~1/sec...")
-
     # how many loops
     loops = camera.getNumberImages()
 
     for i in range(loops):
         # grab an image from the camera
-        grey = camera.getImage()
+        (grey, timestamp) = camera.getImage()
 
         if args.halfres:
             grey = cv2.resize(grey, None, fx=0.5, fy=0.5,
@@ -86,7 +81,7 @@ if __name__ == '__main__':
                                         (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01))
             objpoints.append(objp)
             imgpoints.append(corners2)
-            # cv2.imwrite("cal_{0}.jpg".format(i), grey)
+            # cv2.imwrite("cal_{0}.png".format(i), grey)
 
         # time.sleep(1)
 
@@ -152,8 +147,8 @@ if __name__ == '__main__':
         print("  model: <>")
 
         if args.fisheye:
-            # Show un-distortion of fisheye to user
-            img = cv2.imread(glob.glob(os.path.join(args.folder, "*.jpg"))[0])
+            # Show un-distortion of fisheye to user for 1st image
+            img = cv2.imread([file for file in os.listdir(args.folder) if file.endswith(('.png', '.jpg'))][0])
             if args.halfres:
                 img = cv2.resize(img, None, fx=0.5, fy=0.5,
                                  interpolation=cv2.INTER_AREA)

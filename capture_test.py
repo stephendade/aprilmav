@@ -2,7 +2,7 @@
 '''
 Camera Capture performance test
 
-All images will be stored as "capture_N.jpg"
+All images will be stored as "<timestamp in ms>.png"
 
 '''
 
@@ -26,7 +26,7 @@ def save_threadfunc():
         if save_queue.empty():
             continue
         (image, filename) = save_queue.get()
-        cv2.imwrite(filename, image, [cv2.IMWRITE_JPEG_QUALITY, 99])
+        cv2.imwrite(filename, image)
         print("Saved {0}".format(filename))
         if save_queue.empty() and shouldExit:
             break
@@ -74,19 +74,17 @@ if __name__ == '__main__':
     worker.start()
 
     for i in range(args.loop):
-        myStart = time.time()
-
-        imageBW = camera.getImage()
+        (imageBW, timestamp) = camera.getImage()
 
         # get time to capture and convert
-        print("Captured {1:04d}.jpg in {0:.0f}ms".format(
-            (time.time() - myStart)*1000, i))
+        print("Captured {1:04d}.png in {0:.0f}ms".format(
+            time.time()*1000 - timestamp, i))
 
         time.sleep(args.delay/1000)
 
         # write image to save queue as (image, filename) tuple
         save_queue.put((imageBW, os.path.join(
-            ".", args.folder, "capture_{:04d}.jpg".format(i))))
+            ".", args.folder, "{0}.png".format(timestamp))))
 
     # close camera
     camera.close()

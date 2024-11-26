@@ -47,7 +47,7 @@ class statusThread(threading.Thread):
 
     def updateData(self, proTime, newPos, newRot, pktWasSent):
         '''Sync data with thread'''
-        self.lastFiveProTimes.append(proTime)
+        self.lastFiveProTimes.append(proTime/1000)
         self.pos = newPos
         self.rot = newRot
         self.pktSent = pktWasSent
@@ -320,14 +320,11 @@ if __name__ == '__main__':
     while True:
         # print("--------------------------------------")
 
-        myStart = time.time()
-
         # grab an image (and timestamp in usec) from the camera
         # estimate 50usec from timestamp to frame capture on next line
-        timestamp = int(round(time.time() * 1000000)) + 50
         file = camera.getFileName()
         # print("Timestamp of capture = {0}".format(timestamp))
-        imageBW = camera.getImage()
+        (imageBW, timestamp) = camera.getImage()
         i += 1
 
         # we're out of images
@@ -379,12 +376,12 @@ if __name__ == '__main__':
 
         # Send to status thread
         threadStatus.updateData(time.time(
-        ) - myStart, (posR[0], posR[1], posR[2]), (rotD[0], rotD[1], rotD[2]), threadMavlink.getPktSent())
+        )*1000 - timestamp, (posR[0], posR[1], posR[2]), (rotD[0], rotD[1], rotD[2]), threadMavlink.getPktSent())
 
         # Send to save thread
         if threadSave:
             threadSave.save_queue.put((imageBW, os.path.join(
-                ".", args.imageFolder, "processed_{:04d}.jpg".format(i)), posR, rotD, tags))
+                ".", args.imageFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
 
         # Get ready for next frame
         tagPlacement.newFrame()

@@ -68,6 +68,7 @@ class camera:
     def getImage(self):
         ''' Capture a single image from the Camera '''
 
+        timestamp = round(time.time() * 1000)
         self.frame = self.camera.capture_array()
 
         # Convert to greyscale
@@ -80,7 +81,7 @@ class camera:
             image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
         if self.camParams['rotation'] == 270:
             image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        return image
+        return (image, timestamp)
 
     def close(self):
         ''' close the camera'''

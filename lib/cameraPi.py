@@ -43,13 +43,14 @@ class camera:
     def getImage(self):
         ''' Capture a single image from the Camera '''
 
+        timestamp = round(time.time() * 1000)
         self.camera.capture(self.image, format="bgr",
                             use_video_port=self.camParams['use_video_port'])
 
         # and convert to OpenCV greyscale format
         self.image = self.image.reshape(
             (self.camera.resolution[1], self.camera.resolution[0], 3))
-        return cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        return (cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY), timestamp)
 
     def close(self):
         ''' close the camera'''

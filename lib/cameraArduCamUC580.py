@@ -47,6 +47,7 @@ class camera:
     def getImage(self):
         ''' Capture a single image from the Camera '''
 
+        timestamp = round(time.time() * 1000)
         self.frame = self.camera.capture(encoding="i420")
         image = self.frame.as_array.reshape(
             int(self.camParams['resolution'][1]*1.5), self.camParams['resolution'][0])
@@ -68,7 +69,7 @@ class camera:
             imageCrop = cv2.rotate(imageCrop, cv2.ROTATE_90_CLOCKWISE)
         if self.camParams['rotation'] == 270:
             imageCrop = cv2.rotate(imageCrop, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        return imageCrop
+        return (imageCrop, timestamp)
 
     def close(self):
         ''' close the camera'''

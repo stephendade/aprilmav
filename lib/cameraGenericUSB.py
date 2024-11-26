@@ -37,6 +37,7 @@ class camera:
     def getImage(self):
         ''' Capture a single image from the Camera '''
 
+        timestamp = round(time.time() * 1000)
         return_value, image = self.camera.read()
 
         # Rotate if required
@@ -47,7 +48,7 @@ class camera:
         if self.camParams['rotation'] == 270:
             image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        return (cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), timestamp)
 
     def close(self):
         ''' close the camera'''

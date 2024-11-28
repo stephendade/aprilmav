@@ -83,8 +83,9 @@ if __name__ == '__main__':
         time.sleep(args.delay/1000)
 
         # write image to save queue as (image, filename) tuple
+        # note timestamp stored as millisec
         save_queue.put((imageBW, os.path.join(
-            ".", args.folder, "{0}.png".format(timestamp))))
+            ".", args.folder, "{0:.0f}.png".format(timestamp*1000))))
 
     # close camera
     camera.close()

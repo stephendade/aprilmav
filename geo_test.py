@@ -40,6 +40,8 @@ if __name__ == '__main__':
                         default=2, help="Apriltag decimation")
     parser.add_argument("--maxjump", type=int,
                         default=20, help="Maximum position change allowed between frames in cm")
+    parser.add_argument("--calframes", type=int,
+                        default=10, help="Use this many frames at the start for calibration")
     args = parser.parse_args()
 
     print("Initialising")
@@ -134,9 +136,11 @@ if __name__ == '__main__':
         D[3][0] = camParams['cam_paramsD'][3]
 
     for i in range(loops):
-        print("--------------------------------------")
+        if i > args.calframes:
+            print("--------------------------------------")
 
         # grab an image from the camera
+        startTime = time.time()
         file = camera.getFileName()
         (imageBW, timestamp) = camera.getImage()
 
@@ -165,7 +169,20 @@ if __name__ == '__main__':
                 tagsused += 1
                 tagPlacement.addTag(tag)
 
-        tagPlacement.getBestTransform(time.time())
+        # Calibration routines
+        if i == 0:
+            print("Starting calibration. Don't move vehicle")
+            tagPlacement.startCalibrate()
+        if i < args.calframes:
+            # Run a calibration routine for the first 20 frames
+            tagPlacement.incrementCalibrate(timestamp)
+            continue
+        if i == args.calframes:
+            tagPlacement.endCalibrate()
+            print("Calibration complete")
+            print("--------------------------------------")
+
+        tagPlacement.getBestTransform(timestamp)
 
         if file:
             print("File: {0}".format(file))
@@ -177,9 +194,9 @@ if __name__ == '__main__':
 
         with open(args.outfile, "a", encoding="utf-8") as outfile:
             outfile.write("{0},".format(file))
-            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(posR[0], posR[1], posR[2]))
+            outfile.write("{0:.4f},{1:.4f},{2:.4f},".format(posR[0], posR[1], posR[2]))
             outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
-            outfile.write("{0:.3f},{1:.3f},{2:.3f}\n".format(speed[0], speed[1], speed[2]))
+            outfile.write("{0:.3f},{1:.3f},{2:.3f},{3:.6f}\n".format(speed[0], speed[1], speed[2], timestamp))
 
         # Update the live graph
         if args.gui:
@@ -196,7 +213,7 @@ if __name__ == '__main__':
             plt.draw()
             fig.canvas.flush_events()
 
-        print("Time to capture, detect, localise = {0:.1f} ms, {2}/{1} tags".format(time.time()*1000 - timestamp,
+        print("Time to capture, detect, localise = {0:.2f} ms, {2}/{1} tags".format(time.time() - startTime,
                                                                                     len(tags),
                                                                                     len(tagPlacement.tagDuplicatesT)))
 

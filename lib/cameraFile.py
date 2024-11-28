@@ -38,7 +38,7 @@ class FileCamera:
             basename = os.path.splitext(os.path.basename(self.images[0]))[0]
             timestamp = int(basename)/1000
         except ValueError:
-            timestamp = round(time.time())
+            timestamp = time.time()
         img = cv2.imread(self.images.pop(0), cv2.IMREAD_GRAYSCALE)
         # img = cv2.fastNlMeansDenoising(img,None, 3, 5, 17)
 

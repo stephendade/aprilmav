@@ -47,7 +47,7 @@ class camera:
     def getImage(self):
         ''' Capture a single image from the Camera '''
 
-        timestamp = round(time.time() * 1000)
+        timestamp = time.time()
         self.frame = self.camera.capture(encoding="i420")
         image = self.frame.as_array.reshape(
             int(self.camParams['resolution'][1]*1.5), self.camParams['resolution'][0])

@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
         # get time to capture and convert
         print("Captured {1:04d}.png in {0:.0f}ms".format(
-            time.time()*1000 - timestamp, i))
+            (time.time() - timestamp)*1000, i))
 
         time.sleep(args.delay/1000)
 

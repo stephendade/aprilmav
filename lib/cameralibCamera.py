@@ -68,7 +68,7 @@ class camera:
     def getImage(self):
         ''' Capture a single image from the Camera '''
 
-        timestamp = round(time.time() * 1000)
+        timestamp = time.time()
         self.frame = self.camera.capture_array()
 
         # Convert to greyscale

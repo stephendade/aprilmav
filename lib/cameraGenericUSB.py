@@ -37,7 +37,7 @@ class camera:
     def getImage(self):
         ''' Capture a single image from the Camera '''
 
-        timestamp = round(time.time() * 1000)
+        timestamp = time.time()
         return_value, image = self.camera.read()
 
         # Rotate if required

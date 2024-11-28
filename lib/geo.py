@@ -52,9 +52,11 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=False, maxjump=1):
+    def __init__(self, debug=True, maxjump=1, slidingWindow=5):
         self.T_CamToWorld = deque(maxlen=10)
+        self.timestamps = deque(maxlen=10)
         self.T_CamToWorldFiltered = deque(maxlen=10)
+        self.timestampsFiltered = deque(maxlen=10)
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
@@ -62,15 +64,18 @@ class tagDB:
         self.debug = debug
         self.maxjump = maxjump
         self.reportedPos = (0, 0, 0)
+        self.reportedPosPrev = (0, 0, 0)
         self.reportedRot = (0, 0, 0)
-        self.reportedVelocity = deque(maxlen=3)
-        self.prevTime = 0
-        # elf.P_CamtoVeh = numpy.array([deltax, deltay, deltaz])
+        self.reportedVelocity = (0, 0, 0)
+        self.reportedTimestampPrev = 0
         self.T_CamToWorld.append(numpy.array(numpy.eye((4))))
         self.T_CamToWorld.append(numpy.array(numpy.eye((4))))
         self.T_CamToWorldFiltered.append(numpy.array(numpy.eye((4))))
         self.T_CamToWorldFiltered.append(numpy.array(numpy.eye((4))))
-        self.reportedVelocity.append((0, 0, 0))
+        self.slidingWindow = slidingWindow
+        self.calpos = []
+        self.calvel = []
+        self.std_pos_norm = 0
 
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''
@@ -122,7 +127,8 @@ class tagDB:
         '''Generate the vehicle's current position
          and velocity and rotation in ArduPilot NED format,
          noting that Apriltag is coords are right, fwd, up (ENU).
-         This assumes camera is on top of vehicle, bottom of camera facing fwd'''
+         This assumes camera is on top of vehicle, bottom of camera facing fwd
+         Timestamp is seconds since epoch'''
         # Check for any large jumps in position between
         # t and t-1 and t-2 and ignore accordingly
         if (self.is_large_jump(self.T_CamToWorld[-1], self.T_CamToWorld[-2]) and
@@ -130,29 +136,45 @@ class tagDB:
             if self.debug:
                 print("Ignoring jump1")
             self.T_CamToWorldFiltered.append(self.T_CamToWorld[-3])
+            self.timestampsFiltered.append(self.timestamps[-3])
         elif self.is_large_jump(self.T_CamToWorld[-1], self.T_CamToWorld[-2]):
             if self.debug:
                 print("Ignoring jump2")
             self.T_CamToWorldFiltered.append(self.T_CamToWorld[-2])
+            self.timestampsFiltered.append(self.timestamps[-2])
         else:
             self.T_CamToWorldFiltered.append(self.T_CamToWorld[-1])
+            self.timestampsFiltered.append(self.timestamps[-1])
 
-        # Generate position, rotation in ArduPilot format
-        T_VehToWorld = self.T_CamtoVeh @ (self.T_CamToWorldFiltered[-1])
-        self.reportedPos = getPos(T_VehToWorld)
-        self.reportedRot = getRotation(T_VehToWorld, True)
+        # Generate position, rotation in ArduPilot format, average 5 times (SMA)
+        averagedpos = []
+        averagedrot = []
+        for i in range(1, self.slidingWindow+1):
+            if len(self.T_CamToWorldFiltered) >= i:
+                T_VehToWorld = self.T_CamtoVeh @ (self.T_CamToWorldFiltered[-i])
+                averagedpos.append(getPos(T_VehToWorld))
+                averagedrot.append(getRotation(T_VehToWorld, True))
+        newPos = sum(averagedpos) / self.slidingWindow
+        newRot = sum(averagedrot) / self.slidingWindow
 
-        # Generate velocity in ArduPilot format
-        T_VehToWorldDelta = (self.T_CamtoVeh @ self.T_CamToWorldFiltered[-1]) - \
-            (self.T_CamtoVeh @ self.T_CamToWorldFiltered[-2])
-        delta = getPos(T_VehToWorldDelta)
-        if self.prevTime > 0:
-            velocity = numpy.array(delta) / (1E-6 * (timestamp - self.prevTime))
-            self.reportedVelocity.append(velocity)
+        # add it as a "reported postion and speed" if the delta exceeds stddev*2
+        if numpy.abs(numpy.linalg.norm(newPos) - numpy.linalg.norm(self.reportedPos)) > self.std_pos_norm*2:
+            self.reportedPos = newPos
+            self.reportedRot = newRot
+
+            delta = self.reportedPos - self.reportedPosPrev
+            if self.reportedTimestampPrev > 0:
+                velocity = numpy.array(delta) / (timestamp - self.reportedTimestampPrev)
+                self.reportedVelocity = velocity
+            self.reportedPosPrev = self.reportedPos
+            self.reportedTimestampPrev = timestamp
+        elif self.debug:
+            print("Jump too small {0} vs {1}".format(numpy.abs(numpy.linalg.norm(newPos) - numpy.linalg.norm(self.reportedPos)),
+                                                     self.std_pos_norm*2))
 
     def getReportedVelocity(self):
         '''get the current reported velocity'''
-        return self.reportedVelocity[-1]
+        return self.reportedVelocity
 
     def getCurrentPosition(self):
         '''get the vehicle's current position in xyz'''
@@ -164,6 +186,32 @@ class tagDB:
         '''get the vehicle's current position in xyz'''
         T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld[-1]
         return getRotation(T_VehToWorld, radians)
+
+    def startCalibrate(self):
+        '''Get uncertainty of tags. Assumes vehicle is not moving'''
+        self.newFrame()
+        self.calpos = []
+        self.calvel = []
+
+    def incrementCalibrate(self, timestamp):
+        '''Get uncertainty of tags. Assumes vehicle is not moving'''
+        self.getBestTransform(timestamp)
+        self.calpos.append(self.reportedPos)
+        self.calvel.append(self.reportedVelocity)
+        self.newFrame()
+
+    def endCalibrate(self):
+        '''Get uncertainty of tags. Assumes vehicle is not moving'''
+        #get avg and std dev
+        mean_pos = numpy.mean(self.calpos, axis=0)
+        std_pos = numpy.std(self.calpos, axis=0)
+        mean_vel = numpy.mean(self.calvel, axis=0)
+        std_vel = numpy.std(self.calvel, axis=0)
+        print("Pos mean is {0} and std dev is {1}".format(mean_pos, std_pos))
+        print("Vel mean is {0} and std dev is {1}".format(mean_vel, std_vel))
+        self.std_pos_norm = numpy.linalg.norm(std_pos)
+        self.newFrame()
+        self.tagPlacement = {}
 
     def getTagdb(self):
         '''get coords of all tags by axis'''
@@ -236,14 +284,13 @@ class tagDB:
                 # We have our least-cost transform
                 self.T_CamToWorld.append(self.T_CamToWorld[-1] @ numpy.linalg.inv(
                     bestTransform))
-
+                self.timestamps.append(timestamp)
                 if self.debug:
                     print("Delta {0}, Rot = {1}".format(getPos(bestTransform).round(3),
                                                         getRotation(bestTransform).round(1)))
 
                 # Update position, rotation, velocity
                 self.generateReportedLoc(timestamp)
-                self.prevTime = timestamp
             if self.debug:
                 print("New Pos {0}, Rot = {2} with {1} tags".format(self.getCurrentPosition().round(3),
                                                                     len(self.tagDuplicatesT),

@@ -12,6 +12,8 @@ import time
 import argparse
 import sys
 from importlib import import_module
+from collections import defaultdict
+
 import numpy
 import cv2
 import yaml
@@ -93,6 +95,10 @@ if __name__ == '__main__':
         D[2][0] = camParams['cam_paramsD'][2]
         D[3][0] = camParams['cam_paramsD'][3]
 
+    # hold all pose errors to get average at end:
+    all_pose_error = []
+    all_tags = defaultdict(list)
+
     for i in range(loops):
         print("--------------------------------------")
         # grab an image from the camera
@@ -129,6 +135,8 @@ if __name__ == '__main__':
 
             tagpos = getPos(getTransform(tag))
             tagrot = getRotation(getTransform(tag))
+            all_pose_error.append(tag.pose_err*1E8)
+            all_tags[tag.tag_id].append(tagpos)
 
             print("Tag {0} pos = {1} m, Rot = {2} deg. ErrE8 = {3:.4f}".format(tag.tag_id, tagpos.round(3),
                                                                                tagrot.round(1), tag.pose_err*1E8))
@@ -142,3 +150,14 @@ if __name__ == '__main__':
                                                                                                      tagrot[1],
                                                                                                      tagrot[2],
                                                                                                      tag.pose_err))
+    print("Pose error (1E8) mean: {0:.3f} and Std dev {1:.3f}".format(numpy.mean(all_pose_error),
+                                                                      numpy.std(all_pose_error)))
+    # Compute statistics for each tag
+    stats_by_tag = {}
+    for tag_id, posns in all_tags.items():
+        # Convert to NumPy arrays
+        posns_array = numpy.array(posns)
+        translation_mean = numpy.mean(posns_array, axis=0)
+        translation_std = numpy.std(posns_array, axis=0)
+        print("Tag ID {0} mean: {1} and Std dev {2}".format(tag_id, translation_mean,
+                                                            translation_std))

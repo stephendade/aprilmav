@@ -66,8 +66,9 @@ calibration via the Apriltag distances from the camera:
 $ process_test.py
 ```
 
-Localisation test. Estimates the vehicles current position based on Apriltags. Useful
-for confirming the camera calibration.
+Localisation test. Estimates the vehicles current position and velocity based on Apriltags and 
+outputs to csv. Useful for confirming the camera calibration and data quality. 
+Uses many of the same options as ``aprilmav.py``
 
 ```
 $ geo_test.py
@@ -90,7 +91,11 @@ $ aprilmav.py
 - ``--imageFolder``   Save processed images to this folder
 - ``--video``         Output video to port, 0 to disable
 - ``--decimation``    Apriltag decimation. Tradeoff against detection speed and accuracy.
-    
+- ``--maxjump=N``     Ignore any frame-to-frame position jumps of more than N cm
+- ``--calframes=N``   Use N image frames at the start to determine the position man and std dev. The vehicle must be stationary during this time. Only applicable if ``--stddev`` is used
+- ``--averaging=N``   Use a moving average of N frames for determining position and velocity.
+- ``--stddev``        Use a filter than ignores any position jump greater than 2*stddev of the position calibration.
+
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.
 
@@ -143,3 +148,16 @@ To add a new camera, follow the following steps:
 
 Note a separate profile will be required for a specific lens and resolution combination.
 
+### Accuracy Performance
+
+ArduPilot requires a good velocity estimate from AprilMAV. This can be graphed via the xxx MAVLink messages.
+
+``geo_test.py`` can be used to output a csv file showing the postion and velocity values for analysis. This analysis is best when with an image capture set of the vehicle moving at a constant velocity in 1 direction.
+
+If the velocity numbers are too noisy, the following options will help:
+- Ensure the camera's focus is as sharp as possible for the typical Apriltag distances
+- Decrease camera gain to reduce any noise in the images. Apriltags are capabile of being detected in quite low-light environments
+- A good camera calibration (if not using one of the supplied calibrations) is essential
+- Use the ``--averaging=N`` option to average over N frames. N should be a maximum of camera fps/2
+- Use the ``--stddev`` option to enable a filter that ignores any position jumps greater than 2xstddev of the detected Apriltag uncertainty
+  

@@ -37,11 +37,15 @@ if __name__ == '__main__':
     parser.add_argument('--gui', dest='gui',
                         default=False, action='store_true')
     parser.add_argument("--decimation", type=int,
-                        default=2, help="Apriltag decimation")
+                        default=1, help="Apriltag decimation")
     parser.add_argument("--maxjump", type=int,
-                        default=20, help="Maximum position change allowed between frames in cm")
+                        default=0.5, help="Maximum position change allowed between frames in cm")
     parser.add_argument("--calframes", type=int,
                         default=10, help="Use this many frames at the start for calibration")
+    parser.add_argument("--averaging", type=int,
+                        default=5, help="Use moving average of N frames")
+    parser.add_argument('--stddev', dest='stddev',
+                        default=False, action='store_true', help="Use std dev filtering")
     args = parser.parse_args()
 
     print("Initialising")
@@ -78,7 +82,7 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(maxjump=args.maxjump/100)
+    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging, usefilter=args.stddev)
 
     # how many loops
     loops = camera.getNumberImages() if camera.getNumberImages() else args.loop

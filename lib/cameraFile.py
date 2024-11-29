@@ -3,8 +3,8 @@ Camera Interfacing for a directory of images
 '''
 
 import os
-import cv2
 import time
+import cv2
 
 
 class FileCamera:

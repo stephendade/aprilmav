@@ -32,7 +32,7 @@ class camera:
         self.frame = None
 
         # Set camera settings
-        config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0],
+        config = self.camera.create_still_configuration({"size": (self.camParams['resolution'][0],
                                                         self.camParams['resolution'][1])},
                                                         controls={
                                                             'FrameRate': 60},
@@ -44,13 +44,13 @@ class camera:
         time.sleep(1)
         metadata = self.camera.capture_metadata()
         self.camera.stop()
-        controls = {"ExposureTime": metadata["ExposureTime"],
-                    "AnalogueGain": metadata["AnalogueGain"],
+        controls = {"ExposureTime": int(metadata["ExposureTime"]),
+                    "AnalogueGain": int(metadata["AnalogueGain"]/4),
                     "ColourGains": metadata["ColourGains"],
                     'FrameRate': 60}
 
         # Set camera settings with new gains
-        config = self.camera.create_video_configuration({"size": (self.camParams['resolution'][0],
+        config = self.camera.create_still_configuration({"size": (self.camParams['resolution'][0],
                                                         self.camParams['resolution'][1])},
                                                         controls=controls,
                                                         buffer_count=2)

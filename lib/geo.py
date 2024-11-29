@@ -3,8 +3,8 @@ Geometrical functions
 '''
 
 import math
-import numpy
 from collections import deque
+import numpy
 
 from transforms3d.euler import mat2euler
 
@@ -52,7 +52,7 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=True, maxjump=1, slidingWindow=5):
+    def __init__(self, debug=True, maxjump=0.1, slidingWindow=5, usefilter=False):
         self.T_CamToWorld = deque(maxlen=10)
         self.timestamps = deque(maxlen=10)
         self.T_CamToWorldFiltered = deque(maxlen=10)
@@ -76,6 +76,7 @@ class tagDB:
         self.calpos = []
         self.calvel = []
         self.std_pos_norm = 0
+        self.filter = usefilter
 
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''
@@ -157,20 +158,30 @@ class tagDB:
         newPos = sum(averagedpos) / self.slidingWindow
         newRot = sum(averagedrot) / self.slidingWindow
 
-        # add it as a "reported postion and speed" if the delta exceeds stddev*2
-        if numpy.abs(numpy.linalg.norm(newPos) - numpy.linalg.norm(self.reportedPos)) > self.std_pos_norm*2:
+        if self.filter:
+            # add it as a "reported postion and speed" if the delta exceeds stddev*2
+            diff = numpy.abs(numpy.linalg.norm(newPos) - numpy.linalg.norm(self.reportedPos))
+            if diff > self.std_pos_norm*2:
+                self.reportedPos = newPos
+                self.reportedRot = newRot
+
+                delta = self.reportedPos - self.reportedPosPrev
+                if self.reportedTimestampPrev > 0:
+                    velocity = numpy.array(delta) / (timestamp - self.reportedTimestampPrev)
+                    self.reportedVelocity = velocity
+                self.reportedPosPrev = self.reportedPos
+                self.reportedTimestampPrev = timestamp
+            elif self.debug:
+                print("Jump too small {0} vs {1}".format(diff, self.std_pos_norm*2))
+        else:
             self.reportedPos = newPos
             self.reportedRot = newRot
 
             delta = self.reportedPos - self.reportedPosPrev
-            if self.reportedTimestampPrev > 0:
-                velocity = numpy.array(delta) / (timestamp - self.reportedTimestampPrev)
-                self.reportedVelocity = velocity
+            self.reportedVelocity = numpy.array(delta) / (timestamp - self.reportedTimestampPrev)
+
             self.reportedPosPrev = self.reportedPos
             self.reportedTimestampPrev = timestamp
-        elif self.debug:
-            print("Jump too small {0} vs {1}".format(numpy.abs(numpy.linalg.norm(newPos) - numpy.linalg.norm(self.reportedPos)),
-                                                     self.std_pos_norm*2))
 
     def getReportedVelocity(self):
         '''get the current reported velocity'''
@@ -278,7 +289,7 @@ class tagDB:
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur
 
-            if lowestCost > 1:
+            if lowestCost > 0.1:
                 print("WARNING: bad position estimate. Ignoring this frame.")
             else:
                 # We have our least-cost transform

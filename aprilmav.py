@@ -235,7 +235,13 @@ if __name__ == '__main__':
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
     parser.add_argument("--maxjump", type=int,
-                        default=10, help="Maximum position change allowed between frames in cm")
+                        default=0.5, help="Maximum position change allowed between frames in cm")
+    parser.add_argument("--calframes", type=int,
+                        default=10, help="Use this many frames at the start for calibration")
+    parser.add_argument("--averaging", type=int,
+                        default=5, help="Use moving average of N frames")
+    parser.add_argument('--stddev', dest='stddev',
+                        default=False, action='store_true', help="Use std dev filtering")
     args = parser.parse_args()
 
     print("Initialising")
@@ -268,7 +274,7 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(False, args.maxjump)
+    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging, usefilter=args.stddev)
 
     # left, up, fwd, pitch, yaw, roll
     with open(args.outfile, "w+", encoding="utf-8") as outfile:
@@ -352,6 +358,19 @@ if __name__ == '__main__':
             if tag.pose_err < args.maxerror*1e-8:
                 tagsused += 1
                 tagPlacement.addTag(tag)
+
+        # Calibration routines
+        if i == 0:
+            print("Starting calibration. Don't move vehicle")
+            tagPlacement.startCalibrate()
+        if i < args.calframes:
+            # Run a calibration routine for the first 20 frames
+            tagPlacement.incrementCalibrate(timestamp)
+            continue
+        if i == args.calframes:
+            tagPlacement.endCalibrate()
+            print("Calibration complete")
+            print("--------------------------------------")
 
         tagPlacement.getBestTransform(timestamp)
 

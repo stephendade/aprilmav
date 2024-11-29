@@ -148,7 +148,13 @@ if __name__ == '__main__':
 
         if args.fisheye:
             # Show un-distortion of fisheye to user for 1st image
-            img = cv2.imread([file for file in os.listdir(args.folder) if file.endswith(('.png', '.jpg'))][0])
+            images = [
+                os.path.join(args.folder, file)
+                for file in os.listdir(args.folder)
+                if file.endswith(('.png', '.jpg'))
+            ]
+            images.sort()
+            img = cv2.imread(images[0])
             if args.halfres:
                 img = cv2.resize(img, None, fx=0.5, fy=0.5,
                                  interpolation=cv2.INTER_AREA)
@@ -159,8 +165,8 @@ if __name__ == '__main__':
             undistorted_img = cv2.remap(
                 img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
 
-            cv2.imshow("undistorted", undistorted_img)
-            cv2.imshow("none undistorted", img)
+            cv2.imshow("Corrected", undistorted_img)
+            cv2.imshow("Original", img)
             print("Type 0 into image window to exit")
             cv2.waitKey(0)
             cv2.destroyAllWindows()

@@ -26,7 +26,7 @@ def save_threadfunc():
         if save_queue.empty():
             continue
         (image, filename) = save_queue.get()
-        cv2.imwrite(filename, image)
+        cv2.imwrite(filename, image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
         print("Saved {0}".format(filename))
         if save_queue.empty() and shouldExit:
             break

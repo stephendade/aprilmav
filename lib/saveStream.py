@@ -35,7 +35,7 @@ class saveThread(threading.Thread):
             cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 40),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             imageColour = self.labelTags(imageColour, tags)
-            cv2.imwrite(filename, imageColour)
+            cv2.imwrite(filename, imageColour, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
             # print("Saved {0}".format(filename))
             if self.exit_event.wait(timeout=0.01):

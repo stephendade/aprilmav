@@ -357,19 +357,6 @@ if __name__ == '__main__':
                 tagsused += 1
                 tagPlacement.addTag(tag)
 
-        # Calibration routines
-        if i == 0:
-            print("Starting calibration. Don't move vehicle")
-            tagPlacement.startCalibrate()
-        if i < args.calframes:
-            # Run a calibration routine for the first 20 frames
-            tagPlacement.incrementCalibrate(timestamp)
-            continue
-        if i == args.calframes:
-            tagPlacement.endCalibrate()
-            print("Calibration complete")
-            print("--------------------------------------")
-
         tagPlacement.getBestTransform(timestamp)
 
         if file:

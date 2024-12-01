@@ -52,11 +52,12 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=True, maxjump=0.1, slidingWindow=5, usefilter=False):
-        self.T_CamToWorld = deque(maxlen=10)
-        self.timestamps = deque(maxlen=10)
-        self.T_CamToWorldFiltered = deque(maxlen=10)
-        self.timestampsFiltered = deque(maxlen=10)
+    def __init__(self, debug=False, maxjump=0.1, slidingWindow=5):
+        self.T_CamToWorld = deque(maxlen=slidingWindow+1)
+        self.timestamps = deque(maxlen=slidingWindow+1)
+        self.T_CamToWorldFiltered = deque(maxlen=slidingWindow+1)
+        self.timestampsFiltered = deque(maxlen=slidingWindow+1)
+        self.deltaVelocityFiltered = deque(maxlen=slidingWindow+1)
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
@@ -64,7 +65,7 @@ class tagDB:
         self.debug = debug
         self.maxjump = maxjump
         self.reportedPos = (0, 0, 0)
-        self.reportedPosPrev = (0, 0, 0)
+        self.reportedPosPrev = (0.0, 0.0, 0.0)
         self.reportedRot = (0, 0, 0)
         self.reportedVelocity = (0, 0, 0)
         self.reportedTimestampPrev = 0
@@ -76,7 +77,8 @@ class tagDB:
         self.calpos = []
         self.calvel = []
         self.std_pos_norm = 0
-        self.filter = usefilter
+        # Define a threshold for Z-scores to identify outliers
+        self.threshold = 2
 
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''
@@ -133,12 +135,13 @@ class tagDB:
         # Check for any large jumps in position between
         # t and t-1 and t-2 and ignore accordingly
         if (self.is_large_jump(self.T_CamToWorld[-1], self.T_CamToWorld[-2]) and
-           self.is_large_jump(self.T_CamToWorld[-2], self.T_CamToWorld[-3])):
+           self.is_large_jump(self.T_CamToWorld[-2], self.T_CamToWorld[-3]) and
+           len(self.timestampsFiltered) > 2):
             if self.debug:
                 print("Ignoring jump1")
             self.T_CamToWorldFiltered.append(self.T_CamToWorld[-3])
             self.timestampsFiltered.append(self.timestamps[-3])
-        elif self.is_large_jump(self.T_CamToWorld[-1], self.T_CamToWorld[-2]):
+        elif self.is_large_jump(self.T_CamToWorld[-1], self.T_CamToWorld[-2]) and len(self.timestampsFiltered) > 2:
             if self.debug:
                 print("Ignoring jump2")
             self.T_CamToWorldFiltered.append(self.T_CamToWorld[-2])
@@ -155,33 +158,35 @@ class tagDB:
                 T_VehToWorld = self.T_CamtoVeh @ (self.T_CamToWorldFiltered[-i])
                 averagedpos.append(getPos(T_VehToWorld))
                 averagedrot.append(getRotation(T_VehToWorld, True))
-        newPos = sum(averagedpos) / self.slidingWindow
-        newRot = sum(averagedrot) / self.slidingWindow
+        self.reportedPos = self.zscoreFilter(averagedpos)
+        self.reportedRot = self.zscoreFilter(averagedrot)
 
-        if self.filter:
-            # add it as a "reported postion and speed" if the delta exceeds stddev*2
-            diff = numpy.abs(numpy.linalg.norm(newPos) - numpy.linalg.norm(self.reportedPos))
-            if diff > self.std_pos_norm*2:
-                self.reportedPos = newPos
-                self.reportedRot = newRot
+        # store the delta velocity
+        delta = numpy.array(self.reportedPos) - numpy.array(self.reportedPosPrev)
+        self.deltaVelocityFiltered.append(delta / (timestamp - self.reportedTimestampPrev))
+        self.reportedVelocity = self.zscoreFilter(self.deltaVelocityFiltered)
 
-                delta = self.reportedPos - self.reportedPosPrev
-                if self.reportedTimestampPrev > 0:
-                    velocity = numpy.array(delta) / (timestamp - self.reportedTimestampPrev)
-                    self.reportedVelocity = velocity
-                self.reportedPosPrev = self.reportedPos
-                self.reportedTimestampPrev = timestamp
-            elif self.debug:
-                print("Jump too small {0} vs {1}".format(diff, self.std_pos_norm*2))
-        else:
-            self.reportedPos = newPos
-            self.reportedRot = newRot
+        self.reportedPosPrev = self.reportedPos
+        self.reportedTimestampPrev = timestamp
 
-            delta = self.reportedPos - self.reportedPosPrev
-            self.reportedVelocity = numpy.array(delta) / (timestamp - self.reportedTimestampPrev)
+    def zscoreFilter(self, averagedpos):
+        averagedpos = numpy.array(averagedpos)
 
-            self.reportedPosPrev = self.reportedPos
-            self.reportedTimestampPrev = timestamp
+        # Calculate mean and standard deviation for each coordinate
+        mean_pos = numpy.mean(averagedpos, axis=0)
+        std_pos = numpy.std(averagedpos, axis=0)
+
+        # Calculate Z-scores for each coordinate
+        z_scores = numpy.abs((averagedpos - mean_pos) / std_pos)
+
+        # Filter out positions with any coordinate having a Z-score greater than the threshold
+        filtered_positions = averagedpos[(z_scores < self.threshold).all(axis=1)]
+
+        # Calculate the mean of the remaining positions
+        mean_filtered_pos = numpy.mean(filtered_positions, axis=0)
+
+        newPos = tuple(mean_filtered_pos)
+        return newPos
 
     def getReportedVelocity(self):
         '''get the current reported velocity'''
@@ -289,7 +294,7 @@ class tagDB:
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur
 
-            if lowestCost > 0.1:
+            if lowestCost > 0.5:
                 print("WARNING: bad position estimate. Ignoring this frame.")
             else:
                 # We have our least-cost transform

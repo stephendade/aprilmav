@@ -240,8 +240,6 @@ if __name__ == '__main__':
                         default=10, help="Use this many frames at the start for calibration")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
-    parser.add_argument('--stddev', dest='stddev',
-                        default=False, action='store_true', help="Use std dev filtering")
     args = parser.parse_args()
 
     print("Initialising")
@@ -274,7 +272,7 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging, usefilter=args.stddev)
+    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging)
 
     # left, up, fwd, pitch, yaw, roll
     with open(args.outfile, "w+", encoding="utf-8") as outfile:

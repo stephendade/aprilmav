@@ -272,7 +272,8 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging)
+    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging,
+                         campos=camParams['positionRelVehicle'], camrot=camParams['rotationRelVehicle'])
 
     # left, up, fwd, pitch, yaw, roll
     with open(args.outfile, "w+", encoding="utf-8") as outfile:

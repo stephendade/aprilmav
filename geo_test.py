@@ -78,7 +78,8 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging)
+    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging,
+                         campos=camParams['positionRelVehicle'], camrot=camParams['rotationRelVehicle'])
 
     # how many loops
     loops = camera.getNumberImages() if camera.getNumberImages() else args.loop

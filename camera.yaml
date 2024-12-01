@@ -7,6 +7,8 @@ PiCamV2LowRes:
   sensor_mode: 5
   framerate: 30
   fisheye: False
+  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
   
 PiCamV2FullFoV:
   cam_name: "cameraPi"
@@ -16,6 +18,8 @@ PiCamV2FullFoV:
   sensor_mode: 4
   framerate: 25
   fisheye: False
+  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
   
 PiCamV2FullFoVHD:
   cam_name: "cameraPi"
@@ -25,6 +29,8 @@ PiCamV2FullFoVHD:
   sensor_mode: 4
   framerate: 20
   fisheye: False
+  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 ArduCamUC580:
   cam_name: "cameraArduCamUC580"
@@ -33,7 +39,9 @@ ArduCamUC580:
   resolution: !!python/tuple [1280, 800]
   fisheye: True
   halfres: False
-  
+  rotationRelVehicle: !!python/tuple [180, 90, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+
 ArduCamUC580Half:
   cam_name: "cameraArduCamUC580"
   cam_params: !!python/tuple [287.65621303404754, 288.1190029513685, 316.6282203036185, 195.399352432793]
@@ -41,12 +49,16 @@ ArduCamUC580Half:
   resolution: !!python/tuple [1280, 800]
   fisheye: True
   halfres: True
-  
+  rotationRelVehicle: !!python/tuple [180, 90, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+
 GenericUSB:
   cam_name: "cameraGenericUSB"
   resolution: !!python/tuple [1280, 720]
   cam_params: !!python/tuple [650, 650, 640, 480]
   fisheye: False
+  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 imx296-6mmlens:
   cam_name: "cameralibCamera"
@@ -56,6 +68,8 @@ imx296-6mmlens:
   resolution: !!python/tuple [1456, 1088]
   fisheye: True
   halfres: False
+  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 imx296-2.7mmlens:
   cam_name: "cameralibCamera"
@@ -67,3 +81,5 @@ imx296-2.7mmlens:
   resolution: !!python/tuple [1456, 1088]
   fisheye: True
   halfres: False
+  rotationRelVehicle: !!python/tuple [180, 90, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters

@@ -52,7 +52,7 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=False, maxjump=0.1, slidingWindow=5):
+    def __init__(self, debug=False, maxjump=0.1, slidingWindow=5, campos=(0, 0, 0), camrot=(0, 0, 0)):
         self.T_CamToWorld = deque(maxlen=slidingWindow+1)
         self.timestamps = deque(maxlen=slidingWindow+1)
         self.T_CamToWorldFiltered = deque(maxlen=slidingWindow+1)
@@ -76,6 +76,8 @@ class tagDB:
         self.slidingWindow = slidingWindow
         # Define a threshold for Z-scores to identify outliers
         self.threshold = 2
+        self.campos = campos  # camera position in vehicle frame
+        self.camrot = camrot  # camera rotation in vehicle frame
 
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''
@@ -179,7 +181,8 @@ class tagDB:
         Filters out outlier positions based on Z-scores and returns the mean of the remaining positions.
 
         Parameters:
-        averagedpos (list or numpy.ndarray): A list or array of positions where each position is a list or array of coordinates.
+        averagedpos (list or numpy.ndarray): A list or array of positions where each position is a list or array of
+        coordinates.
 
         Returns:
         tuple: The mean position of the filtered positions as a tuple of coordinates.

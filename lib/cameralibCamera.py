@@ -44,7 +44,7 @@ class camera:
         time.sleep(1)
         metadata = self.camera.capture_metadata()
         self.camera.stop()
-        controls = {"ExposureTime": int(metadata["ExposureTime"]),
+        controls = {"ExposureTime": int(metadata["ExposureTime"]/30),
                     "AnalogueGain": int(metadata["AnalogueGain"]/4),
                     "ColourGains": metadata["ColourGains"],
                     'FrameRate': 60}

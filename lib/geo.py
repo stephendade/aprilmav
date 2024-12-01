@@ -170,6 +170,23 @@ class tagDB:
         self.reportedTimestampPrev = timestamp
 
     def zscoreFilter(self, averagedpos):
+        """
+        Filters out outlier positions based on Z-scores and returns the mean of the remaining positions.
+
+        Parameters:
+        averagedpos (list or numpy.ndarray): A list or array of positions where each position is a list or array of coordinates.
+
+        Returns:
+        tuple: The mean position of the filtered positions as a tuple of coordinates.
+
+        The method performs the following steps:
+        1. Converts the input positions to a numpy array.
+        2. Calculates the mean and standard deviation for each coordinate.
+        3. Computes the Z-scores for each coordinate.
+        4. Filters out positions where any coordinate has a Z-score greater than the threshold.
+        5. Calculates the mean of the remaining positions.
+        6. Returns the mean position as a tuple.
+        """
         averagedpos = numpy.array(averagedpos)
 
         # Calculate mean and standard deviation for each coordinate

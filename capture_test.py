@@ -77,8 +77,8 @@ if __name__ == '__main__':
         (imageBW, timestamp) = camera.getImage()
 
         # get time to capture and convert
-        print("Captured {1:04d}.png in {0:.0f}ms".format(
-            (time.time() - timestamp)*1000, i))
+        print("Captured {0:.0f}.png in {1:.0f}ms ({2}/{3})".format(
+            timestamp*1000, (time.time() - timestamp)*1000, i, args.loop))
 
         time.sleep(args.delay/1000)
 

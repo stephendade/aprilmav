@@ -189,7 +189,7 @@ if __name__ == '__main__':
         tagPlacement.getBestTransform(timestamp)
 
         if file:
-            print("File: {0}".format(file))
+            print("File: {0} ({1}/{2})".format(file, i, loops))
 
         posR = tagPlacement.reportedPos
         rotR = tagPlacement.reportedRot

@@ -155,13 +155,21 @@ class tagDB:
                 T_VehToWorld = self.T_CamtoVeh @ (self.T_CamToWorldFiltered[-i])
                 averagedpos.append(getPos(T_VehToWorld))
                 averagedrot.append(getRotation(T_VehToWorld, True))
-        self.reportedPos = self.zscoreFilter(averagedpos)
-        self.reportedRot = self.zscoreFilter(averagedrot)
+        # only start filtering when we have enough data
+        if len(self.T_CamToWorldFiltered) > self.slidingWindow:
+            self.reportedPos = self.zscoreFilter(averagedpos)
+            self.reportedRot = self.zscoreFilter(averagedrot)
+        else:
+            self.reportedPos = getPos(T_VehToWorld)
+            self.reportedRot = getRotation(T_VehToWorld, True)
 
         # store the delta velocity
         delta = numpy.array(self.reportedPos) - numpy.array(self.reportedPosPrev)
         self.deltaVelocityFiltered.append(delta / (timestamp - self.reportedTimestampPrev))
-        self.reportedVelocity = self.zscoreFilter(self.deltaVelocityFiltered)
+        if len(self.deltaVelocityFiltered) > self.slidingWindow:
+            self.reportedVelocity = self.zscoreFilter(self.deltaVelocityFiltered)
+        else:  # not enough data yet
+            self.reportedVelocity = self.deltaVelocityFiltered[-1]
 
         self.reportedPosPrev = self.reportedPos
         self.reportedTimestampPrev = timestamp

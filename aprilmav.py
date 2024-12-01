@@ -47,7 +47,7 @@ class statusThread(threading.Thread):
 
     def updateData(self, proTime, newPos, newRot, pktWasSent):
         '''Sync data with thread'''
-        self.lastFiveProTimes.append(proTime/1000)
+        self.lastFiveProTimes.append(proTime)
         self.pos = newPos
         self.rot = newRot
         self.pktSent = pktWasSent
@@ -394,8 +394,10 @@ if __name__ == '__main__':
         threadMavlink.updateData(posR, rotR, timestamp, speed)
 
         # Send to status thread
-        threadStatus.updateData(time.time(
-        )*1000 - timestamp, (posR[0], posR[1], posR[2]), (rotD[0], rotD[1], rotD[2]), threadMavlink.getPktSent())
+        threadStatus.updateData(time.time() - timestamp,
+                                (posR[0], posR[1], posR[2]),
+                                (rotD[0], rotD[1], rotD[2]),
+                                threadMavlink.getPktSent())
 
         # Send to save thread
         if threadSave:

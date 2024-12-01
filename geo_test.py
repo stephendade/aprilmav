@@ -40,8 +40,6 @@ if __name__ == '__main__':
                         default=1, help="Apriltag decimation")
     parser.add_argument("--maxjump", type=int,
                         default=0.5, help="Maximum position change allowed between frames in cm")
-    parser.add_argument("--calframes", type=int,
-                        default=10, help="Use this many frames at the start for calibration")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
     args = parser.parse_args()
@@ -138,8 +136,7 @@ if __name__ == '__main__':
         D[3][0] = camParams['cam_paramsD'][3]
 
     for i in range(loops):
-        if i > args.calframes:
-            print("--------------------------------------")
+        print("--------------------------------------")
 
         # grab an image from the camera
         startTime = time.time()
@@ -170,19 +167,6 @@ if __name__ == '__main__':
             if tag.pose_err < args.maxerror*1e-8:
                 tagsused += 1
                 tagPlacement.addTag(tag)
-
-        # Calibration routines
-        if i == 0:
-            print("Starting calibration. Don't move vehicle")
-            tagPlacement.startCalibrate()
-        if i < args.calframes:
-            # Run a calibration routine for the first 20 frames
-            tagPlacement.incrementCalibrate(timestamp)
-            continue
-        if i == args.calframes:
-            tagPlacement.endCalibrate()
-            print("Calibration complete")
-            print("--------------------------------------")
 
         tagPlacement.getBestTransform(timestamp)
 

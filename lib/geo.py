@@ -74,9 +74,6 @@ class tagDB:
         self.T_CamToWorldFiltered.append(numpy.array(numpy.eye((4))))
         self.T_CamToWorldFiltered.append(numpy.array(numpy.eye((4))))
         self.slidingWindow = slidingWindow
-        self.calpos = []
-        self.calvel = []
-        self.std_pos_norm = 0
         # Define a threshold for Z-scores to identify outliers
         self.threshold = 2
 
@@ -219,32 +216,6 @@ class tagDB:
         '''get the vehicle's current position in xyz'''
         T_VehToWorld = self.T_CamtoVeh @ self.T_CamToWorld[-1]
         return getRotation(T_VehToWorld, radians)
-
-    def startCalibrate(self):
-        '''Get uncertainty of tags. Assumes vehicle is not moving'''
-        self.newFrame()
-        self.calpos = []
-        self.calvel = []
-
-    def incrementCalibrate(self, timestamp):
-        '''Get uncertainty of tags. Assumes vehicle is not moving'''
-        self.getBestTransform(timestamp)
-        self.calpos.append(self.reportedPos)
-        self.calvel.append(self.reportedVelocity)
-        self.newFrame()
-
-    def endCalibrate(self):
-        '''Get uncertainty of tags. Assumes vehicle is not moving'''
-        #get avg and std dev
-        mean_pos = numpy.mean(self.calpos, axis=0)
-        std_pos = numpy.std(self.calpos, axis=0)
-        mean_vel = numpy.mean(self.calvel, axis=0)
-        std_vel = numpy.std(self.calvel, axis=0)
-        print("Pos mean is {0} and std dev is {1}".format(mean_pos, std_pos))
-        print("Vel mean is {0} and std dev is {1}".format(mean_vel, std_vel))
-        self.std_pos_norm = numpy.linalg.norm(std_pos)
-        self.newFrame()
-        self.tagPlacement = {}
 
     def getTagdb(self):
         '''get coords of all tags by axis'''

@@ -40,14 +40,6 @@ class camera:
         timestamp = time.time()
         return_value, image = self.camera.read()
 
-        # Rotate if required
-        if self.camParams['rotation'] == 180:
-            image = cv2.rotate(image, cv2.ROTATE_180)
-        if self.camParams['rotation'] == 90:
-            image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
-        if self.camParams['rotation'] == 270:
-            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
-
         return (cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), timestamp)
 
     def close(self):

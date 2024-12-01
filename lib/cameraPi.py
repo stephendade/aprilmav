@@ -22,7 +22,6 @@ class camera:
         self.camParams = camParams
         self.camera = PiCamera(resolution=camParams['resolution'], framerate=camParams['framerate'],
                                sensor_mode=camParams['sensor_mode'])
-        self.camera.rotation = camParams['rotation']
 
         self.image = numpy.empty(
             (self.camera.resolution[0] * self.camera.resolution[1] * 3,), dtype=numpy.uint8)

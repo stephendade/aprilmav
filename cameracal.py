@@ -142,7 +142,6 @@ if __name__ == '__main__':
             print("  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0], imgDim[1]))
         print("  fisheye: {0}".format(args.fisheye))
         print("  halfres: {0}".format(args.halfres))
-        print("  rotation: 0")
         print("  camname: <>")
         print("  model: <>")
 

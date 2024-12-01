@@ -19,7 +19,6 @@ class camera:
 
         self.camParams = camParams
         self.camera = arducam.mipi_camera()
-        self.camera.rotation = camParams['rotation']
         self.camera.halfres = camParams['halfres']
         self.frame = None
 
@@ -62,13 +61,6 @@ class camera:
             imageCrop = cv2.resize(
                 imageCrop, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
 
-        # Rotate if required
-        if self.camParams['rotation'] == 180:
-            imageCrop = cv2.rotate(imageCrop, cv2.ROTATE_180)
-        if self.camParams['rotation'] == 90:
-            imageCrop = cv2.rotate(imageCrop, cv2.ROTATE_90_CLOCKWISE)
-        if self.camParams['rotation'] == 270:
-            imageCrop = cv2.rotate(imageCrop, cv2.ROTATE_90_COUNTERCLOCKWISE)
         return (imageCrop, timestamp)
 
     def close(self):

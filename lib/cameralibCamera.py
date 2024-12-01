@@ -27,8 +27,6 @@ class camera:
             return
 
         self.camParams = camParams
-
-        self.camera.rotation = camParams['rotation']
         self.frame = None
 
         # Set camera settings
@@ -74,13 +72,6 @@ class camera:
         # Convert to greyscale
         image = cv2.cvtColor(self.frame, cv2.COLOR_RGB2GRAY)
 
-        # Rotate if required
-        if self.camParams['rotation'] == 180:
-            image = cv2.rotate(image, cv2.ROTATE_180)
-        if self.camParams['rotation'] == 90:
-            image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
-        if self.camParams['rotation'] == 270:
-            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
         return (image, timestamp)
 
     def close(self):

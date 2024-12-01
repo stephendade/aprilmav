@@ -3,7 +3,6 @@ PiCamV2LowRes:
   cam_name: "cameraPi"
   cam_params: !!python/tuple [818.0968859467251, 817.2573949039664, 433.78963953637407, 254.56860763807128]
   resolution: !!python/tuple [800, 608]
-  rotation: 180
   use_video_port: True
   sensor_mode: 5
   framerate: 30
@@ -13,7 +12,6 @@ PiCamV2FullFoV:
   cam_name: "cameraPi"
   cam_params: !!python/tuple [646.7895716876668, 648.0066280321572, 402.3718061406127, 301.7492204982478]
   resolution: !!python/tuple [832, 608]
-  rotation: 180
   use_video_port: True
   sensor_mode: 4
   framerate: 25
@@ -23,7 +21,6 @@ PiCamV2FullFoVHD:
   cam_name: "cameraPi"
   cam_params: !!python/tuple [948.081890418443, 950.8362449958827, 637.9904659268185, 439.9205249003001]
   resolution: !!python/tuple [1216, 912]
-  rotation: 180
   use_video_port: True
   sensor_mode: 4
   framerate: 20
@@ -34,7 +31,6 @@ ArduCamUC580:
   cam_params: !!python/tuple [574.812570999981, 575.7421879877336, 633.6010243930515, 390.9861810031649]
   cam_paramsD: !!python/tuple [0.007600850431421323, -0.052276055918063793, 0.15806197443706363, -0.12319549316927544]
   resolution: !!python/tuple [1280, 800]
-  rotation: 0
   fisheye: True
   halfres: False
   
@@ -43,7 +39,6 @@ ArduCamUC580Half:
   cam_params: !!python/tuple [287.65621303404754, 288.1190029513685, 316.6282203036185, 195.399352432793]
   cam_paramsD: !!python/tuple [0.007534020441721305, -0.05422419845713151, 0.1605053805855317, -0.1231473727170638]
   resolution: !!python/tuple [1280, 800]
-  rotation: 0
   fisheye: True
   halfres: True
   
@@ -51,7 +46,6 @@ GenericUSB:
   cam_name: "cameraGenericUSB"
   resolution: !!python/tuple [1280, 720]
   cam_params: !!python/tuple [650, 650, 640, 480]
-  rotation: 0
   fisheye: False
 
 imx296-6mmlens:
@@ -61,7 +55,6 @@ imx296-6mmlens:
   cam_paramsD: !!python/tuple [-0.13392483734284377, -0.3733250143698285, 1.2448707776971588, -1.8040266655469723]
   resolution: !!python/tuple [1456, 1088]
   fisheye: True
-  rotation: 180
   halfres: False
 
 imx296-2.7mmlens:
@@ -74,4 +67,3 @@ imx296-2.7mmlens:
   resolution: !!python/tuple [1456, 1088]
   fisheye: True
   halfres: False
-  rotation: 180

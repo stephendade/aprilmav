@@ -94,7 +94,6 @@ $ aprilmav.py
 - ``--maxjump=N``     Ignore any frame-to-frame position jumps of more than N cm
 - ``--calframes=N``   Use N image frames at the start to determine the position man and std dev. The vehicle must be stationary during this time. Only applicable if ``--stddev`` is used
 - ``--averaging=N``   Use a moving average of N frames for determining position and velocity.
-- ``--stddev``        Use a filter than ignores any position jump greater than 2*stddev of the position calibration.
 
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.
@@ -159,5 +158,4 @@ If the velocity numbers are too noisy, the following options will help:
 - Decrease camera gain to reduce any noise in the images. Apriltags are capabile of being detected in quite low-light environments
 - A good camera calibration (if not using one of the supplied calibrations) is essential
 - Use the ``--averaging=N`` option to average over N frames. N should be a maximum of camera fps/2
-- Use the ``--stddev`` option to enable a filter that ignores any position jumps greater than 2xstddev of the detected Apriltag uncertainty
   

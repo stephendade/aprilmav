@@ -1,7 +1,6 @@
 The calibration images in this folder were taken with the following settings:
 
 Model: Raspberry Pi Camera V2
-  rotation: 180
   use_video_port: True
   sensor_mode: 4
   framerate: 25

@@ -145,7 +145,7 @@ To add a new camera, follow the following steps:
 - Run ``capture_test.py`` whilst showing a chessboard (https://github.com/opencv/opencv/blob/master/doc/pattern.png) in a variety of orientations and distances
 - Run ``cameracal.py`` using the above images and put the resultant camera parameters in in ``camera.yaml``
 
-Note a separate profile will be required for a specific lens and resolution combination.
+Note a separate profile will be required for a specific lens and resolution combination, and camera rotation/position.
 
 ### Accuracy Performance
 
@@ -155,6 +155,7 @@ ArduPilot requires a good velocity estimate from AprilMAV. This can be graphed v
 
 If the velocity numbers are too noisy, the following options will help:
 - Ensure the camera's focus is as sharp as possible for the typical Apriltag distances
+- Decrease exposure time as much as possible to reduce motion blur during sharp turns
 - Decrease camera gain to reduce any noise in the images. Apriltags are capabile of being detected in quite low-light environments
 - A good camera calibration (if not using one of the supplied calibrations) is essential
 - Use the ``--averaging=N`` option to average over N frames. N should be a maximum of camera fps/2

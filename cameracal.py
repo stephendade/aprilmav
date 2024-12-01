@@ -144,6 +144,8 @@ if __name__ == '__main__':
         print("  halfres: {0}".format(args.halfres))
         print("  camname: <>")
         print("  model: <>")
+        print("  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees")
+        print("  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters")
 
         if args.fisheye:
             # Show un-distortion of fisheye to user for 1st image

@@ -6,7 +6,7 @@ import math
 from collections import deque
 import numpy
 
-from transforms3d.euler import mat2euler
+from transforms3d.euler import mat2euler, euler2mat
 
 
 def getTransform(tag):
@@ -76,8 +76,18 @@ class tagDB:
         self.slidingWindow = slidingWindow
         # Define a threshold for Z-scores to identify outliers
         self.threshold = 2
-        self.campos = campos  # camera position in vehicle frame
-        self.camrot = camrot  # camera rotation in vehicle frame
+
+        '''Generate the transformation matrix from camera to vehicle frame'''
+        # Convert rotation tuple (Euler angles) to rotation matrix
+        rotation_matrix = euler2mat(numpy.deg2rad(camrot[0]), numpy.deg2rad(camrot[1]),
+                                    numpy.deg2rad(camrot[2]), axes='sxyz')
+
+        # Construct the transformation matrix
+        T_CamtoVeh = numpy.eye(4)
+        T_CamtoVeh[0:3, 0:3] = rotation_matrix
+        T_CamtoVeh[0:3, 3] = campos
+
+        self.T_CamtoVeh = T_CamtoVeh
 
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''

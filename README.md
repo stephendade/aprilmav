@@ -112,7 +112,9 @@ EK3_SRC1_VELZ    6
 EK3_SRC1_YAW     6
 ```
 
-Note that, assuming the camera is mounted facing up (to the ceiling) with the bottom of the image towards the front of the vehicle, then ``VISO_ORIENT`` should be 0. The coordinate frame conversion takes places within aprilmav.
+Note that coordinate frame conversion from the camera (see [here](https://github.com/AprilRobotics/apriltag#coordinate-system)) to 
+vehicle (NED) frames takes place in aprilmav. Use the ``rotationRelVehicle`` in ``camera.yaml`` to define the camera-to-vehicle 
+conversion. Thus the ``VISO_ORIENT`` should be 0 in ArduPilot.
 
 The ``VISO_DELAY_MS`` should be set to 1000/framerate (ie 7fps gives a ``VISO_DELAY_MS`` of 142).
 

@@ -177,7 +177,7 @@ if __name__ == '__main__':
         posR = tagPlacement.reportedPos
         rotR = tagPlacement.reportedRot
         rotD = numpy.rad2deg(tagPlacement.reportedRot)
-        speed = tagPlacement.getReportedVelocity()
+        speed = tagPlacement.reportedVelocity
 
         with open(args.outfile, "a", encoding="utf-8") as outfile:
             outfile.write("{0},".format(file))

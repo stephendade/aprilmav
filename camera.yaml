@@ -81,5 +81,5 @@ imx296-2.7mmlens:
   resolution: !!python/tuple [1456, 1088]
   fisheye: True
   halfres: False
-  rotationRelVehicle: !!python/tuple [180, 0, 0]   #roll-pitch-yaw in degrees
+  rotationRelVehicle: !!python/tuple [180, 0, 90]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters

@@ -79,7 +79,7 @@ class tagDB:
         '''Generate the transformation matrix from camera to vehicle frame'''
         # Convert rotation tuple (Euler angles) to rotation matrix
         rotation_matrix = euler2mat(numpy.deg2rad(camrot[0]), numpy.deg2rad(camrot[1]),
-                                    numpy.deg2rad(camrot[2]), axes='szyx')
+                                    numpy.deg2rad(camrot[2]), axes='sxyz')
 
         # Construct the transformation matrix
         T_CamtoVeh = numpy.eye(4)

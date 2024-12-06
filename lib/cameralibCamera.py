@@ -42,8 +42,8 @@ class camera:
         time.sleep(1)
         metadata = self.camera.capture_metadata()
         self.camera.stop()
-        controls = {"ExposureTime": int(metadata["ExposureTime"]/30),
-                    "AnalogueGain": int(metadata["AnalogueGain"]/4),
+        controls = {"ExposureTime": 5000,    # microseconds. So 5ms
+                    "AnalogueGain": int(metadata["AnalogueGain"]),
                     "ColourGains": metadata["ColourGains"],
                     'FrameRate': 60}
 

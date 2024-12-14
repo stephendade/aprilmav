@@ -83,3 +83,14 @@ imx296-2.7mmlens:
   halfres: False
   rotationRelVehicle: !!python/tuple [0, 180, 90]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+
+JetsonCamera:
+  cam_name: "cameraGstreamer"
+  model: "nvarguscamerasrc sensor-id=0 ! nvvidconv"
+  cam_params: !!python/tuple [798.2655329920997, 798.7968119508516, 776.4542781994045, 565.5362043678947]
+  cam_paramsD: !!python/tuple [0.3967947174898555, -0.031081140652258477, 0.5206634930570165, -0.8805883955108713]
+  resolution: !!python/tuple [3280, 2464]
+  fisheye: True
+  halfres: False
+  rotationRelVehicle: !!python/tuple [180, 0, 90]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters

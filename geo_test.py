@@ -90,7 +90,8 @@ if __name__ == '__main__':
         outfile.write("Filename,")
         outfile.write("PosX (m),PosY (m),PosZ (m),")
         outfile.write("RotX (rad),RotY (rad),RotZ (rad),")
-        outfile.write("VelX (m/s),VelY (m/s), VelZ (m/s)\n")
+        outfile.write("VelX (m/s),VelY (m/s), VelZ (m/s),")
+        outfile.write("timestamp (sec)\n")
 
     # GUI
     fig = None

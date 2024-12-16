@@ -86,7 +86,7 @@ imx296-2.7mmlens:
 
 # IMX219 (Raspi Camera V2) on a NVidia Jetson
 # Exposure time limited to 20000000ns (20ms)
-# 8 Mpixel
+# 8 Mpixel  NOTE: The calibration is not correct. Don't use yet
 JetsonCameraIMX219-8MP:
   cam_name: "cameraGstreamer"
   model: "nvarguscamerasrc sensor-id=1 wbmode=0 ee-mode=0 exposuretimerange=\"20000000 20000000\" ! video/x-raw(memory:NVMM), width=(int)3280, height=(int)2464, framerate=(fraction)20/1 ! nvvidconv"

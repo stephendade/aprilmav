@@ -135,7 +135,7 @@ The following cameras have been tested as compatible with Aprilmav:
 - [ArduCam UC-717 (IMX296)](https://www.arducam.com/product/1-58mp-imx296-color-global-shutter-camera-module-with-m12-lens-for-raspberry-pi/). The default 6mm lens is too narrow. For a 2.7mm lens use ``--camera=imx296-2.7mmlens``
 - Arducam 1MP OV9281 (works quite well, as it has a global shutter). Requires specific libraries. Run ``./lib/getArduCamfiles.sh`` to download the files. Use ``--camera=ArduCamUC580``
 - Generic USB webcams. Will need a specific calibration and settings file for each camera model. Use ``--camera=GenericUSB``
-
+- IMX219 Cameras on the Nvidia Jetson at a variety of resolutions: ``--camera=JetsonCameraIMX219-8MP``, ``--camera=JetsonCameraIMX219-6MP`` and ``--camera=JetsonCameraIMX219-2MP``.
 Cameras with global shutters are preferred, as they give much more accurate position solutions.
 
 ### Adding a new camera

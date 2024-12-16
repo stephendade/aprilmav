@@ -23,7 +23,7 @@ class camera:
 
         # Couldn't find the camera
         if not self.camera:
-            print("Error: Could not find {0}".format(camParams['cam_name']))
+            print("Error: Could not find {0}".format(camParams['cam_driver']))
             return
 
         self.camParams = camParams

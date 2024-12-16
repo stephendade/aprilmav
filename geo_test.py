@@ -34,32 +34,7 @@ def signal_handler(signum, frame):
     exit_event.set()
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--tagSize", type=int, default=96,
-                        help="Apriltag size in mm")
-    parser.add_argument("--camera", type=str, default="PiCamV2FullFoV",
-                        help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=20,
-                        help="Capture and process this many frames")
-    parser.add_argument("--maxerror", type=int, default=400,
-                        help="Maximum pose error to use, in n*E-8 units")
-    parser.add_argument("--folder", type=str, default=None,
-                        help="Use a folder of images instead of camera")
-    parser.add_argument("--outfile", type=str, default="geo_test_results.csv",
-                        help="Output tag data to this file")
-    parser.add_argument('--gui', dest='gui',
-                        default=False, action='store_true')
-    parser.add_argument("--decimation", type=int,
-                        default=2, help="Apriltag decimation")
-    parser.add_argument("--maxjump", type=int,
-                        default=0.5, help="Maximum position change allowed between frames in cm")
-    parser.add_argument("--averaging", type=int,
-                        default=5, help="Use moving average of N frames")
-    parser.add_argument("--imageFolder", type=str, default="",
-                        help="Save processed images to this folder")
-    args = parser.parse_args()
-
+def main(args):
     print("Initialising")
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -241,11 +216,39 @@ if __name__ == '__main__':
 
     exit_event.set()
 
+    # Tags
+    if args.gui:
+        for tagid, tag in tagPlacement.getTagdb().items():
+            axMap.annotate("T{0} ({1:.3f})m".format(
+                tagid, tag[1, 3]), (tag[2, 3]+0.1, tag[0, 3]+0.1))
+        print("Waiting for plot window to be closed")
+        plt.show()
 
-# Tags
-if args.gui:
-    for tagid, tag in tagPlacement.getTagdb().items():
-        axMap.annotate("T{0} ({1:.3f})m".format(
-            tagid, tag[1, 3]), (tag[2, 3]+0.1, tag[0, 3]+0.1))
-    print("Waiting for plot window to be closed")
-    plt.show()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tagSize", type=int, default=96,
+                        help="Apriltag size in mm")
+    parser.add_argument("--camera", type=str, default="PiCamV2FullFoV",
+                        help="Camera profile in camera.yaml")
+    parser.add_argument("--loop", type=int, default=20,
+                        help="Capture and process this many frames")
+    parser.add_argument("--maxerror", type=int, default=400,
+                        help="Maximum pose error to use, in n*E-8 units")
+    parser.add_argument("--folder", type=str, default=None,
+                        help="Use a folder of images instead of camera")
+    parser.add_argument("--outfile", type=str, default="geo_test_results.csv",
+                        help="Output tag data to this file")
+    parser.add_argument('--gui', dest='gui',
+                        default=False, action='store_true')
+    parser.add_argument("--decimation", type=int,
+                        default=2, help="Apriltag decimation")
+    parser.add_argument("--maxjump", type=int,
+                        default=0.5, help="Maximum position change allowed between frames in cm")
+    parser.add_argument("--averaging", type=int,
+                        default=5, help="Use moving average of N frames")
+    parser.add_argument("--imageFolder", type=str, default="",
+                        help="Save processed images to this folder")
+    args = parser.parse_args()
+
+    main(args)

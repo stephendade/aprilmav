@@ -84,13 +84,41 @@ imx296-2.7mmlens:
   rotationRelVehicle: !!python/tuple [0, 180, 90]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
-JetsonCamera:
+# IMX219 (Raspi Camera V2) on a NVidia Jetson
+# Exposure time limited to 20000000ns (20ms)
+# 8 Mpixel
+JetsonCameraIMX219-8MP:
   cam_name: "cameraGstreamer"
-  model: "nvarguscamerasrc sensor-id=0 ! nvvidconv"
-  cam_params: !!python/tuple [798.2655329920997, 798.7968119508516, 776.4542781994045, 565.5362043678947]
-  cam_paramsD: !!python/tuple [0.3967947174898555, -0.031081140652258477, 0.5206634930570165, -0.8805883955108713]
+  model: "nvarguscamerasrc sensor-id=1 wbmode=0 ee-mode=0 exposuretimerange=\"20000000 20000000\" ! video/x-raw(memory:NVMM), width=(int)3280, height=(int)2464, framerate=(fraction)20/1 ! nvvidconv"
+  cam_params: !!python/tuple [4325.719553695577, 5780.6221883232065, 1707.482885769248, 1311.2631825964472]
   resolution: !!python/tuple [3280, 2464]
-  fisheye: True
+  fisheye: False
+  halfres: False
+  rotationRelVehicle: !!python/tuple [180, 0, 90]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+
+# IMX219 (Raspi Camera V2) on a NVidia Jetson
+# Exposure time limited to 20000000ns (20ms)
+# 6 Mpixel
+JetsonCameraIMX219-6MP:
+  cam_name: "cameraGstreamer"
+  model: "nvarguscamerasrc sensor-id=1 wbmode=0 ee-mode=0 exposuretimerange=\"20000000 20000000\" ! video/x-raw(memory:NVMM), width=(int)3280, height=(int)1840, framerate=(fraction)20/1 ! nvvidconv"
+  cam_params: !!python/tuple [2606.2998435512704, 2596.5386861795705, 1701.436844743684, 928.2865699004666]
+  resolution: !!python/tuple [3280, 1840]
+  fisheye: False
+  halfres: False
+  rotationRelVehicle: !!python/tuple [180, 0, 90]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+
+# IMX219 (Raspi Camera V2) on a NVidia Jetson
+# Exposure time limited to 20000000ns (20ms)
+# 2 Mpixel
+JetsonCameraIMX219-2MP:
+  cam_name: "cameraGstreamer"
+  model: "nvarguscamerasrc sensor-id=1 wbmode=0 ee-mode=0 exposuretimerange=\"20000000 20000000\" ! video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, framerate=(fraction)20/1 ! nvvidconv"
+  cam_params: !!python/tuple [2562.749814772615, 2543.0132812611823, 946.0707049633506, 566.1760636657606]
+  resolution: !!python/tuple [1920, 1072]
+  fisheye: False
   halfres: False
   rotationRelVehicle: !!python/tuple [180, 0, 90]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters

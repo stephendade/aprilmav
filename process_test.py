@@ -22,22 +22,7 @@ from pyapriltags import Detector
 from modules.geo import getPos, getTransform, getRotation
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--camera", type=str, default="PiCamV2FullFoV",
-                        help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=10,
-                        help="Process this many frames")
-    parser.add_argument("--tagSize", type=int, default=94,
-                        help="Apriltag size in mm")
-    parser.add_argument("--folder", type=str, default=None,
-                        help="Use a folder of images instead of camera")
-    parser.add_argument("--outfile", type=str, default="processed.csv",
-                        help="Output tag data to this file")
-    parser.add_argument("--decimation", type=int,
-                        default=2, help="Apriltag decimation")
-    args = parser.parse_args()
-
+def main(args):
     print("Initialising")
 
     # Open camera settings
@@ -161,3 +146,21 @@ if __name__ == '__main__':
         translation_std = numpy.std(posns_array, axis=0)
         print("Tag ID {0} mean: {1} and Std dev {2}".format(tag_id, translation_mean,
                                                             translation_std))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--camera", type=str, default="PiCamV2FullFoV",
+                        help="Camera profile in camera.yaml")
+    parser.add_argument("--loop", type=int, default=10,
+                        help="Process this many frames")
+    parser.add_argument("--tagSize", type=int, default=94,
+                        help="Apriltag size in mm")
+    parser.add_argument("--folder", type=str, default=None,
+                        help="Use a folder of images instead of camera")
+    parser.add_argument("--outfile", type=str, default="processed.csv",
+                        help="Output tag data to this file")
+    parser.add_argument("--decimation", type=int,
+                        default=2, help="Apriltag decimation")
+    args = parser.parse_args()
+    main(args)

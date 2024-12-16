@@ -20,9 +20,9 @@ import cv2
 from pyapriltags import Detector
 from pymavlink import mavutil
 
-from lib.geo import tagDB
-from lib.videoStream import videoThread
-from lib.saveStream import saveThread
+from modules.geo import tagDB
+from modules.videoStream import videoThread
+from modules.saveStream import saveThread
 
 exit_event = threading.Event()
 
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     camera = None
     try:
         print(parameters[args.camera]['cam_name'])
-        mod = import_module("lib." + parameters[args.camera]['cam_name'])
+        mod = import_module("drivers." + parameters[args.camera]['cam_name'])
         camera = mod.camera(parameters[args.camera])
     except (ImportError, KeyError):
         print('No camera with the name {0}, exiting'.format(args.camera))

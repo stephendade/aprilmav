@@ -142,7 +142,7 @@ Cameras with global shutters are preferred, as they give much more accurate posi
 
 To add a new camera, follow the following steps:
 
-- Create a camera driver in the ``./lib`` directory. Look at ``cameraGenericUSB.py`` as an example.
+- Create a camera driver in the ``./drivers`` directory. Look at ``cameraGenericUSB.py`` as an example.
 - Add a camera profile in ``camera.yaml``
 - Run ``capture_test.py`` whilst showing a chessboard (https://github.com/opencv/opencv/blob/master/doc/pattern.png) in a variety of orientations and distances
 - Run ``cameracal.py`` using the above images and put the resultant camera parameters in in ``camera.yaml``

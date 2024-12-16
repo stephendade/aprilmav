@@ -19,7 +19,7 @@ import cv2
 import yaml
 
 from pyapriltags import Detector
-from lib.geo import getPos, getTransform, getRotation
+from modules.geo import getPos, getTransform, getRotation
 
 
 if __name__ == '__main__':
@@ -48,12 +48,12 @@ if __name__ == '__main__':
     # initialize the camera
     CAMERA = None
     if args.folder:
-        from lib import cameraFile
+        from drivers import cameraFile
         CAMERA = cameraFile.FileCamera(args.folder)
     else:
         try:
             print(parameters[args.camera]['cam_name'])
-            mod = import_module("lib." + parameters[args.camera]['cam_name'])
+            mod = import_module("drivers." + parameters[args.camera]['cam_name'])
             CAMERA = mod.camera(parameters[args.camera])
         except (ImportError, KeyError):
             print('No camera with the name {0}, exiting'.format(args.camera))

@@ -12,6 +12,8 @@ into camera.yaml
 import time
 import argparse
 import sys
+import threading
+import signal
 from importlib import import_module
 import yaml
 import numpy
@@ -19,6 +21,17 @@ import cv2
 
 from pyapriltags import Detector
 from lib.geo import tagDB
+from lib.saveStream import saveThread
+
+exit_event = threading.Event()
+
+
+def signal_handler(signum, frame):
+    """
+    Signal handler for exit
+    """
+    exit_event.set()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -37,14 +50,18 @@ if __name__ == '__main__':
     parser.add_argument('--gui', dest='gui',
                         default=False, action='store_true')
     parser.add_argument("--decimation", type=int,
-                        default=1, help="Apriltag decimation")
+                        default=2, help="Apriltag decimation")
     parser.add_argument("--maxjump", type=int,
                         default=0.5, help="Maximum position change allowed between frames in cm")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
+    parser.add_argument("--imageFolder", type=str, default="",
+                        help="Save processed images to this folder")
     args = parser.parse_args()
 
     print("Initialising")
+
+    signal.signal(signal.SIGINT, signal_handler)
 
     # Open camera settings
     with open('camera.yaml', 'r', encoding="utf-8") as stream:
@@ -83,6 +100,12 @@ if __name__ == '__main__':
 
     # how many loops
     loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
+
+    # Start save image thread, if desired
+    threadSave = None
+    if args.imageFolder != "":
+        threadSave = saveThread(args.imageFolder, exit_event)
+        threadSave.start()
 
     print("Starting {0} image capture and process...".format(loops))
 
@@ -207,7 +230,8 @@ if __name__ == '__main__':
 
         tagPlacement.newFrame()
 
-        # cv2.imwrite("detect_{0}.png".format(i), image)
+        if exit_event.is_set():
+            break
 
 # Tags
 if args.gui:

@@ -14,6 +14,7 @@ import argparse
 import sys
 import threading
 import signal
+import os
 from importlib import import_module
 import yaml
 import numpy
@@ -228,10 +229,18 @@ if __name__ == '__main__':
                                                                                     len(tags),
                                                                                     len(tagPlacement.tagDuplicatesT)))
 
+        # Send to save thread
+        if threadSave:
+            threadSave.save_queue.put((imageBW, os.path.join(
+                ".", args.imageFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+
         tagPlacement.newFrame()
 
         if exit_event.is_set():
             break
+
+    exit_event.set()
+
 
 # Tags
 if args.gui:

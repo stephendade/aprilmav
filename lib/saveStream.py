@@ -25,6 +25,8 @@ class saveThread(threading.Thread):
 
     def run(self):
         while True:
+            if self.exit_event.wait(timeout=0.001):
+                return
             if self.save_queue.empty():
                 continue
             (image, filename, posn, rot, tags) = self.save_queue.get()
@@ -36,10 +38,6 @@ class saveThread(threading.Thread):
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             imageColour = self.labelTags(imageColour, tags)
             cv2.imwrite(filename, imageColour, [cv2.IMWRITE_PNG_COMPRESSION, 0])
-
-            # print("Saved {0}".format(filename))
-            if self.exit_event.wait(timeout=0.01):
-                return
 
     def labelTags(self, image, tags):
         """

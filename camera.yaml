@@ -1,6 +1,6 @@
 # Camera settings
 PiCamV2LowRes:
-  cam_name: "cameraPi"
+  cam_driver: "cameraPi"
   cam_params: !!python/tuple [818.0968859467251, 817.2573949039664, 433.78963953637407, 254.56860763807128]
   resolution: !!python/tuple [800, 608]
   use_video_port: True
@@ -11,7 +11,7 @@ PiCamV2LowRes:
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
   
 PiCamV2FullFoV:
-  cam_name: "cameraPi"
+  cam_driver: "cameraPi"
   cam_params: !!python/tuple [646.7895716876668, 648.0066280321572, 402.3718061406127, 301.7492204982478]
   resolution: !!python/tuple [832, 608]
   use_video_port: True
@@ -22,7 +22,7 @@ PiCamV2FullFoV:
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
   
 PiCamV2FullFoVHD:
-  cam_name: "cameraPi"
+  cam_driver: "cameraPi"
   cam_params: !!python/tuple [948.081890418443, 950.8362449958827, 637.9904659268185, 439.9205249003001]
   resolution: !!python/tuple [1216, 912]
   use_video_port: True
@@ -33,7 +33,7 @@ PiCamV2FullFoVHD:
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 ArduCamUC580:
-  cam_name: "cameraArduCamUC580"
+  cam_driver: "cameraArduCamUC580"
   cam_params: !!python/tuple [574.812570999981, 575.7421879877336, 633.6010243930515, 390.9861810031649]
   cam_paramsD: !!python/tuple [0.007600850431421323, -0.052276055918063793, 0.15806197443706363, -0.12319549316927544]
   resolution: !!python/tuple [1280, 800]
@@ -43,7 +43,7 @@ ArduCamUC580:
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 ArduCamUC580Half:
-  cam_name: "cameraArduCamUC580"
+  cam_driver: "cameraArduCamUC580"
   cam_params: !!python/tuple [287.65621303404754, 288.1190029513685, 316.6282203036185, 195.399352432793]
   cam_paramsD: !!python/tuple [0.007534020441721305, -0.05422419845713151, 0.1605053805855317, -0.1231473727170638]
   resolution: !!python/tuple [1280, 800]
@@ -53,7 +53,7 @@ ArduCamUC580Half:
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 GenericUSB:
-  cam_name: "cameraGenericUSB"
+  cam_driver: "cameraGenericUSB"
   resolution: !!python/tuple [1280, 720]
   cam_params: !!python/tuple [650, 650, 640, 480]
   fisheye: False
@@ -61,7 +61,7 @@ GenericUSB:
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 imx296-6mmlens:
-  cam_name: "cameralibCamera"
+  cam_driver: "cameralibCamera"
   model: "imx296"
   cam_params: !!python/tuple [1774.6877264643633, 1775.3791033847385, 739.1456554208937, 563.4015123976078]
   cam_paramsD: !!python/tuple [-0.13392483734284377, -0.3733250143698285, 1.2448707776971588, -1.8040266655469723]
@@ -72,7 +72,7 @@ imx296-6mmlens:
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 imx296-2.7mmlens:
-  cam_name: "cameralibCamera"
+  cam_driver: "cameralibCamera"
   model: "imx296"
   #cam_params: !!python/tuple [783.991299195332, 783.9892414004288, 775.6798943240108, 561.2979811239607]
   #cam_paramsD: !!python/tuple [0.4001141819946811, 0.05664530684158833, -0.09101327926674617, 0.0772721509804246]
@@ -88,7 +88,7 @@ imx296-2.7mmlens:
 # Exposure time limited to 20000000ns (20ms)
 # 8 Mpixel  NOTE: The calibration is not correct. Don't use yet
 JetsonCameraIMX219-8MP:
-  cam_name: "cameraGstreamer"
+  cam_driver: "cameraGstreamer"
   model: "nvarguscamerasrc sensor-id=1 wbmode=0 ee-mode=0 exposuretimerange=\"20000000 20000000\" ! video/x-raw(memory:NVMM), width=(int)3280, height=(int)2464, framerate=(fraction)20/1 ! nvvidconv"
   cam_params: !!python/tuple [4325.719553695577, 5780.6221883232065, 1707.482885769248, 1311.2631825964472]
   resolution: !!python/tuple [3280, 2464]
@@ -101,7 +101,7 @@ JetsonCameraIMX219-8MP:
 # Exposure time limited to 20000000ns (20ms)
 # 6 Mpixel
 JetsonCameraIMX219-6MP:
-  cam_name: "cameraGstreamer"
+  cam_driver: "cameraGstreamer"
   model: "nvarguscamerasrc sensor-id=1 wbmode=0 ee-mode=0 exposuretimerange=\"20000000 20000000\" ! video/x-raw(memory:NVMM), width=(int)3280, height=(int)1840, framerate=(fraction)20/1 ! nvvidconv"
   cam_params: !!python/tuple [2606.2998435512704, 2596.5386861795705, 1701.436844743684, 928.2865699004666]
   resolution: !!python/tuple [3280, 1840]
@@ -114,7 +114,7 @@ JetsonCameraIMX219-6MP:
 # Exposure time limited to 20000000ns (20ms)
 # 2 Mpixel
 JetsonCameraIMX219-2MP:
-  cam_name: "cameraGstreamer"
+  cam_driver: "cameraGstreamer"
   model: "nvarguscamerasrc sensor-id=1 wbmode=0 ee-mode=0 exposuretimerange=\"20000000 20000000\" ! video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, framerate=(fraction)20/1 ! nvvidconv"
   cam_params: !!python/tuple [2562.749814772615, 2543.0132812611823, 946.0707049633506, 566.1760636657606]
   resolution: !!python/tuple [1920, 1072]

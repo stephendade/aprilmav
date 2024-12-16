@@ -25,6 +25,10 @@ class videoThread(threading.Thread):
     def run(self):
         vidOut = None
         while True:
+            if self.exit_event.wait(timeout=0.001):
+                if vidOut:
+                    vidOut.release()
+                return
             if self.frame_queue.empty():
                 continue
             (image, posn, rot, tags) = self.frame_queue.get()
@@ -47,11 +51,6 @@ class videoThread(threading.Thread):
                     return
             # Send processed image to video stream
             vidOut.write(imageColour)
-
-            if self.exit_event.wait(timeout=0.01):
-                if vidOut:
-                    vidOut.release()
-                return
 
     def labelTags(self, image, tags):
         """

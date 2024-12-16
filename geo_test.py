@@ -21,8 +21,8 @@ import numpy
 import cv2
 
 from pyapriltags import Detector
-from lib.geo import tagDB
-from lib.saveStream import saveThread
+from modules.geo import tagDB
+from modules.saveStream import saveThread
 
 exit_event = threading.Event()
 
@@ -72,12 +72,12 @@ if __name__ == '__main__':
     # initialize the camera
     camera = None
     if args.folder:
-        from lib import cameraFile
+        from drivers import cameraFile
         camera = cameraFile.FileCamera(args.folder)
     else:
         try:
             print(parameters[args.camera]['cam_name'])
-            mod = import_module("lib." + parameters[args.camera]['cam_name'])
+            mod = import_module("drivers." + parameters[args.camera]['cam_name'])
             camera = mod.camera(parameters[args.camera])
         except (ImportError, KeyError):
             print('No camera with the name {0}, exiting'.format(args.camera))

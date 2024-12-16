@@ -13,7 +13,6 @@ This can be run over a folder of pre-captured images from any camera
 '''
 import argparse
 import os
-import glob
 import cv2
 import numpy
 
@@ -32,7 +31,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # initialize the camera
-    from lib import cameraFile
+    from drivers import cameraFile
     camera = cameraFile.FileCamera(args.folder)
 
     # Chessboard rows and cols

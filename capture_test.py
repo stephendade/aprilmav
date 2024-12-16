@@ -61,7 +61,7 @@ if __name__ == '__main__':
     camera = None
     try:
         print(parameters[args.camera]['cam_name'])
-        mod = import_module("lib." + parameters[args.camera]['cam_name'])
+        mod = import_module("drivers." + parameters[args.camera]['cam_name'])
         camera = mod.camera(parameters[args.camera])
     except (ImportError, KeyError):
         print('No camera with the name {0}, exiting'.format(args.camera))

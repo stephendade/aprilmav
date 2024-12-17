@@ -11,6 +11,7 @@ Distance is relative to the camera's sensor in 3 dimensions.
 import time
 import argparse
 import sys
+import os
 from importlib import import_module
 from collections import defaultdict
 
@@ -49,7 +50,7 @@ def main(args):
 
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
                            families='tagStandard41h12',
-                           nthreads=3,
+                           nthreads=max(1, os.cpu_count() - 1),
                            quad_decimate=args.decimation,
                            quad_sigma=0.0,
                            refine_edges=1,

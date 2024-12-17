@@ -63,7 +63,7 @@ def main(args):
 
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
                            families='tagStandard41h12',
-                           nthreads=3,
+                           nthreads=max(1, os.cpu_count() - 1),
                            quad_decimate=args.decimation,
                            quad_sigma=0.4,
                            refine_edges=1,

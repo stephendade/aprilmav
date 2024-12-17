@@ -81,7 +81,7 @@ imx296-2.7mmlens:
   resolution: !!python/tuple [1456, 1088]
   fisheye: True
   halfres: False
-  rotationRelVehicle: !!python/tuple [0, 180, 90]   #roll-pitch-yaw in degrees
+  rotationRelVehicle: !!python/tuple [0, 180, 90]   #roll-yaw-pitch in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 # IMX219 (Raspi Camera V2) on a NVidia Jetson
@@ -94,7 +94,7 @@ JetsonCameraIMX219-8MP:
   resolution: !!python/tuple [3280, 2464]
   fisheye: False
   halfres: False
-  rotationRelVehicle: !!python/tuple [180, 0, 90]   #roll-pitch-yaw in degrees
+  rotationRelVehicle: !!python/tuple [45, 90, 0]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 # IMX219 (Raspi Camera V2) on a NVidia Jetson
@@ -107,7 +107,7 @@ JetsonCameraIMX219-6MP:
   resolution: !!python/tuple [3280, 1840]
   fisheye: False
   halfres: False
-  rotationRelVehicle: !!python/tuple [180, 0, 90]   #roll-pitch-yaw in degrees
+  rotationRelVehicle: !!python/tuple [45, 90, 0]   #roll-yaw-pitch in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 # IMX219 (Raspi Camera V2) on a NVidia Jetson
@@ -120,5 +120,5 @@ JetsonCameraIMX219-2MP:
   resolution: !!python/tuple [1920, 1072]
   fisheye: False
   halfres: False
-  rotationRelVehicle: !!python/tuple [180, 0, 90]   #roll-pitch-yaw in degrees
+  rotationRelVehicle: !!python/tuple [45, 90, 0]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters

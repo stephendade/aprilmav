@@ -3,12 +3,38 @@ Testing for geo and process
 '''
 import argparse
 import os
-import pytest
 import geo_test
 import process_test
 
 
 def test_geo_execution():
+    """
+    Test the execution of the geo_test module with various parameters.
+
+    This function sets up an argument parser to handle command-line arguments
+    for testing the geo_test module. It includes options for tag size, camera
+    profile, number of frames to process, maximum pose error, input folder,
+    output file, GUI display, apriltag decimation, maximum position change
+    between frames, moving average of frames, and folder to save processed
+    images. After parsing the arguments, it calls the main function of the
+    geo_test module and asserts that the output file is created.
+
+    Command-line Arguments:
+        --tagSize (int): Apriltag size in mm (default: 96).
+        --camera (str): Camera profile in camera.yaml (default: "ArduCamUC580").
+        --loop (int): Number of frames to capture and process (default: 20).
+        --maxerror (int): Maximum pose error to use, in n*E-8 units (default: 400).
+        --folder (str): Folder of images to use instead of camera (default: "test_data").
+        --outfile (str): File to output tag data (default: "geo_test_results.csv").
+        --gui (bool): Display GUI (default: False).
+        --decimation (int): Apriltag decimation (default: 2).
+        --maxjump (float): Maximum position change allowed between frames in cm (default: 0.5).
+        --averaging (int): Use moving average of N frames (default: 5).
+        --imageFolder (str): Folder to save processed images (default: "").
+
+    Raises:
+        AssertionError: If the output file "geo_test_results.csv" does not exist.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--tagSize", type=int, default=96,
                         help="Apriltag size in mm")
@@ -38,6 +64,27 @@ def test_geo_execution():
 
 
 def test_process_execution():
+    """
+    Test the execution of the process_test.main function with various arguments.
+
+    This function sets up an argument parser with several options, parses the
+    arguments, and calls the process_test.main function with the parsed arguments.
+    It then asserts that the output file "processed.csv" exists.
+
+    Arguments:
+    --camera: str, default="ArduCamUC580"
+        Camera profile in camera.yaml.
+    --loop: int, default=10
+        Number of frames to process.
+    --tagSize: int, default=94
+        Apriltag size in mm.
+    --folder: str, default="test_data"
+        Folder of images to use instead of camera.
+    --outfile: str, default="processed.csv"
+        File to output tag data.
+    --decimation: int, default=2
+        Apriltag decimation.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--camera", type=str, default="ArduCamUC580",
                         help="Camera profile in camera.yaml")

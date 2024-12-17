@@ -111,7 +111,7 @@ def main(args):
                 imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
         if file:
-            print("File: {0}".format(file))
+            print("File: {0} ({1}/{2})".format(file, i, loops))
 
         # get time to capture and convert
         print("Time to capture and detect = {0:.1f} ms, found {1} tags".format(
@@ -139,7 +139,6 @@ def main(args):
     print("Pose error (1E8) mean: {0:.3f} and Std dev {1:.3f}".format(numpy.mean(all_pose_error),
                                                                       numpy.std(all_pose_error)))
     # Compute statistics for each tag
-    stats_by_tag = {}
     for tag_id, posns in all_tags.items():
         # Convert to NumPy arrays
         posns_array = numpy.array(posns)

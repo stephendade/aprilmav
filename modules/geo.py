@@ -290,8 +290,8 @@ class tagDB:
                     bestTransform = Ttprevtocur
 
             # now iterate the bestTransform a little to see if we can get a better fit
-            step_size = 0.001
-            for _ in range(1000):
+            step_size = 0.01
+            for _ in range(100):
                 # Generate small changes to the rotation part
                 rotation_matrix = Ttprevtocur[:3, :3]
                 euler_angles = mat2euler(rotation_matrix)

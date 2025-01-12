@@ -35,7 +35,7 @@ def main(args):
     CAMERA = None
     if args.folder:
         from drivers import cameraFile
-        CAMERA = cameraFile.FileCamera(args.folder)
+        CAMERA = cameraFile.FileCamera(camParams, args.folder)
     else:
         try:
             print(parameters[args.camera]['cam_driver'])
@@ -67,26 +67,9 @@ def main(args):
                                                                     "PosZ (fwd)", "RotX (pitch)", "RotY (yaw)",
                                                                     "RotZ (roll)", "PoseErr"))
 
-    # Need to reconstruct K and D
-    if camParams['fisheye']:
-        K = numpy.zeros((3, 3))
-        D = numpy.zeros((4, 1))
-        K[0, 0] = camParams['cam_params'][0]
-        K[1, 1] = camParams['cam_params'][1]
-        K[0, 2] = camParams['cam_params'][2]
-        K[1, 2] = camParams['cam_params'][3]
-        K[2, 2] = 1
-        D[0][0] = camParams['cam_paramsD'][0]
-        D[1][0] = camParams['cam_paramsD'][1]
-        D[2][0] = camParams['cam_paramsD'][2]
-        D[3][0] = camParams['cam_paramsD'][3]
-
     # hold all pose errors to get average at end:
     all_pose_error = []
     all_tags = defaultdict(list)
-
-    map1 = None
-    map2 = None
 
     for i in range(loops):
         print("--------------------------------------")
@@ -100,12 +83,7 @@ def main(args):
 
         # AprilDetect, after accounting for distortion  (if fisheye)
         if camParams['fisheye']:
-            # dim1 is the dimension of input image to un-distort
-            if map1 is None or map2 is None:
-                dim1 = imageBW.shape[:2][::-1]
-                map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-                    K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
-            undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR,
+            undistorted_img = cv2.remap(imageBW, CAMERA.map1, CAMERA.map2, interpolation=cv2.INTER_LINEAR,
                                         borderMode=cv2.BORDER_CONSTANT)
 
             tags = at_detector.detect(
@@ -142,7 +120,7 @@ def main(args):
                                                                                                      tag.pose_err))
     if len(all_pose_error) > 0:
         print("Pose error (1E8) mean: {0:.3f} and Std dev {1:.3f}".format(numpy.mean(all_pose_error),
-                                                                        numpy.std(all_pose_error)))
+                                                                          numpy.std(all_pose_error)))
     # Compute statistics for each tag
     for tag_id, posns in all_tags.items():
         # Convert to NumPy arrays

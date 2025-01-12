@@ -4,6 +4,7 @@ Camera Interfacing for Libcamera
 '''
 
 import time
+import numpy
 import cv2
 from picamera2 import Picamera2
 
@@ -28,6 +29,24 @@ class camera:
 
         self.camParams = camParams
         self.frame = None
+
+        # Need to reconstruct K and D for each camera
+        self.K = numpy.zeros((3, 3))
+        self.D = numpy.zeros((4, 1))
+        self.fisheye = camParams['fisheye']
+        self.dim1 = None
+        self.map1 = None
+        self.map2 = None
+        if camParams['fisheye']:
+            self.K[0, 0] = camParams['cam_params'][0]
+            self.K[1, 1] = camParams['cam_params'][1]
+            self.K[0, 2] = camParams['cam_params'][2]
+            self.K[1, 2] = camParams['cam_params'][3]
+            self.K[2, 2] = 1
+            self.D[0][0] = camParams['cam_paramsD'][0]
+            self.D[1][0] = camParams['cam_paramsD'][1]
+            self.D[2][0] = camParams['cam_paramsD'][2]
+            self.D[3][0] = camParams['cam_paramsD'][3]
 
         # Set camera settings
         config = self.camera.create_still_configuration({"size": (self.camParams['resolution'][0],
@@ -71,6 +90,14 @@ class camera:
 
         # Convert to greyscale
         image = cv2.cvtColor(self.frame, cv2.COLOR_RGB2GRAY)
+
+        # Generate the undistorted image mapping if fisheye
+        if self.fisheye and self.dim1 is None:
+            # Only need to get mapping at first frame
+            # dim1 is the dimension of input image to un-distort
+            self.dim1 = image.shape[:2][::-1]
+            self.map1, self.map2 = cv2.fisheye.initUndistortRectifyMap(
+                self.K, self.D, numpy.eye(3), self.K, self.dim1, cv2.CV_16SC2)
 
         return (image, timestamp)
 

@@ -85,6 +85,9 @@ def main(args):
     all_pose_error = []
     all_tags = defaultdict(list)
 
+    map1 = None
+    map2 = None
+
     for i in range(loops):
         print("--------------------------------------")
         # grab an image from the camera
@@ -98,9 +101,10 @@ def main(args):
         # AprilDetect, after accounting for distortion  (if fisheye)
         if camParams['fisheye']:
             # dim1 is the dimension of input image to un-distort
-            dim1 = imageBW.shape[:2][::-1]
-            map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-                K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
+            if map1 is None or map2 is None:
+                dim1 = imageBW.shape[:2][::-1]
+                map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+                    K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
             undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR,
                                         borderMode=cv2.BORDER_CONSTANT)
 
@@ -138,7 +142,7 @@ def main(args):
                                                                                                      tag.pose_err))
     if len(all_pose_error) > 0:
         print("Pose error (1E8) mean: {0:.3f} and Std dev {1:.3f}".format(numpy.mean(all_pose_error),
-                                                                          numpy.std(all_pose_error)))
+                                                                        numpy.std(all_pose_error)))
     # Compute statistics for each tag
     for tag_id, posns in all_tags.items():
         # Convert to NumPy arrays

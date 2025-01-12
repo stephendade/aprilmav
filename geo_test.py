@@ -136,6 +136,9 @@ def main(args):
         D[2][0] = camParams['cam_paramsD'][2]
         D[3][0] = camParams['cam_paramsD'][3]
 
+    map1 = None
+    map2 = None
+
     for i in range(loops):
         print("--------------------------------------")
 
@@ -151,9 +154,10 @@ def main(args):
         # AprilDetect, after accounting for distortion (if fisheye)
         if camParams['fisheye']:
             # dim1 is the dimension of input image to un-distort
-            dim1 = imageBW.shape[:2][::-1]
-            map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-                K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
+            if map1 is None or map2 is None:
+                dim1 = imageBW.shape[:2][::-1]
+                map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+                    K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
             undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR,
                                         borderMode=cv2.BORDER_CONSTANT)
             tags = at_detector.detect(
@@ -200,7 +204,7 @@ def main(args):
             plt.draw()
             fig.canvas.flush_events()
 
-        print("Time to capture, detect, localise = {0:.2f} ms, {2}/{1} tags".format(time.time() - startTime,
+        print("Time to capture, detect, localise = {0:.2f} ms, {2}/{1} tags".format(1000*(time.time() - startTime),
                                                                                     len(tags),
                                                                                     len(tagPlacement.tagDuplicatesT)))
 

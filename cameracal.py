@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     # initialize the camera
     from drivers import cameraFile
-    camera = cameraFile.FileCamera(args.folder)
+    camera = cameraFile.FileCamera(None, args.folder)
 
     # Chessboard rows and cols
     cbcol = args.cbcol
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     imgpoints = queue.Queue()  # 2d points in image plane.
 
     # how many loops
-    loops = camera.getNumberImages()  
+    loops = camera.getNumberImages()
 
     # Use multithreading to speed up, but limit to number of cores - 1
     max_workers = max(os.cpu_count() - 1, 1)

@@ -48,7 +48,7 @@ def main(args):
     camera = None
     if args.folder:
         from drivers import cameraFile
-        camera = cameraFile.FileCamera(args.folder)
+        camera = cameraFile.FileCamera(camParams, args.folder)
     else:
         try:
             print(parameters[args.camera]['cam_driver'])
@@ -122,23 +122,6 @@ def main(args):
 
         plt.show(block=False)
 
-    # Need to reconstruct K and D
-    if camParams['fisheye']:
-        K = numpy.zeros((3, 3))
-        D = numpy.zeros((4, 1))
-        K[0, 0] = camParams['cam_params'][0]
-        K[1, 1] = camParams['cam_params'][1]
-        K[0, 2] = camParams['cam_params'][2]
-        K[1, 2] = camParams['cam_params'][3]
-        K[2, 2] = 1
-        D[0][0] = camParams['cam_paramsD'][0]
-        D[1][0] = camParams['cam_paramsD'][1]
-        D[2][0] = camParams['cam_paramsD'][2]
-        D[3][0] = camParams['cam_paramsD'][3]
-
-    map1 = None
-    map2 = None
-
     for i in range(loops):
         print("--------------------------------------")
 
@@ -153,12 +136,7 @@ def main(args):
 
         # AprilDetect, after accounting for distortion (if fisheye)
         if camParams['fisheye']:
-            # dim1 is the dimension of input image to un-distort
-            if map1 is None or map2 is None:
-                dim1 = imageBW.shape[:2][::-1]
-                map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-                    K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
-            undistorted_img = cv2.remap(imageBW, map1, map2, interpolation=cv2.INTER_LINEAR,
+            undistorted_img = cv2.remap(imageBW, camera.map1, camera.map2, interpolation=cv2.INTER_LINEAR,
                                         borderMode=cv2.BORDER_CONSTANT)
             tags = at_detector.detect(
                 undistorted_img, True, camParams['cam_params'], args.tagSize/1000)

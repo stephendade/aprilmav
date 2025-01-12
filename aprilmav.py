@@ -285,18 +285,6 @@ if __name__ == '__main__':
     dim1 = None
     map1 = None
     map2 = None
-    if camParams['fisheye']:
-        K = numpy.zeros((3, 3))
-        D = numpy.zeros((4, 1))
-        K[0, 0] = camParams['cam_params'][0]
-        K[1, 1] = camParams['cam_params'][1]
-        K[0, 2] = camParams['cam_params'][2]
-        K[1, 2] = camParams['cam_params'][3]
-        K[2, 2] = 1
-        D[0][0] = camParams['cam_paramsD'][0]
-        D[1][0] = camParams['cam_paramsD'][1]
-        D[2][0] = camParams['cam_paramsD'][2]
-        D[3][0] = camParams['cam_paramsD'][3]
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -336,16 +324,9 @@ if __name__ == '__main__':
         if imageBW is None:
             break
 
-        # AprilDetect, after accounting for distortion (if fisheye)
-        if camParams['fisheye'] and dim1 is None:
-            # Only need to get mapping at first frame
-            # dim1 is the dimension of input image to un-distort
-            dim1 = imageBW.shape[:2][::-1]
-            map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-                K, D, numpy.eye(3), K, dim1, cv2.CV_16SC2)
         if camParams['fisheye']:
             imageBW = cv2.remap(
-                imageBW, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+                imageBW, camera.map1, camera.map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
             # tags = at_detector.detect(undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
         # else:
         tags = at_detector.detect(

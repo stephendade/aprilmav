@@ -115,7 +115,7 @@ def main(args):
 
         # get time to capture and convert
         print("Time to capture and detect = {0:.1f} ms, found {1} tags".format(
-            time.time()*1000 - timestamp, len(tags)))
+            1000*(time.time() - timestamp), len(tags)))
 
         for tag in tags:
 
@@ -136,8 +136,9 @@ def main(args):
                                                                                                      tagrot[1],
                                                                                                      tagrot[2],
                                                                                                      tag.pose_err))
-    print("Pose error (1E8) mean: {0:.3f} and Std dev {1:.3f}".format(numpy.mean(all_pose_error),
-                                                                      numpy.std(all_pose_error)))
+    if len(all_pose_error) > 0:
+        print("Pose error (1E8) mean: {0:.3f} and Std dev {1:.3f}".format(numpy.mean(all_pose_error),
+                                                                          numpy.std(all_pose_error)))
     # Compute statistics for each tag
     for tag_id, posns in all_tags.items():
         # Convert to NumPy arrays

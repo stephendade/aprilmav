@@ -7,19 +7,20 @@ import numpy
 import cv2
 
 from picamera import PiCamera
+from .cameraBase import cameraBase
 
 
-class camera:
+class camera(cameraBase):
     '''A Camera setup and capture class for the PiCamV2'''
 
-    def __init__(self, camParams):
+    def __init__(self, camParams, aprildecimation=1, aprilthreads=1, tagSize=0.1):
         '''Initialise the camera, based on a dict of settings'''
+        super().__init__(camParams, aprildecimation, aprilthreads, tagSize)
 
         if camParams['resolution'][0] % 16 != 0 or camParams['resolution'][1] % 16 != 0:
             print("Error: Camera resolution must be divisible by 16")
             return
 
-        self.camParams = camParams
         self.camera = PiCamera(resolution=camParams['resolution'], framerate=camParams['framerate'],
                                sensor_mode=camParams['sensor_mode'])
 
@@ -49,7 +50,11 @@ class camera:
         # and convert to OpenCV greyscale format
         self.image = self.image.reshape(
             (self.camera.resolution[1], self.camera.resolution[0], 3))
-        return (cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY), timestamp)
+        self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+
+        self.image = self.maybeDoFishEyeConversion(self.image)
+
+        return (self.image, timestamp)
 
     def close(self):
         ''' close the camera'''

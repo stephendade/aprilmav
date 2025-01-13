@@ -4,19 +4,19 @@ Camera Interfacing for a GStreamer pipeline via OpenCV
 
 import time
 import cv2
+from .cameraBase import cameraBase
 
 
-class camera:
+class camera(cameraBase):
     '''A Camera setup and capture class for a GStreamer source via OpenCV'''
 
-    def __init__(self, camParams):
+    def __init__(self, camParams, aprildecimation=1, aprilthreads=1, tagSize=0.1):
         '''Initialise the camera, based on a dict of settings'''
+        super().__init__(camParams, aprildecimation, aprilthreads, tagSize)
 
         if camParams['resolution'][0] % 16 != 0 or camParams['resolution'][1] % 16 != 0:
             print("Error: Camera resolution must be divisible by 16")
             return
-
-        self.camParams = camParams
 
         # Check if OpenCV has GStreamer enabled
         if 'GStreamer:                   YES' not in cv2.getBuildInformation():
@@ -54,8 +54,11 @@ class camera:
 
         timestamp = time.time()
         return_value, image = self.camera.read()
+        imageBW = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        return (cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), timestamp)
+        imageBW = self.maybeDoFishEyeConversion(imageBW)
+
+        return (imageBW, timestamp)
 
     def close(self):
         ''' close the camera'''

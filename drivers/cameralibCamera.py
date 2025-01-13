@@ -6,13 +6,15 @@ Camera Interfacing for Libcamera
 import time
 import cv2
 from picamera2 import Picamera2
+from .cameraBase import cameraBase
 
 
-class camera:
+class camera(cameraBase):
     '''A Camera setup and capture class for Libcamera'''
 
-    def __init__(self, camParams):
+    def __init__(self, camParams, aprildecimation=1, aprilthreads=1, tagSize=0.1):
         '''Initialise the camera, based on a dict of settings'''
+        super().__init__(camParams, aprildecimation, aprilthreads, tagSize)
 
         # find the camera by name
         self.camera = None
@@ -26,7 +28,6 @@ class camera:
             print("Error: Could not find {0}".format(camParams['cam_driver']))
             return
 
-        self.camParams = camParams
         self.frame = None
 
         # Set camera settings
@@ -71,6 +72,8 @@ class camera:
 
         # Convert to greyscale
         image = cv2.cvtColor(self.frame, cv2.COLOR_RGB2GRAY)
+
+        image = self.maybeDoFishEyeConversion(image)
 
         return (image, timestamp)
 

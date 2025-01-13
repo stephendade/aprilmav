@@ -8,6 +8,7 @@ Distance is relative to the camera's sensor in 3 dimensions.
 
 '''
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import argparse
 import sys
@@ -16,10 +17,8 @@ from importlib import import_module
 from collections import defaultdict
 
 import numpy
-import cv2
 import yaml
 
-from pyapriltags import Detector
 from modules.geo import getPos, getTransform, getRotation
 
 
@@ -27,97 +26,96 @@ def main(args):
     print("Initialising")
 
     # Open camera settings
-    with open('camera.yaml', 'r', encoding="utf-8") as stream:
+    with open(args.yaml, 'r', encoding="utf-8") as stream:
         parameters = yaml.load(stream, Loader=yaml.FullLoader)
-    camParams = parameters[args.camera]
 
-    # initialize the camera
-    CAMERA = None
-    if args.folder:
+    # initialize the camera(s)
+    CAMERA = []
+    if args.multicamera != "":
+        workers = int(os.cpu_count() / len(args.multicamera.split(","))) - 1
+        for cam in args.multicamera.split(","):
+            try:
+                print(parameters[cam]['cam_driver'])
+                mod = import_module("drivers." + parameters[cam]['cam_driver'])
+                CAMERA.append(mod.camera(parameters[cam], args.decimation,
+                                         workers, args.tagSize/1000))
+            except (ImportError, KeyError):
+                print('No camera with the name {0}, exiting'.format(cam))
+                sys.exit(0)
+    elif args.folder:
+        workers = os.cpu_count() - 1
         from drivers import cameraFile
-        CAMERA = cameraFile.FileCamera(camParams, args.folder)
+        CAMERA.append(cameraFile.FileCamera(parameters[args.camera], args.folder,
+                                            args.decimation, workers, args.tagSize/1000))
     else:
         try:
+            workers = os.cpu_count() - 1
             print(parameters[args.camera]['cam_driver'])
             mod = import_module("drivers." + parameters[args.camera]['cam_driver'])
-            CAMERA = mod.camera(parameters[args.camera])
+            CAMERA.append(mod.camera(parameters[args.camera], args.decimation,
+                                     workers, args.tagSize/1000))
         except (ImportError, KeyError):
             print('No camera with the name {0}, exiting'.format(args.camera))
             sys.exit(0)
 
-    # allow the camera to warmup
+    # allow the cameras to warmup
     time.sleep(2)
 
-    at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
-                           families='tagStandard41h12',
-                           nthreads=max(1, os.cpu_count() - 1),
-                           quad_decimate=args.decimation,
-                           quad_sigma=0.0,
-                           refine_edges=1,
-                           decode_sharpening=0.25,
-                           debug=0)
-
     # how many loops
-    loops = CAMERA.getNumberImages() if CAMERA.getNumberImages() else args.loop
+    # loops = CAMERA.getNumberImages() if CAMERA.getNumberImages() else args.loop
+    loops = min([C.getNumberImages() for C in CAMERA]) if CAMERA[0].getNumberImages() else args.loop
 
     print("Starting {0} image capture and process...".format(loops))
 
     with open(args.outfile, "w+", encoding="utf-8") as outfile:
         outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)",
-                                                                    "PosZ (fwd)", "RotX (pitch)", "RotY (yaw)",
-                                                                    "RotZ (roll)", "PoseErr"))
+                                                                     "PosZ (fwd)", "RotX (pitch)", "RotY (yaw)",
+                                                                     "RotZ (roll)", "PoseErr"))
 
     # hold all pose errors to get average at end:
     all_pose_error = []
     all_tags = defaultdict(list)
-
     for i in range(loops):
         print("--------------------------------------")
-        # grab an image from the camera
-        file = CAMERA.getFileName()
-        (imageBW, timestamp) = CAMERA.getImage()
+        tags = []
+        executor = ThreadPoolExecutor(max_workers=len(CAMERA))
+        futures = []
+        for CAM in CAMERA:
+            # grab an image from the camera
+            file = CAM.getFileName()
+            if file:
+                print("File: {0} ({1}/{2})".format(file, i, loops))
+            # (imageBW, timestamp) = CAM.getImage()
+            futures.append(executor.submit(CAM.getApriltagsandImage))
 
-        # we're out of images
-        if imageBW is None:
-            break
+        # wait for all threads to finish
+        for future in as_completed(futures):
+            tags, timestamp = future.result()
 
-        # AprilDetect, after accounting for distortion  (if fisheye)
-        if camParams['fisheye']:
-            undistorted_img = cv2.remap(imageBW, CAMERA.map1, CAMERA.map2, interpolation=cv2.INTER_LINEAR,
-                                        borderMode=cv2.BORDER_CONSTANT)
+            # get time to capture and convert
+            print("Time to capture and detect = {0:.1f} ms, found {1} tags".format(
+                1000*(time.time() - timestamp), len(tags)))
 
-            tags = at_detector.detect(
-                undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
-        else:
-            tags = at_detector.detect(
-                imageBW, True, camParams['cam_params'], args.tagSize/1000)
+            # TODO: figure out how to works with all the tags, with different pos/rot
+            for tag in tags:
 
-        if file:
-            print("File: {0} ({1}/{2})".format(file, i, loops))
+                tagpos = getPos(getTransform(tag))
+                tagrot = getRotation(getTransform(tag))
+                all_pose_error.append(tag.pose_err*1E8)
+                all_tags[tag.tag_id].append(tagpos)
 
-        # get time to capture and convert
-        print("Time to capture and detect = {0:.1f} ms, found {1} tags".format(
-            1000*(time.time() - timestamp), len(tags)))
-
-        for tag in tags:
-
-            tagpos = getPos(getTransform(tag))
-            tagrot = getRotation(getTransform(tag))
-            all_pose_error.append(tag.pose_err*1E8)
-            all_tags[tag.tag_id].append(tagpos)
-
-            print("Tag {0} pos = {1} m, Rot = {2} deg. ErrE8 = {3:.4f}".format(tag.tag_id, tagpos.round(3),
-                                                                               tagrot.round(1), tag.pose_err*1E8))
-            with open(args.outfile, "w+", encoding="utf-8") as outfile:
-                outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
-                                                                                                     tag.tag_id,
-                                                                                                     tagpos[0],
-                                                                                                     tagpos[1],
-                                                                                                     tagpos[2],
-                                                                                                     tagrot[0],
-                                                                                                     tagrot[1],
-                                                                                                     tagrot[2],
-                                                                                                     tag.pose_err))
+                print("Tag {0} pos = {1} m, Rot = {2} deg. ErrE8 = {3:.4f}".format(tag.tag_id, tagpos.round(3),
+                                                                                   tagrot.round(1), tag.pose_err*1E8))
+                with open(args.outfile, "w+", encoding="utf-8") as outfile:
+                    outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
+                                                                                                         tag.tag_id,
+                                                                                                         tagpos[0],
+                                                                                                         tagpos[1],
+                                                                                                         tagpos[2],
+                                                                                                         tagrot[0],
+                                                                                                         tagrot[1],
+                                                                                                         tagrot[2],
+                                                                                                         tag.pose_err))
     if len(all_pose_error) > 0:
         print("Pose error (1E8) mean: {0:.3f} and Std dev {1:.3f}".format(numpy.mean(all_pose_error),
                                                                           numpy.std(all_pose_error)))
@@ -145,5 +143,9 @@ if __name__ == '__main__':
                         help="Output tag data to this file")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
+    parser.add_argument("--multicamera", type=str, default="",
+                        help="csv list of camera profiles to use. Overrides --camera")
+    parser.add_argument("--yaml", type=str, default="camera.yaml",
+                        help="Camera parameters file")
     args = parser.parse_args()
     main(args)

@@ -3,7 +3,6 @@ Camera Interfacing for the ArduCam UC-580 (OV9281 Global Shutter)
 '''
 
 import time
-import numpy
 import cv2
 from . import arducam_mipicamera as arducam
 from .cameraBase import cameraBase
@@ -12,10 +11,14 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for the ArduCam UC580'''
 
-    def __init__(self, camParams):
+    def __init__(self, camParams, aprildecimation=1, aprilthreads=1, tagSize=0.1):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams)
+        super().__init__(camParams, aprildecimation, aprilthreads, tagSize)
 
+        if camParams['resolution'][0] % 16 != 0 or camParams['resolution'][1] % 16 != 0:
+            print("Error: Camera resolution must be divisible by 16")
+            return
+    
         self.camera = arducam.mipi_camera()
         self.camera.halfres = camParams['halfres']
         self.frame = None

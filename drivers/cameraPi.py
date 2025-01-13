@@ -13,9 +13,13 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for the PiCamV2'''
 
-    def __init__(self, camParams):
+    def __init__(self, camParams, aprildecimation=1, aprilthreads=1, tagSize=0.1):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams)
+        super().__init__(camParams, aprildecimation, aprilthreads, tagSize)
+
+        if camParams['resolution'][0] % 16 != 0 or camParams['resolution'][1] % 16 != 0:
+            print("Error: Camera resolution must be divisible by 16")
+            return
 
         self.camera = PiCamera(resolution=camParams['resolution'], framerate=camParams['framerate'],
                                sensor_mode=camParams['sensor_mode'])

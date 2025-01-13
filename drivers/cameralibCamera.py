@@ -4,7 +4,6 @@ Camera Interfacing for Libcamera
 '''
 
 import time
-import numpy
 import cv2
 from picamera2 import Picamera2
 from .cameraBase import cameraBase
@@ -13,9 +12,9 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for Libcamera'''
 
-    def __init__(self, camParams):
+    def __init__(self, camParams, aprildecimation=1, aprilthreads=1, tagSize=0.1):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams)
+        super().__init__(camParams, aprildecimation, aprilthreads, tagSize)
 
         # find the camera by name
         self.camera = None

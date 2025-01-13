@@ -11,9 +11,9 @@ from .cameraBase import cameraBase
 class FileCamera(cameraBase):
     '''A Camera setup and capture class'''
 
-    def __init__(self, camParams, folder="."):
+    def __init__(self, camParams, folder=".", aprildecimation=1, aprilthreads=1, tagSize=0.1):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams)
+        super().__init__(camParams, aprildecimation, aprilthreads, tagSize)
 
         self.images = [
             os.path.join(folder, file)
@@ -34,7 +34,7 @@ class FileCamera(cameraBase):
 
         if len(self.images) == 0:
             print("Warning: FileCamera out of images")
-            return None
+            return None, None
 
         try:
             basename = os.path.splitext(os.path.basename(self.images[0]))[0]

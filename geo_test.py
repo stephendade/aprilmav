@@ -135,14 +135,8 @@ def main(args):
             break
 
         # AprilDetect, after accounting for distortion (if fisheye)
-        if camParams['fisheye']:
-            undistorted_img = cv2.remap(imageBW, camera.map1, camera.map2, interpolation=cv2.INTER_LINEAR,
-                                        borderMode=cv2.BORDER_CONSTANT)
-            tags = at_detector.detect(
-                undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
-        else:
-            tags = at_detector.detect(
-                imageBW, True, camParams['cam_params'], args.tagSize/1000)
+        tags = at_detector.detect(
+            imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
         # add any new tags to database, or existing one to duplicates
         tagsused = 0

@@ -324,11 +324,6 @@ if __name__ == '__main__':
         if imageBW is None:
             break
 
-        if camParams['fisheye']:
-            imageBW = cv2.remap(
-                imageBW, camera.map1, camera.map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-            # tags = at_detector.detect(undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
-        # else:
         tags = at_detector.detect(
             imageBW, True, camParams['cam_params'], args.tagSize/1000)
 

@@ -82,15 +82,8 @@ def main(args):
             break
 
         # AprilDetect, after accounting for distortion  (if fisheye)
-        if camParams['fisheye']:
-            undistorted_img = cv2.remap(imageBW, CAMERA.map1, CAMERA.map2, interpolation=cv2.INTER_LINEAR,
-                                        borderMode=cv2.BORDER_CONSTANT)
-
-            tags = at_detector.detect(
-                undistorted_img, True, camParams['cam_params'], args.tagSize/1000)
-        else:
-            tags = at_detector.detect(
-                imageBW, True, camParams['cam_params'], args.tagSize/1000)
+        tags = at_detector.detect(
+            imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
         if file:
             print("File: {0} ({1}/{2})".format(file, i, loops))

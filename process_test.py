@@ -16,7 +16,6 @@ from importlib import import_module
 from collections import defaultdict
 
 import numpy
-import cv2
 import yaml
 
 from pyapriltags import Detector

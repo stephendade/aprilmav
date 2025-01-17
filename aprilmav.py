@@ -15,7 +15,6 @@ import os
 
 import yaml
 import numpy
-import cv2
 
 from pyapriltags import Detector
 from pymavlink import mavutil

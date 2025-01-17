@@ -18,7 +18,6 @@ import os
 from importlib import import_module
 import yaml
 import numpy
-import cv2
 
 from pyapriltags import Detector
 from modules.geo import tagDB

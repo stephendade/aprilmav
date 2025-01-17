@@ -4,7 +4,6 @@ Camera Interfacing for a GStreamer pipeline via OpenCV
 
 import time
 import cv2
-import numpy
 from .cameraBase import cameraBase
 
 

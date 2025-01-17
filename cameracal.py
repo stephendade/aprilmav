@@ -13,16 +13,32 @@ This can be run over a folder of pre-captured images from any camera
 '''
 import argparse
 import os
-import cv2
-import numpy
 import queue
 from concurrent.futures import ThreadPoolExecutor
 
+import cv2
+import numpy
+
 
 def getImagepoints(image, i, loops, cbcol, cbrow, objpoints, imgpoints):
-    ret, corners = cv2.findChessboardCorners(
+    """
+    Detects chessboard corners in the given image and refines their coordinates.
+
+    Parameters:
+    image (numpy.ndarray): The input image in which to detect chessboard corners.
+    i (int): The current image index in the loop.
+    loops (int): The total number of images to process.
+    cbcol (int): The number of inner corners per a chessboard row.
+    cbrow (int): The number of inner corners per a chessboard column.
+    objpoints (list): The list to store the object points (3D points in real world space).
+    imgpoints (list): The list to store the image points (2D points in image plane).
+
+    Returns:
+    None
+    """
+    pret, corners = cv2.findChessboardCorners(
         image, (cbcol, cbrow), flags=cv2.CALIB_CB_ADAPTIVE_THRESH)
-    if ret:
+    if pret:
         print("Found chessboard in image {0}/{1}".format(i, loops))
         corners2 = cv2.cornerSubPix(image, corners, (11, 11), (-1, -1),
                                     (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01))

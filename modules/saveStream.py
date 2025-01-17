@@ -35,10 +35,10 @@ class saveThread(threading.Thread):
             img_width = imageColour.shape[1]
             scale = img_width / 3 / 500  # Assuming 50 is the base width for scaling
 
-            cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, int(30 * scale)),
-                        cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 255), int(2 * scale))
-            cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, int(60 * scale)),
-                        cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 255), int(2 * scale))
+            cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]),
+                        (10, int(30 * scale)), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 255), int(2 * scale))
+            cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]),
+                        (10, int(60 * scale)), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 255), int(2 * scale))
             imageColour = self.labelTags(imageColour, tags)
             cv2.imwrite(filename, imageColour, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 

@@ -3,7 +3,6 @@ Camera Interfacing for the ArduCam UC-580 (OV9281 Global Shutter)
 '''
 
 import time
-import numpy
 import cv2
 from . import arducam_mipicamera as arducam
 from .cameraBase import cameraBase
@@ -41,7 +40,7 @@ class camera(cameraBase):
         '''Get current file in camera'''
         return None
 
-    def getImage(self):
+    def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera '''
 
         timestamp = time.time()
@@ -59,7 +58,8 @@ class camera(cameraBase):
             imageCrop = cv2.resize(
                 imageCrop, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
 
-        imageCrop = self.maybeDoFishEyeConversion(imageCrop)
+        if not get_raw:
+            imageCrop = self.maybeDoFishEyeConversion(imageCrop)
 
         return (imageCrop, timestamp)
 

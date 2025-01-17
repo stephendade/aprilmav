@@ -29,7 +29,7 @@ class FileCamera(cameraBase):
         '''Get number of loaded images'''
         return len(self.images)
 
-    def getImage(self):
+    def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera and time of capture (sec since epoch)'''
 
         if len(self.images) == 0:
@@ -44,7 +44,8 @@ class FileCamera(cameraBase):
         img = cv2.imread(self.images.pop(0), cv2.IMREAD_GRAYSCALE)
         # img = cv2.fastNlMeansDenoising(img,None, 3, 5, 17)
 
-        img = self.maybeDoFishEyeConversion(img)
+        if not get_raw:
+            img = self.maybeDoFishEyeConversion(img)
 
         return (img, timestamp)
 

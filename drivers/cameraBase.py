@@ -12,29 +12,36 @@ class cameraBase:
     def __init__(self, camParams):
         '''Initialise the camera, based on a dict of settings'''
 
-        if camParams['resolution'][0] % 16 != 0 or camParams['resolution'][1] % 16 != 0:
-            print("Error: Camera resolution must be divisible by 16")
-            return
+        try:
+            if camParams['resolution'][0] % 16 != 0 or camParams['resolution'][1] % 16 != 0:
+                print("Error: Camera resolution must be divisible by 16")
+                return
+        except TypeError:
+            # for camercal, camParams['resolution'] is not defined
+            pass
 
         self.camParams = camParams
 
-        # Need to reconstruct K and D for each camera
-        self.K = numpy.zeros((3, 3))
-        self.D = numpy.zeros((4, 1))
-        self.fisheye = camParams['fisheye']
-        self.dim1 = None
-        self.map1 = None
-        self.map2 = None
-        if camParams['fisheye']:
-            self.K[0, 0] = camParams['cam_params'][0]
-            self.K[1, 1] = camParams['cam_params'][1]
-            self.K[0, 2] = camParams['cam_params'][2]
-            self.K[1, 2] = camParams['cam_params'][3]
-            self.K[2, 2] = 1
-            self.D[0][0] = camParams['cam_paramsD'][0]
-            self.D[1][0] = camParams['cam_paramsD'][1]
-            self.D[2][0] = camParams['cam_paramsD'][2]
-            self.D[3][0] = camParams['cam_paramsD'][3]
+        try:
+            # Need to reconstruct K and D for each camera
+            self.K = numpy.zeros((3, 3))
+            self.D = numpy.zeros((4, 1))
+            self.fisheye = camParams['fisheye']
+            self.dim1 = None
+            self.map1 = None
+            self.map2 = None
+            if camParams['fisheye']:
+                self.K[0, 0] = camParams['cam_params'][0]
+                self.K[1, 1] = camParams['cam_params'][1]
+                self.K[0, 2] = camParams['cam_params'][2]
+                self.K[1, 2] = camParams['cam_params'][3]
+                self.K[2, 2] = 1
+                self.D[0][0] = camParams['cam_paramsD'][0]
+                self.D[1][0] = camParams['cam_paramsD'][1]
+                self.D[2][0] = camParams['cam_paramsD'][2]
+                self.D[3][0] = camParams['cam_paramsD'][3]
+        except (KeyError, IndexError, TypeError):
+            pass
 
     def getNumberImages(self):
         '''Get number of loaded images'''
@@ -62,7 +69,7 @@ class cameraBase:
         else:
             return image
 
-    def getImage(self):
+    def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera '''
         return None
 

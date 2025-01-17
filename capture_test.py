@@ -74,7 +74,7 @@ if __name__ == '__main__':
     worker.start()
 
     for i in range(args.loop):
-        (imageBW, timestamp) = camera.getImage()
+        (imageBW, timestamp) = camera.getImage(get_raw=True)
 
         # get time to capture and convert
         print("Captured {0:.0f}.png in {1:.0f}ms ({2}/{3})".format(

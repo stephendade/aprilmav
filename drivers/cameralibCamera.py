@@ -4,7 +4,6 @@ Camera Interfacing for Libcamera
 '''
 
 import time
-import numpy
 import cv2
 from picamera2 import Picamera2
 from .cameraBase import cameraBase
@@ -65,7 +64,7 @@ class camera(cameraBase):
         '''Get current file in camera'''
         return None
 
-    def getImage(self):
+    def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera '''
 
         timestamp = time.time()
@@ -74,7 +73,8 @@ class camera(cameraBase):
         # Convert to greyscale
         image = cv2.cvtColor(self.frame, cv2.COLOR_RGB2GRAY)
 
-        image = self.maybeDoFishEyeConversion(image)
+        if not get_raw:
+            image = self.maybeDoFishEyeConversion(image)
 
         return (image, timestamp)
 

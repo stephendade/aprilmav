@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     for i in range(loops):
         # grab an image from the camera
-        (grey, timestamp) = camera.getImage()
+        (grey, timestamp) = camera.getImage(get_raw=True)
 
         if args.halfres:
             grey = cv2.resize(grey, None, fx=0.5, fy=0.5,

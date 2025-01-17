@@ -46,14 +46,15 @@ class camera(cameraBase):
         '''Get current file in camera'''
         return None
 
-    def getImage(self):
+    def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera '''
 
         timestamp = time.time()
         return_value, image = self.camera.read()
         imageBW = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        imageBW = self.maybeDoFishEyeConversion(imageBW)
+        if not get_raw:
+            imageBW = self.maybeDoFishEyeConversion(imageBW)
 
         return (imageBW, timestamp)
 

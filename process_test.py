@@ -34,12 +34,12 @@ def main(args):
     CAMERA = None
     if args.folder:
         from drivers import cameraFile
-        CAMERA = cameraFile.FileCamera(camParams, args.folder)
+        CAMERA = cameraFile.FileCamera(camParams, args.folder, args.jetson)
     else:
         try:
             print(parameters[args.camera]['cam_driver'])
             mod = import_module("drivers." + parameters[args.camera]['cam_driver'])
-            CAMERA = mod.camera(parameters[args.camera])
+            CAMERA = mod.camera(parameters[args.camera], args.jetson)
         except (ImportError, KeyError):
             print('No camera with the name {0}, exiting'.format(args.camera))
             sys.exit(0)

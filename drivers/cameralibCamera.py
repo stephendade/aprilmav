@@ -12,9 +12,9 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for Libcamera'''
 
-    def __init__(self, camParams):
+    def __init__(self, camParams, use_jetson=False):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams)
+        super().__init__(camParams, use_jetson)
 
         # find the camera by name
         self.camera = None
@@ -81,4 +81,5 @@ class camera(cameraBase):
     def close(self):
         ''' close the camera'''
         # self.camera.close_camera()
+        super().close()
         del self.frame

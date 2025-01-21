@@ -239,6 +239,8 @@ if __name__ == '__main__':
                         default=5, help="Use moving average of N frames")
     parser.add_argument('--extraopt', dest='extraopt', help="Optimise best position better",
                         default=False, action='store_true')
+    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+                        default=False, action='store_true')
     args = parser.parse_args()
 
     print("Initialising")
@@ -253,7 +255,7 @@ if __name__ == '__main__':
     try:
         print(parameters[args.camera]['cam_driver'])
         mod = import_module("drivers." + parameters[args.camera]['cam_driver'])
-        camera = mod.camera(parameters[args.camera])
+        camera = mod.camera(parameters[args.camera], args.jetson)
     except (ImportError, KeyError):
         print('No camera with the name {0}, exiting'.format(args.camera))
         sys.exit(0)

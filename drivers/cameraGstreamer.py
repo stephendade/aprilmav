@@ -10,9 +10,9 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for a GStreamer source via OpenCV'''
 
-    def __init__(self, camParams):
+    def __init__(self, camParams, use_jetson=False):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams)
+        super().__init__(camParams, use_jetson)
 
         # Check if OpenCV has GStreamer enabled
         if 'GStreamer:                   YES' not in cv2.getBuildInformation():
@@ -59,4 +59,5 @@ class camera(cameraBase):
 
     def close(self):
         ''' close the camera'''
+        super().close()
         del self.camera

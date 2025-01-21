@@ -70,7 +70,7 @@ def main(args):
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging,
+    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraopt,
                          campos=camParams['positionRelVehicle'], camrot=camParams['rotationRelVehicle'])
 
     # how many loops
@@ -218,12 +218,12 @@ if __name__ == '__main__':
                         default=False, action='store_true')
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
-    parser.add_argument("--maxjump", type=int,
-                        default=0.5, help="Maximum position change allowed between frames in cm")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
     parser.add_argument("--imageFolder", type=str, default="",
                         help="Save processed images to this folder")
+    parser.add_argument('--extraopt', dest='extraopt', help="Optimise best position better",
+                        default=False, action='store_true')
     args = parser.parse_args()
 
     main(args)

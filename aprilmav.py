@@ -233,12 +233,12 @@ if __name__ == '__main__':
                         help="Output video to port, 0 to disable")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
-    parser.add_argument("--maxjump", type=int,
-                        default=0.5, help="Maximum position change allowed between frames in cm")
     parser.add_argument("--calframes", type=int,
                         default=10, help="Use this many frames at the start for calibration")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
+    parser.add_argument('--extraopt', dest='extraopt', help="Optimise best position better",
+                        default=False, action='store_true')
     args = parser.parse_args()
 
     print("Initialising")
@@ -271,7 +271,7 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(maxjump=args.maxjump/100, slidingWindow=args.averaging,
+    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraopt,
                          campos=camParams['positionRelVehicle'], camrot=camParams['rotationRelVehicle'])
 
     # left, up, fwd, pitch, yaw, roll

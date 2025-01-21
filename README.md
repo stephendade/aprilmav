@@ -91,7 +91,7 @@ $ aprilmav.py
 - ``--imageFolder``   Save processed images to this folder
 - ``--video``         Output video to port, 0 to disable
 - ``--decimation``    Apriltag decimation. Tradeoff against detection speed and accuracy.
-- ``--maxjump=N``     Ignore any frame-to-frame position jumps of more than N cm
+- ``--extraopt``      Optimise detected position better. Uses a lot of extra CPU.
 - ``--calframes=N``   Use N image frames at the start to determine the position man and std dev. The vehicle must be stationary during this time. Only applicable if ``--stddev`` is used
 - ``--averaging=N``   Use a moving average of N frames for determining position and velocity.
 

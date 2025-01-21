@@ -28,9 +28,9 @@ def test_geo_execution():
         --outfile (str): File to output tag data (default: "geo_test_results.csv").
         --gui (bool): Display GUI (default: False).
         --decimation (int): Apriltag decimation (default: 2).
-        --maxjump (float): Maximum position change allowed between frames in cm (default: 0.5).
         --averaging (int): Use moving average of N frames (default: 5).
         --imageFolder (str): Folder to save processed images (default: "").
+        --extraopt (bool): Optimise best position better (default: False).
 
     Raises:
         AssertionError: If the output file "geo_test_results.csv" does not exist.
@@ -52,12 +52,12 @@ def test_geo_execution():
                         default=False, action='store_true')
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
-    parser.add_argument("--maxjump", type=int,
-                        default=0.5, help="Maximum position change allowed between frames in cm")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
     parser.add_argument("--imageFolder", type=str, default="",
                         help="Save processed images to this folder")
+    parser.add_argument('--extraopt', dest='extraopt', help="Optimise best position better",
+                        default=True, action='store_true')
     args = parser.parse_args()
     geo_test.main(args)
     assert os.path.exists("geo_test_results.csv")

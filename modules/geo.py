@@ -52,7 +52,7 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=False, maxjump=0.1, slidingWindow=5, campos=(0, 0, 0), camrot=(0, 0, 0)):
+    def __init__(self, debug=False, maxjump=0.1, slidingWindow=5, campos=(0, 0, 0), camrot=(0, 0, 0), extraOpt=False):
         self.T_VehToWorld = deque(maxlen=slidingWindow+1)
         self.timestamps = deque(maxlen=slidingWindow+1)
         self.T_VehToWorldFiltered = deque(maxlen=slidingWindow+1)
@@ -73,6 +73,7 @@ class tagDB:
         self.T_VehToWorldFiltered.append(numpy.array(numpy.eye((4))))
         self.T_VehToWorldFiltered.append(numpy.array(numpy.eye((4))))
         self.slidingWindow = slidingWindow
+        self.extraOpt = extraOpt
         # Define a threshold for Z-scores to identify outliers
         self.threshold = 2
 
@@ -139,28 +140,12 @@ class tagDB:
     def generateReportedLoc(self, timestamp):
         '''Generate the vehicle's current position
          and velocity and rotation in ArduPilot NED format,
-         noting that Apriltag is coords are right, fwd, up (ENU).
-         This assumes camera is on top of vehicle, bottom of camera facing fwd
+         noting that Apriltag coords are (image right, image down, image out) relative to camera.
          Timestamp is seconds since epoch'''
-        # Check for any large jumps in position between
-        # t and t-1 and t-2 and ignore accordingly
-        if (self.is_large_jump(self.T_VehToWorld[-1], self.T_VehToWorld[-2]) and
-           self.is_large_jump(self.T_VehToWorld[-2], self.T_VehToWorld[-3]) and
-           len(self.timestampsFiltered) > 2):
-            if self.debug:
-                print("Ignoring jump1")
-            self.T_VehToWorldFiltered.append(self.T_VehToWorld[-3])
-            self.timestampsFiltered.append(self.timestamps[-3])
-        elif self.is_large_jump(self.T_VehToWorld[-1], self.T_VehToWorld[-2]) and len(self.timestampsFiltered) > 2:
-            if self.debug:
-                print("Ignoring jump2")
-            self.T_VehToWorldFiltered.append(self.T_VehToWorld[-2])
-            self.timestampsFiltered.append(self.timestamps[-2])
-        else:
-            self.T_VehToWorldFiltered.append(self.T_VehToWorld[-1])
-            self.timestampsFiltered.append(self.timestamps[-1])
+        self.T_VehToWorldFiltered.append(self.T_VehToWorld[-1])
+        self.timestampsFiltered.append(self.timestamps[-1])
 
-        # Generate position, rotation in ArduPilot format, average 5 times (SMA)
+        # Generate position, rotation in ArduPilot format, average 5 times (SMA) if required
         averagedpos = []
         averagedrot = []
         for i in range(1, self.slidingWindow+1):
@@ -168,7 +153,7 @@ class tagDB:
                 averagedpos.append(getPos(self.T_VehToWorldFiltered[-i]))
                 averagedrot.append(getRotation(self.T_VehToWorldFiltered[-i], True))
         # only start filtering when we have enough data
-        if len(self.T_VehToWorldFiltered) > self.slidingWindow:
+        if self.slidingWindow > 0 and len(self.T_VehToWorldFiltered) > self.slidingWindow:
             self.reportedPos = self.zscoreFilter(averagedpos)
             self.reportedRot = self.zscoreFilter(averagedrot)
         else:
@@ -178,7 +163,7 @@ class tagDB:
         # store the delta velocity
         delta = numpy.array(self.reportedPos) - numpy.array(self.reportedPosPrev)
         self.deltaVelocityFiltered.append(delta / (timestamp - self.reportedTimestampPrev))
-        if len(self.deltaVelocityFiltered) > self.slidingWindow:
+        if self.slidingWindow > 0 and len(self.deltaVelocityFiltered) > self.slidingWindow:
             self.reportedVelocity = self.zscoreFilter(self.deltaVelocityFiltered)
         else:  # not enough data yet
             self.reportedVelocity = self.deltaVelocityFiltered[-1]
@@ -257,18 +242,20 @@ class tagDB:
                 if self.debug:
                     print("Trying tag {0}".format(tagid))
                 # t is the time now, t-1 is the previous frame - where T_VehToWorld is at this point
-                # tag is the same world position at both orig and duplicate
+                # tag duplicate (tagDB) is the world frame
+                # new tag is in the vehicle frame
                 # World frame is time-independent
-                # TOrig(World<-Tag) = T(World <- veh_t) * TDup(veh_t <-Tag)
+                # TTagDB(World<-Tag) = TVeh(World <- veh_t) * TNewTag(veh_t <-Tag)
                 # and:
-                # T(World <- veh_t-1) = T(World <- veh_t) * T(veh_t <- veh_t-1)
+                # TVeh(World <- veh_t-1) = TVeh(World <- veh_t) * TVeh(veh_t <- veh_t-1)
                 #
                 # Thus
-                # T(World <- veh_t) = T(World <- veh_t-1) * T(veh_t <- veh_t-1)^-1
+                # TVeh(World <- veh_t) = TVeh(World <- veh_t-1) * TVeh(veh_t <- veh_t-1)^-1
                 # then
-                # TOrig(World<-Tag) = T(World <- veh_t-1) * T(veh_t <- veh_t-1)^-1 * TDup(veh_t<-Tag)
+                # TTagDB(World<-Tag) = TVeh(World <- veh_t-1) * TVeh(veh_t <- veh_t-1)^-1 * TNewTag(veh_t<-Tag)
+                #
                 # Thus
-                # T(veh_t <- veh_t-1) = TDup(veh_t<-Tag) * TOrig(World<-Tag)^-1 * T(World <- veh_t-1)
+                # TVeh(veh_t <- veh_t-1) = TNewTag(veh_t<-Tag) * TTagDB(World<-Tag)^-1 * TVeh(World <- veh_t-1)
                 Ttprevtocur = tagT @ numpy.linalg.inv(
                     self.tagPlacement[tagid]) @ self.T_VehToWorld[-1]
                 # print("tagT =\n{0}".format(tagT))
@@ -279,8 +266,7 @@ class tagDB:
                 for tagidj, tagTj in self.tagDuplicatesT.items():
                     PosDelta = self.tagPlacement[tagidj] @ [[0], [0], [0], [
                         1]] - self.T_VehToWorld[-1] @ numpy.linalg.inv(Ttprevtocur) @ tagTj @ [[0], [0], [0], [1]]
-                    if summeddist < 0.5:
-                        summeddist += mag(PosDelta)
+                    summeddist += mag(PosDelta)
 
                 if lowestCost > summeddist:
                     if self.debug:
@@ -288,45 +274,50 @@ class tagDB:
                             tagid, summeddist))
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur
+                else:
+                    if self.debug:
+                        print("Ignoring tag {0} with error {1:.3f}m".format(
+                            tagid, summeddist))
 
             # now iterate the bestTransform a little to see if we can get a better fit
-            step_size = 0.01
-            for _ in range(100):
-                # Generate small changes to the rotation part
-                rotation_matrix = Ttprevtocur[:3, :3]
-                euler_angles = mat2euler(rotation_matrix)
-                delta_euler = numpy.random.randn(3) * step_size
-                new_euler_angles = euler_angles + delta_euler
-                new_rotation_matrix = euler2mat(*new_euler_angles)
+            if self.extraOpt:
+                step_size = 0.01
+                for _ in range(100):
+                    # Generate small changes to the rotation part
+                    rotation_matrix = Ttprevtocur[:3, :3]
+                    euler_angles = mat2euler(rotation_matrix)
+                    delta_euler = numpy.random.randn(3) * step_size
+                    new_euler_angles = euler_angles + delta_euler
+                    new_rotation_matrix = euler2mat(*new_euler_angles)
 
-                # Generate small changes to the translation part
-                translation_vector = Ttprevtocur[:3, 3]
-                delta_translation = numpy.random.randn(3) * step_size
-                new_translation_vector = translation_vector + delta_translation
+                    # Generate small changes to the translation part
+                    translation_vector = Ttprevtocur[:3, 3]
+                    delta_translation = numpy.random.randn(3) * step_size
+                    new_translation_vector = translation_vector + delta_translation
 
-                # Construct the new transformation matrix
-                new_transform = numpy.eye(4)
-                new_transform[:3, :3] = new_rotation_matrix
-                new_transform[:3, 3] = new_translation_vector
+                    # Construct the new transformation matrix
+                    new_transform = numpy.eye(4)
+                    new_transform[:3, :3] = new_rotation_matrix
+                    new_transform[:3, 3] = new_translation_vector
 
-                # Calculate the cost for the new transform
-                summeddist = 0
-                for tagidj, tagTj in self.tagDuplicatesT.items():
-                    PosDelta = self.tagPlacement[tagidj] @ [[0], [0], [0], [
-                        1]] - self.T_VehToWorld[-1] @ numpy.linalg.inv(new_transform) @ tagTj @ [[0], [0], [0], [1]]
-                    if summeddist < 0.5:
+                    # Calculate the cost for the new transform
+                    summeddist = 0
+                    for tagidj, tagTj in self.tagDuplicatesT.items():
+                        PosDelta = self.tagPlacement[tagidj] @ [[0], [0], [0], [
+                            1]] - self.T_VehToWorld[-1] @ numpy.linalg.inv(new_transform) @ tagTj @ [[0], [0], [0], [1]]
                         summeddist += mag(PosDelta)
 
-                # Update the best transform if the new cost is lower
-                if lowestCost > summeddist:
-                    if self.debug:
-                        print("Optimising with error {0:.3f}m".format(summeddist))
-                    lowestCost = summeddist
-                    bestTransform = new_transform
+                    # Update the best transform if the new cost is lower
+                    if lowestCost > summeddist:
+                        if self.debug:
+                            print("Optimising with error {0:.3f}m".format(summeddist))
+                        lowestCost = summeddist
+                        bestTransform = new_transform
             if lowestCost > 0.5:
                 print("WARNING: bad position estimate. Ignoring this frame.")
             else:
                 # We have our least-cost transform
+                # TVeh(World <- veh_t) = TVeh(World <- veh_t-1) * TVeh(veh_t <- veh_t-1)^-1
                 self.T_VehToWorld.append(self.T_VehToWorld[-1] @ numpy.linalg.inv(
                     bestTransform))
                 self.timestamps.append(timestamp)
@@ -342,7 +333,7 @@ class tagDB:
                                                                     self.reportedRot.round(1)))
         # finally add any new tags (veh frame) to database (in world reference frame)
         for tagid, tagT in self.tagnewT.items():
-            # T(World <- tag) = T(World <- Veh) * T(Veh <- tag)
+            # TTagDB(World<-Tag) = TVeh(World <- veh_t) * TNewTag(veh_t <-Tag)
             self.tagPlacement[tagid] = self.T_VehToWorld[-1] @ tagT
             if self.debug:
                 print("Added Tag ID {0} at pos {1}, rot {2}".format(tagid, getPos(self.tagPlacement[tagid]).round(3),

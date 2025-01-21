@@ -52,7 +52,7 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=False, maxjump=0.1, slidingWindow=5, campos=(0, 0, 0), camrot=(0, 0, 0), extraOpt=False):
+    def __init__(self, debug=False, slidingWindow=5, campos=(0, 0, 0), camrot=(0, 0, 0), extraOpt=False):
         self.T_VehToWorld = deque(maxlen=slidingWindow+1)
         self.timestamps = deque(maxlen=slidingWindow+1)
         self.T_VehToWorldFiltered = deque(maxlen=slidingWindow+1)
@@ -62,7 +62,6 @@ class tagDB:
         self.tagnewT = {}
         self.tagDuplicatesT = {}
         self.debug = debug
-        self.maxjump = maxjump
         self.reportedPos = (0, 0, 0)
         self.reportedPosPrev = (0.0, 0.0, 0.0)
         self.reportedRot = (0, 0, 0)
@@ -118,24 +117,6 @@ class tagDB:
                                                                 getPos(
                                                                     self.tagDuplicatesT[tag.tag_id]).round(3),
                                                                 getRotation(self.tagDuplicatesT[tag.tag_id]).round(1)))
-
-    def is_large_jump(self, previous_transform, current_transform):
-        """
-        Check if the difference between two transformation matrices is larger than the threshold.
-
-        Parameters:
-        - previous_transform: np.array, previous 4x4 transformation matrix
-        - current_transform: np.array, current 4x4 transformation matrix
-        - threshold: float, threshold for detecting a large jump (e.g., 0.1)
-
-        Returns:
-        - bool: True if the difference is considered a large jump, False otherwise
-        """
-        # Compute the Frobenius norm of the difference
-        diff = numpy.linalg.norm(current_transform - previous_transform, ord='fro')
-
-        # Check if the difference exceeds the threshold
-        return diff > self.maxjump
 
     def generateReportedLoc(self, timestamp):
         '''Generate the vehicle's current position

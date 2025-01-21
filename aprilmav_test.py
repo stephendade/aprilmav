@@ -58,6 +58,8 @@ def test_geo_execution():
                         help="Save processed images to this folder")
     parser.add_argument('--extraopt', dest='extraopt', help="Optimise best position better",
                         default=True, action='store_true')
+    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+                        default=False, action='store_true')
     args = parser.parse_args()
     geo_test.main(args)
     assert os.path.exists("geo_test_results.csv")
@@ -98,6 +100,8 @@ def test_process_execution():
                         help="Output tag data to this file")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
+    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+                        default=False, action='store_true')
     args = parser.parse_args()
     process_test.main(args)
     assert os.path.exists("processed.csv")

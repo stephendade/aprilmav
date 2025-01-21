@@ -47,12 +47,12 @@ def main(args):
     camera = None
     if args.folder:
         from drivers import cameraFile
-        camera = cameraFile.FileCamera(camParams, args.folder)
+        camera = cameraFile.FileCamera(camParams, args.folder, args.jetson)
     else:
         try:
             print(parameters[args.camera]['cam_driver'])
             mod = import_module("drivers." + parameters[args.camera]['cam_driver'])
-            camera = mod.camera(parameters[args.camera])
+            camera = mod.camera(parameters[args.camera], args.jetson)
         except (ImportError, KeyError):
             print('No camera with the name {0}, exiting'.format(args.camera))
             sys.exit(0)
@@ -223,6 +223,8 @@ if __name__ == '__main__':
     parser.add_argument("--imageFolder", type=str, default="",
                         help="Save processed images to this folder")
     parser.add_argument('--extraopt', dest='extraopt', help="Optimise best position better",
+                        default=False, action='store_true')
+    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
                         default=False, action='store_true')
     args = parser.parse_args()
 

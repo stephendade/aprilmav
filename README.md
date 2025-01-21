@@ -94,7 +94,8 @@ $ aprilmav.py
 - ``--extraopt``      Optimise detected position better. Uses a lot of extra CPU.
 - ``--calframes=N``   Use N image frames at the start to determine the position man and std dev. The vehicle must be stationary during this time. Only applicable if ``--stddev`` is used
 - ``--averaging=N``   Use a moving average of N frames for determining position and velocity.
-
+- ``--jetson``        Use hardware accelerator (CUDA, VPI) on NVIDIA Jetson
+  
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.
 

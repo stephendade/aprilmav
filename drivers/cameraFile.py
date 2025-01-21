@@ -11,9 +11,9 @@ from .cameraBase import cameraBase
 class FileCamera(cameraBase):
     '''A Camera setup and capture class'''
 
-    def __init__(self, camParams, folder="."):
+    def __init__(self, camParams, folder=".", use_jetson=False):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams)
+        super().__init__(camParams, use_jetson)
 
         self.images = [
             os.path.join(folder, file)
@@ -55,4 +55,5 @@ class FileCamera(cameraBase):
 
     def close(self):
         ''' close the camera'''
+        super().close()
         return

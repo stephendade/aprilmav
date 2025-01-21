@@ -129,7 +129,7 @@ JetsonCameraIMX219-2MP:
 # 8.3 Mpixel
 JetsonCameraIMX477-8MP:
   cam_driver: "cameraGstreamer"
-  model: "nvarguscamerasrc sensor-id=0 wbmode=0 ee-mode=0 tnr-mode=0 exposuretimerange=\"2000000 2000000\"! video/x-raw(memory:NVMM), width=(int)3840, height=(int)2160, framerate=(fraction)20/1 ! nvvidconv flip-method=2"
+  model: "nvarguscamerasrc sensor-id=0 wbmode=0 ee-mode=0 tnr-mode=0 exposuretimerange=\"8000000 8000000\"! video/x-raw(memory:NVMM), width=(int)3840, height=(int)2160, framerate=(fraction)20/1 ! nvvidconv flip-method=2"
   cam_params: !!python/tuple [2335.078673964562, 2334.978085360188, 1870.6133257480435, 1151.8455892410548]
   cam_paramsD: !!python/tuple [0.16782716375703705, 0.5450055154488477, -1.4989968998165049, 1.0003718040705523]
   resolution: !!python/tuple [3840, 2160]
@@ -137,3 +137,4 @@ JetsonCameraIMX477-8MP:
   halfres: False
   rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+

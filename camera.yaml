@@ -138,3 +138,14 @@ JetsonCameraIMX477-8MP:
   rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
+# Simulated camera for testing
+SimCamera-720p:
+  cam_driver: "cameraSim"
+  model: ""
+  cam_params: !!python/tuple [1, 1, 640, 360]
+  cam_paramsD: !!python/tuple [0, 0, 0, 0]
+  resolution: !!python/tuple [1280, 720]
+  fisheye: False
+  halfres: False
+  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters

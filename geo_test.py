@@ -61,7 +61,7 @@ def main(args):
     time.sleep(2)
 
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
-                           families='tagStandard41h12',
+                           families=args.tagFamily,
                            nthreads=max(1, os.cpu_count() - 1),
                            quad_decimate=args.decimation,
                            quad_sigma=0.4,
@@ -89,6 +89,7 @@ def main(args):
         outfile.write("PosX (m),PosY (m),PosZ (m),")
         outfile.write("RotX (rad),RotY (rad),RotZ (rad),")
         outfile.write("VelX (m/s),VelY (m/s), VelZ (m/s),")
+        outfile.write("tagsUsed,")
         outfile.write("timestamp (sec)\n")
 
     # GUI
@@ -138,10 +139,10 @@ def main(args):
             imageBW, True, camParams['cam_params'], args.tagSize/1000)
 
         # add any new tags to database, or existing one to duplicates
-        tagsused = 0
+        tagsused = []
         for tag in tags:
             if tag.pose_err < args.maxerror*1e-8:
-                tagsused += 1
+                tagsused.append(tag)
                 tagPlacement.addTag(tag)
 
         tagPlacement.getBestTransform(timestamp)
@@ -158,7 +159,9 @@ def main(args):
             outfile.write("{0},".format(file))
             outfile.write("{0:.4f},{1:.4f},{2:.4f},".format(posR[0], posR[1], posR[2]))
             outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
-            outfile.write("{0:.3f},{1:.3f},{2:.3f},{3:.6f}\n".format(speed[0], speed[1], speed[2], timestamp))
+            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(speed[0], speed[1], speed[2]))
+            outfile.write("{0},".format(' '.join(str(id) for id in tagPlacement.tagDuplicatesT.keys())))
+            outfile.write("{0:.6f}\n".format(timestamp))
 
         # Update the live graph
         if args.gui:
@@ -226,6 +229,8 @@ if __name__ == '__main__':
                         default=False, action='store_true')
     parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
                         default=False, action='store_true')
+    parser.add_argument("--tagFamily", type=str, default="tagStandard41h12",
+                        help="Apriltag family")
     args = parser.parse_args()
 
     main(args)

@@ -48,7 +48,7 @@ def main(args):
     time.sleep(2)
 
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
-                           families='tagStandard41h12',
+                           families=args.tagFamily,
                            nthreads=max(1, os.cpu_count() - 1),
                            quad_decimate=args.decimation,
                            quad_sigma=0.0,
@@ -131,11 +131,15 @@ if __name__ == '__main__':
                         help="Process this many frames")
     parser.add_argument("--tagSize", type=int, default=94,
                         help="Apriltag size in mm")
+    parser.add_argument("--tagFamily", type=str, default="tagStandard41h12",
+                        help="Apriltag family")
     parser.add_argument("--folder", type=str, default=None,
                         help="Use a folder of images instead of camera")
     parser.add_argument("--outfile", type=str, default="processed.csv",
                         help="Output tag data to this file")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
+    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+                        default=False, action='store_true')
     args = parser.parse_args()
     main(args)

@@ -241,6 +241,8 @@ if __name__ == '__main__':
                         default=False, action='store_true')
     parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
                         default=False, action='store_true')
+    parser.add_argument("--tagFamily", type=str, default="tagStandard41h12",
+                        help="Apriltag family")
     args = parser.parse_args()
 
     print("Initialising")
@@ -264,7 +266,7 @@ if __name__ == '__main__':
     time.sleep(2)
 
     at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
-                           families='tagStandard41h12',
+                           families=args.tagFamily,
                            nthreads=max(1, os.cpu_count() - 1),
                            quad_decimate=args.decimation,
                            quad_sigma=0.4,

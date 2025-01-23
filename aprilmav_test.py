@@ -38,9 +38,9 @@ def test_geo_execution():
     parser = argparse.ArgumentParser()
     parser.add_argument("--tagSize", type=int, default=96,
                         help="Apriltag size in mm")
-    parser.add_argument("--camera", type=str, default="ArduCamUC580",
+    parser.add_argument("--camera", type=str, default="SimCamera-720p",
                         help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=20,
+    parser.add_argument("--loop", type=int, default=80,
                         help="Capture and process this many frames")
     parser.add_argument("--maxerror", type=int, default=400,
                         help="Maximum pose error to use, in n*E-8 units")
@@ -60,6 +60,8 @@ def test_geo_execution():
                         default=True, action='store_true')
     parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
                         default=False, action='store_true')
+    parser.add_argument("--tagFamily", type=str, default="tag36h11",
+                        help="Apriltag family")
     args = parser.parse_args()
     geo_test.main(args)
     assert os.path.exists("geo_test_results.csv")
@@ -88,9 +90,9 @@ def test_process_execution():
         Apriltag decimation.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--camera", type=str, default="ArduCamUC580",
+    parser.add_argument("--camera", type=str, default="SimCamera-720p",
                         help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=10,
+    parser.add_argument("--loop", type=int, default=80,
                         help="Process this many frames")
     parser.add_argument("--tagSize", type=int, default=94,
                         help="Apriltag size in mm")
@@ -102,6 +104,8 @@ def test_process_execution():
                         default=2, help="Apriltag decimation")
     parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
                         default=False, action='store_true')
+    parser.add_argument("--tagFamily", type=str, default="tag36h11",
+                        help="Apriltag family")
     args = parser.parse_args()
     process_test.main(args)
     assert os.path.exists("processed.csv")

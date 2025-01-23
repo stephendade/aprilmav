@@ -21,10 +21,10 @@ def test_geo_execution():
 
     Command-line Arguments:
         --tagSize (int): Apriltag size in mm (default: 96).
-        --camera (str): Camera profile in camera.yaml (default: "ArduCamUC580").
+        --camera (str): Camera profile in camera.yaml (default: "SimCamera-720p").
         --loop (int): Number of frames to capture and process (default: 20).
         --maxerror (int): Maximum pose error to use, in n*E-8 units (default: 400).
-        --folder (str): Folder of images to use instead of camera (default: "test_data").
+        --folder (str): Folder of images to use instead of camera (default: "").
         --outfile (str): File to output tag data (default: "geo_test_results.csv").
         --gui (bool): Display GUI (default: False).
         --decimation (int): Apriltag decimation (default: 2).
@@ -44,7 +44,7 @@ def test_geo_execution():
                         help="Capture and process this many frames")
     parser.add_argument("--maxerror", type=int, default=400,
                         help="Maximum pose error to use, in n*E-8 units")
-    parser.add_argument("--folder", type=str, default="test_data",
+    parser.add_argument("--folder", type=str, default="",
                         help="Use a folder of images instead of camera")
     parser.add_argument("--outfile", type=str, default="geo_test_results.csv",
                         help="Output tag data to this file")
@@ -76,13 +76,13 @@ def test_process_execution():
     It then asserts that the output file "processed.csv" exists.
 
     Arguments:
-    --camera: str, default="ArduCamUC580"
+    --camera: str, default="SimCamera-720p"
         Camera profile in camera.yaml.
     --loop: int, default=10
         Number of frames to process.
     --tagSize: int, default=94
         Apriltag size in mm.
-    --folder: str, default="test_data"
+    --folder: str, default=""
         Folder of images to use instead of camera.
     --outfile: str, default="processed.csv"
         File to output tag data.
@@ -96,7 +96,7 @@ def test_process_execution():
                         help="Process this many frames")
     parser.add_argument("--tagSize", type=int, default=94,
                         help="Apriltag size in mm")
-    parser.add_argument("--folder", type=str, default="test_data",
+    parser.add_argument("--folder", type=str, default="",
                         help="Use a folder of images instead of camera")
     parser.add_argument("--outfile", type=str, default="processed.csv",
                         help="Output tag data to this file")

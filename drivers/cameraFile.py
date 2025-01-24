@@ -45,6 +45,7 @@ class FileCamera(cameraBase):
         # img = cv2.fastNlMeansDenoising(img,None, 3, 5, 17)
 
         if not get_raw:
+            img = self.doImageEnhancement(img)
             img = self.maybeDoFishEyeConversion(img)
 
         return (img, timestamp)

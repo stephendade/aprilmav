@@ -44,7 +44,7 @@ class camera(cameraBase):
         metadata = self.camera.capture_metadata()
         self.camera.stop()
         controls = {"ExposureTime": self.camParams['exposure'],    # microseconds
-                    "AnalogueGain": int(metadata["AnalogueGain"] * self.camParams['gain']),
+                    "AnalogueGain": int(metadata["AnalogueGain"] * self.camParams['analogue_gain']),
                     "ColourGains": metadata["ColourGains"],
                     'FrameRate': self.camParams['fps']}
 

@@ -6,6 +6,7 @@ All images will be stored as "<timestamp in ms>.png"
 
 '''
 
+import signal
 import time
 import argparse
 import os
@@ -16,8 +17,19 @@ from importlib import import_module
 import cv2
 import yaml
 
+from modules.videoStream import videoThread
+
 save_queue = queue.Queue()
 shouldExit = False
+
+exit_event = threading.Event()
+
+
+def signal_handler(signum, frame):
+    """
+    Signal handler for exit
+    """
+    exit_event.set()
 
 
 def save_threadfunc():
@@ -41,8 +53,10 @@ if __name__ == '__main__':
                         help="Capture this many frames")
     parser.add_argument("--delay", type=int, default=50,
                         help="Delay by N millisec between frame captures")
-    parser.add_argument("--folder", type=str, default="capture",
+    parser.add_argument("--folder", type=str, default="",
                         help="Put capture into this folder")
+    parser.add_argument("--video", type=str, default='',
+                        help="Output video to this IP:port")
     args = parser.parse_args()
 
     print("Initialising Camera")
@@ -52,10 +66,11 @@ if __name__ == '__main__':
         parameters = yaml.load(stream, Loader=yaml.FullLoader)
 
     # create the capture folder if required
-    try:
-        os.makedirs(os.path.join(".", args.folder))
-    except FileExistsError:
-        pass
+    if args.folder != "":
+        try:
+            os.makedirs(os.path.join(".", args.folder))
+        except FileExistsError:
+            pass
 
     # initialize the camera
     camera = None
@@ -68,10 +83,18 @@ if __name__ == '__main__':
         sys.exit(0)
 
     print("Starting {0} image capture...".format(args.loop))
+    signal.signal(signal.SIGINT, signal_handler)
 
-    worker = threading.Thread(target=save_threadfunc, args=())
-    worker.daemon = True
-    worker.start()
+    if args.folder != "":
+        worker = threading.Thread(target=save_threadfunc, args=())
+        worker.daemon = True
+        worker.start()
+
+    # video stream out, if desired
+    threadVideo = None
+    if args.video != '':
+        threadVideo = videoThread(args.video, exit_event)
+        threadVideo.start()
 
     for i in range(args.loop):
         (imageBW, timestamp) = camera.getImage(get_raw=True)
@@ -84,12 +107,21 @@ if __name__ == '__main__':
 
         # write image to save queue as (image, filename) tuple
         # note timestamp stored as millisec
-        save_queue.put((imageBW, os.path.join(
-            ".", args.folder, "{0:.0f}.png".format(timestamp*1000))))
+        if args.folder != "":
+            save_queue.put((imageBW, os.path.join(
+                ".", args.folder, "{0:.0f}.png".format(timestamp*1000))))
+
+        # Send to video stream, if option
+        if threadVideo:
+            threadVideo.frame_queue.put((imageBW, None, None, None))
+
+        if exit_event.is_set():
+            break
 
     # close camera
     camera.close()
 
     # wait for images to finish saving
-    shouldExit = True
-    worker.join()
+    if args.folder != "":
+        shouldExit = True
+        worker.join()

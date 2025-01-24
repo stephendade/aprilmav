@@ -16,10 +16,11 @@ class videoThread(threading.Thread):
     A thread that takes in OpenCV images and streams then over RTP.
     Detected Apriltags and other system data is overlaid
     """
-    def __init__(self, port, exit_event):
+    def __init__(self, IPport, exit_event):
         threading.Thread.__init__(self)
         self.frame_queue = queue.Queue()
-        self.port = str(port)
+        self.ip = IPport.split(":")[0]
+        self.port = IPport.split(":")[1]
         self.exit_event = exit_event
 
     def run(self):
@@ -34,16 +35,19 @@ class videoThread(threading.Thread):
             (image, posn, rot, tags) = self.frame_queue.get()
             # process B&W image to colour and add text
             imageColour = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-            imageColour = self.labelTags(imageColour, tags)
-            cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
-            cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+            if tags:
+                imageColour = self.labelTags(imageColour, tags)
+            if posn:
+                cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+            if rot:
+                cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 40),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             # Start video server if not already started
             if not vidOut:
                 vidOut = cv2.VideoWriter('appsrc ! video/x-raw, format=BGR ! videoconvert ! x264enc \
                                          speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ! \
-                                         udpsink host=0.0.0.0 port=' +
+                                         udpsink host=' + self.ip + ' port=' +
                                          self.port + '', cv2.CAP_GSTREAMER, 0, 20, imageColour.shape[:2][::-1], True)
                 if not vidOut.isOpened():
                     print(

@@ -59,6 +59,7 @@ class camera(cameraBase):
                 imageCrop, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
 
         if not get_raw:
+            imageCrop = self.doImageEnhancement(imageCrop)
             imageCrop = self.maybeDoFishEyeConversion(imageCrop)
 
         return (imageCrop, timestamp)

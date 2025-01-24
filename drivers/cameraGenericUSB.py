@@ -39,6 +39,7 @@ class camera(cameraBase):
         imageBW = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         if not get_raw:
+            imageBW = self.doImageEnhancement(imageBW)
             imageBW = self.maybeDoFishEyeConversion(imageBW)
 
         return (imageBW, timestamp)

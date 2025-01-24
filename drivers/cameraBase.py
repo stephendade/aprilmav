@@ -71,6 +71,14 @@ class cameraBase:
         '''Get current file in camera'''
         return None
 
+    def doImageEnhancement(self, image):
+        '''Enhance the image to optimize AprilTag detection'''
+        # create a CLAHE object (Arguments are optional).
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        image = clahe.apply(image)
+
+        return image
+
     def maybeDoFishEyeConversion(self, image):
         '''Convert the image to rectilinear'''
 

@@ -117,6 +117,9 @@ class camera(cameraBase):
 
         self.location_in_script = (self.location_in_script + 1) % 80
 
+        # Image enhancement
+        curFrame = self.doImageEnhancement(curFrame)
+
         # Return a fake time of 50ms for stable velocity calculations
         return (curFrame, self.base_time + (0.05 * self.location_in_script))
 

@@ -229,8 +229,8 @@ if __name__ == '__main__':
                         default=1, help="MAVLink Source system")
     parser.add_argument("--imageFolder", type=str, default="",
                         help="Save processed images to this folder")
-    parser.add_argument("--video", type=int, default=0,
-                        help="Output video to port, 0 to disable")
+    parser.add_argument("--video", type=str, default='',
+                        help="Output video to IP:port")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
     parser.add_argument("--calframes", type=int,
@@ -307,7 +307,7 @@ if __name__ == '__main__':
 
     # video stream out, if desired
     threadVideo = None
-    if args.video != 0:
+    if args.video != '':
         threadVideo = videoThread(args.video, exit_event)
         threadVideo.start()
 

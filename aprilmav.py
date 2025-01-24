@@ -381,3 +381,8 @@ if __name__ == '__main__':
 
         if exit_event.is_set():
             break
+
+    # close camera
+    camera.close()
+
+    exit_event.set()

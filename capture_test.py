@@ -121,6 +121,8 @@ if __name__ == '__main__':
     # close camera
     camera.close()
 
+    exit_event.set()
+
     # wait for images to finish saving
     if args.folder != "":
         shouldExit = True

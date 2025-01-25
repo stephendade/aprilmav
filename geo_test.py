@@ -45,9 +45,9 @@ def main(args):
 
     # initialize the camera
     camera = None
-    if args.folder:
+    if args.inputFolder:
         from drivers import cameraFile
-        camera = cameraFile.FileCamera(camParams, args.folder, args.jetson)
+        camera = cameraFile.FileCamera(camParams, args.inputFolder, args.jetson)
     else:
         try:
             print(parameters[args.camera]['cam_driver'])
@@ -70,7 +70,7 @@ def main(args):
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraopt,
+    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt,
                          campos=camParams['positionRelVehicle'], camrot=camParams['rotationRelVehicle'])
 
     # how many loops
@@ -78,19 +78,19 @@ def main(args):
 
     # Start save image thread, if desired
     threadSave = None
-    if args.imageFolder != "":
-        threadSave = saveThread(args.imageFolder, exit_event)
+    if args.outputFolder != "":
+        threadSave = saveThread(args.outputFolder, exit_event)
         threadSave.start()
 
     print("Starting {0} image capture and process...".format(loops))
 
-    with open(args.outfile, "w+", encoding="utf-8") as outfile:
-        outfile.write("Filename,")
-        outfile.write("PosX (m),PosY (m),PosZ (m),")
-        outfile.write("RotX (rad),RotY (rad),RotZ (rad),")
-        outfile.write("VelX (m/s),VelY (m/s), VelZ (m/s),")
-        outfile.write("tagsUsed,")
-        outfile.write("timestamp (sec)\n")
+    with open(args.outFile, "w+", encoding="utf-8") as outFile:
+        outFile.write("Filename,")
+        outFile.write("PosX (m),PosY (m),PosZ (m),")
+        outFile.write("RotX (rad),RotY (rad),RotZ (rad),")
+        outFile.write("VelX (m/s),VelY (m/s), VelZ (m/s),")
+        outFile.write("tagsUsed,")
+        outFile.write("timestamp (sec)\n")
 
     # GUI
     fig = None
@@ -141,7 +141,7 @@ def main(args):
         # add any new tags to database, or existing one to duplicates
         tagsused = []
         for tag in tags:
-            if tag.pose_err < args.maxerror*1e-8:
+            if tag.pose_err < args.maxError*1e-8:
                 tagsused.append(tag)
                 tagPlacement.addTag(tag)
 
@@ -155,13 +155,13 @@ def main(args):
         rotD = numpy.rad2deg(tagPlacement.reportedRot)
         speed = tagPlacement.reportedVelocity
 
-        with open(args.outfile, "a", encoding="utf-8") as outfile:
-            outfile.write("{0},".format(file))
-            outfile.write("{0:.4f},{1:.4f},{2:.4f},".format(posR[0], posR[1], posR[2]))
-            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
-            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(speed[0], speed[1], speed[2]))
-            outfile.write("{0},".format(' '.join(str(id) for id in tagPlacement.tagDuplicatesT.keys())))
-            outfile.write("{0:.6f}\n".format(timestamp))
+        with open(args.outFile, "a", encoding="utf-8") as outFile:
+            outFile.write("{0},".format(file))
+            outFile.write("{0:.4f},{1:.4f},{2:.4f},".format(posR[0], posR[1], posR[2]))
+            outFile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
+            outFile.write("{0:.3f},{1:.3f},{2:.3f},".format(speed[0], speed[1], speed[2]))
+            outFile.write("{0},".format(' '.join(str(id) for id in tagPlacement.tagDuplicatesT.keys())))
+            outFile.write("{0:.6f}\n".format(timestamp))
 
         # Update the live graph
         if args.gui:
@@ -185,7 +185,7 @@ def main(args):
         # Send to save thread
         if threadSave:
             threadSave.save_queue.put((imageBW, os.path.join(
-                ".", args.imageFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+                ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
 
         tagPlacement.newFrame()
 
@@ -211,11 +211,11 @@ if __name__ == '__main__':
                         help="Camera profile in camera.yaml")
     parser.add_argument("--loop", type=int, default=20,
                         help="Capture and process this many frames")
-    parser.add_argument("--maxerror", type=int, default=400,
+    parser.add_argument("--maxError", type=int, default=400,
                         help="Maximum pose error to use, in n*E-8 units")
-    parser.add_argument("--folder", type=str, default=None,
-                        help="Use a folder of images instead of camera")
-    parser.add_argument("--outfile", type=str, default="geo_test_results.csv",
+    parser.add_argument("--inputFolder", type=str, default=None,
+                        help="Use a folder of images instead of live camera")
+    parser.add_argument("--outFile", type=str, default="geo_test_results.csv",
                         help="Output tag data to this file")
     parser.add_argument('--gui', dest='gui',
                         default=False, action='store_true')
@@ -223,9 +223,9 @@ if __name__ == '__main__':
                         default=2, help="Apriltag decimation")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
-    parser.add_argument("--imageFolder", type=str, default="",
+    parser.add_argument("--outputFolder", type=str, default="",
                         help="Save processed images to this folder")
-    parser.add_argument('--extraopt', dest='extraopt', help="Optimise best position better",
+    parser.add_argument('--extraOpt', dest='extraOpt', help="Optimise best position better",
                         default=False, action='store_true')
     parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
                         default=False, action='store_true')

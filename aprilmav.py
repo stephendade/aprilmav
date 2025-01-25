@@ -217,9 +217,9 @@ if __name__ == '__main__':
                         help="Apriltag size in mm")
     parser.add_argument("--camera", type=str, default="GenericUSB",
                         help="Camera profile in camera.yaml")
-    parser.add_argument("--maxerror", type=int, default=400,
+    parser.add_argument("--maxError", type=int, default=400,
                         help="Maximum pose error to use, in n*E-8 units")
-    parser.add_argument("--outfile", type=str, default="geo_test_results.csv",
+    parser.add_argument("--outFile", type=str, default="geo_test_results.csv",
                         help="Output tag data to this file")
     parser.add_argument(
         "--device", type=str, default="udpin:127.0.0.1:14550", help="MAVLink connection string")
@@ -227,17 +227,15 @@ if __name__ == '__main__':
                         help="MAVLink baud rate, if using serial")
     parser.add_argument("--source-system", type=int,
                         default=1, help="MAVLink Source system")
-    parser.add_argument("--imageFolder", type=str, default="",
+    parser.add_argument("--outputFolder", type=str, default="",
                         help="Save processed images to this folder")
     parser.add_argument("--video", type=str, default='',
                         help="Output video to IP:port")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
-    parser.add_argument("--calframes", type=int,
-                        default=10, help="Use this many frames at the start for calibration")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
-    parser.add_argument('--extraopt', dest='extraopt', help="Optimise best position better",
+    parser.add_argument('--extraOpt', dest='extraOpt', help="Optimise best position better",
                         default=False, action='store_true')
     parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
                         default=False, action='store_true')
@@ -275,15 +273,15 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraopt,
+    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt,
                          campos=camParams['positionRelVehicle'], camrot=camParams['rotationRelVehicle'])
 
     # left, up, fwd, pitch, yaw, roll
-    with open(args.outfile, "w+", encoding="utf-8") as outfile:
-        outfile.write("Filename,Timestamp,")
-        outfile.write("PosX (m),PosY (m),PosZ (m),")
-        outfile.write("RotX (rad),RotY (rad),RotZ (rad),")
-        outfile.write("VelX (m/s),VelY (m/s), VelZ (m/s)\n")
+    with open(args.outFile, "w+", encoding="utf-8") as outFile:
+        outFile.write("Filename,Timestamp,")
+        outFile.write("PosX (m),PosY (m),PosZ (m),")
+        outFile.write("RotX (rad),RotY (rad),RotZ (rad),")
+        outFile.write("VelX (m/s),VelY (m/s), VelZ (m/s)\n")
     # Need to reconstruct K and D if using fisheye lens
     dim1 = None
     map1 = None
@@ -301,8 +299,8 @@ if __name__ == '__main__':
 
     # Start save image thread, if desired
     threadSave = None
-    if args.imageFolder != "":
-        threadSave = saveThread(args.imageFolder, exit_event)
+    if args.outputFolder != "":
+        threadSave = saveThread(args.outputFolder, exit_event)
         threadSave.start()
 
     # video stream out, if desired
@@ -333,7 +331,7 @@ if __name__ == '__main__':
         # add any new tags to database, or existing one to duplicates
         tagsused = 0
         for tag in tags:
-            if tag.pose_err < args.maxerror*1e-8:
+            if tag.pose_err < args.maxError*1e-8:
                 tagsused += 1
                 tagPlacement.addTag(tag)
 
@@ -348,11 +346,11 @@ if __name__ == '__main__':
         rotD = numpy.rad2deg(tagPlacement.reportedRot)
         speed = tagPlacement.reportedVelocity
 
-        with open(args.outfile, "a", encoding="utf-8") as outfile:
-            outfile.write("{0},{1},".format(file, timestamp))
-            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(posR[0], posR[1], posR[2]))
-            outfile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
-            outfile.write("{0:.3f},{1:.3f},{2:.3f}\n".format(speed[0], speed[1], speed[2]))
+        with open(args.outFile, "a", encoding="utf-8") as outFile:
+            outFile.write("{0},{1},".format(file, timestamp))
+            outFile.write("{0:.3f},{1:.3f},{2:.3f},".format(posR[0], posR[1], posR[2]))
+            outFile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
+            outFile.write("{0:.3f},{1:.3f},{2:.3f}\n".format(speed[0], speed[1], speed[2]))
         # print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart,
 
         # Create and send MAVLink packet
@@ -367,7 +365,7 @@ if __name__ == '__main__':
         # Send to save thread
         if threadSave:
             threadSave.save_queue.put((imageBW, os.path.join(
-                ".", args.imageFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+                ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
 
         # Get ready for next frame
         tagPlacement.newFrame()

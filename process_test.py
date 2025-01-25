@@ -32,9 +32,9 @@ def main(args):
 
     # initialize the camera
     CAMERA = None
-    if args.folder:
+    if args.inputFolder:
         from drivers import cameraFile
-        CAMERA = cameraFile.FileCamera(camParams, args.folder, args.jetson)
+        CAMERA = cameraFile.FileCamera(camParams, args.inputFolder, args.jetson)
     else:
         try:
             print(parameters[args.camera]['cam_driver'])
@@ -61,8 +61,8 @@ def main(args):
 
     print("Starting {0} image capture and process...".format(loops))
 
-    with open(args.outfile, "w+", encoding="utf-8") as outfile:
-        outfile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)",
+    with open(args.outFile, "w+", encoding="utf-8") as outFile:
+        outFile.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format("Filename", "TagID", "PosX (left)", "PosY (up)",
                                                                     "PosZ (fwd)", "RotX (pitch)", "RotY (yaw)",
                                                                     "RotZ (roll)", "PoseErr"))
 
@@ -100,8 +100,8 @@ def main(args):
 
             print("Tag {0} pos = {1} m, Rot = {2} deg. ErrE8 = {3:.4f}".format(tag.tag_id, tagpos.round(3),
                                                                                tagrot.round(1), tag.pose_err*1E8))
-            with open(args.outfile, "w+", encoding="utf-8") as outfile:
-                outfile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
+            with open(args.outFile, "w+", encoding="utf-8") as outFile:
+                outFile.write("{0},{1},{2:.3f},{3:.3f},{4:.3f},{5:.1f},{6:.1f},{7:.1f},{8}\n".format(file,
                                                                                                      tag.tag_id,
                                                                                                      tagpos[0],
                                                                                                      tagpos[1],
@@ -133,9 +133,9 @@ if __name__ == '__main__':
                         help="Apriltag size in mm")
     parser.add_argument("--tagFamily", type=str, default="tagStandard41h12",
                         help="Apriltag family")
-    parser.add_argument("--folder", type=str, default=None,
-                        help="Use a folder of images instead of camera")
-    parser.add_argument("--outfile", type=str, default="processed.csv",
+    parser.add_argument("--inputFolder", type=str, default=None,
+                        help="Use a folder of images instead of live camera")
+    parser.add_argument("--outFile", type=str, default="processed.csv",
                         help="Output tag data to this file")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")

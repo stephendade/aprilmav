@@ -53,8 +53,8 @@ if __name__ == '__main__':
                         help="Capture this many frames")
     parser.add_argument("--delay", type=int, default=50,
                         help="Delay by N millisec between frame captures")
-    parser.add_argument("--folder", type=str, default="",
-                        help="Put capture into this folder")
+    parser.add_argument("--outputFolder", type=str, default="",
+                        help="Put captured images into this folder")
     parser.add_argument("--video", type=str, default='',
                         help="Output video to this IP:port")
     args = parser.parse_args()
@@ -66,9 +66,9 @@ if __name__ == '__main__':
         parameters = yaml.load(stream, Loader=yaml.FullLoader)
 
     # create the capture folder if required
-    if args.folder != "":
+    if args.outputFolder != "":
         try:
-            os.makedirs(os.path.join(".", args.folder))
+            os.makedirs(os.path.join(".", args.outputFolder))
         except FileExistsError:
             pass
 
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     print("Starting {0} image capture...".format(args.loop))
     signal.signal(signal.SIGINT, signal_handler)
 
-    if args.folder != "":
+    if args.outputfolder != "":
         worker = threading.Thread(target=save_threadfunc, args=())
         worker.daemon = True
         worker.start()
@@ -107,9 +107,9 @@ if __name__ == '__main__':
 
         # write image to save queue as (image, filename) tuple
         # note timestamp stored as millisec
-        if args.folder != "":
+        if args.outputFolder != "":
             save_queue.put((imageBW, os.path.join(
-                ".", args.folder, "{0:.0f}.png".format(timestamp*1000))))
+                ".", args.outputFolder, "{0:.0f}.png".format(timestamp*1000))))
 
         # Send to video stream, if option
         if threadVideo:
@@ -124,6 +124,6 @@ if __name__ == '__main__':
     exit_event.set()
 
     # wait for images to finish saving
-    if args.folder != "":
+    if args.outputFolder != "":
         shouldExit = True
         worker.join()

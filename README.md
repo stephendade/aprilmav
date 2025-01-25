@@ -54,7 +54,7 @@ There are several scripts for testing the performance - both accuracy and
 detected speed:
 
 Speed of camera capture. Useful for confirming if the camera itself is a system
-bottleneck. Use ``--folder=xxx`` to save the images to a specific folder, which is
+bottleneck. Use ``--outputFolder=xxx`` to save the images to a specific folder, which is
 useful for playing back datasets in the other scripts:
 
 ```
@@ -85,16 +85,15 @@ $ aprilmav.py
 
 - ``--tagSize``       Apriltag size in mm
 - ``--camera``        Camera profile in camera.yaml
-- ``--maxerror``      Maximum pose error to use, in n*E-8 units
-- ``--outfile``       Output tag data to this file
+- ``--maxError``      Maximum pose error to use, in n*E-8 units
+- ``--outFile``       Output position data to this file in csv format
 - ``--device``        MAVLink connection string
 - ``--baud``          MAVLink baud rate, if using serial port in ``--device``
 - ``--source-system`` MAVLink Source system
-- ``--imageFolder``   Save processed images to this folder
+- ``--outputFolder``  Save processed images to this folder
 - ``--video``         Output an RTP H264 video to this IP:Port, 0 to disable
 - ``--decimation``    Apriltag decimation. Tradeoff against detection speed and accuracy.
-- ``--extraopt``      Optimise detected position better. Uses a lot of extra CPU.
-- ``--calframes=N``   Use N image frames at the start to determine the position man and std dev. The vehicle must be stationary during this time. Only applicable if ``--stddev`` is used
+- ``--extraOpt``      Optimise detected position better. Uses a lot of extra CPU.
 - ``--averaging=N``   Use a moving average of N frames for determining position and velocity.
 - ``--jetson``        Use hardware accelerator (CUDA, VPI) on NVIDIA Jetson
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``

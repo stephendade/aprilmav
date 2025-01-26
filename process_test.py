@@ -10,13 +10,10 @@ Distance is relative to the camera's sensor in 3 dimensions.
 
 import time
 import argparse
-import sys
 import os
-from importlib import import_module
 from collections import defaultdict
 
 import numpy
-import yaml
 
 from pyapriltags import Detector
 from modules.geo import getPos, getTransform, getRotation

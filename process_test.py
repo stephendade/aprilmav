@@ -20,29 +20,14 @@ import yaml
 
 from pyapriltags import Detector
 from modules.geo import getPos, getTransform, getRotation
+from modules.common import loadCameras
 
 
 def main(args):
     print("Initialising")
 
-    # Open camera settings
-    with open('camera.yaml', 'r', encoding="utf-8") as stream:
-        parameters = yaml.load(stream, Loader=yaml.FullLoader)
-    camParams = parameters[args.camera]
-
-    # initialize the camera
-    CAMERA = None
-    if args.inputFolder:
-        from drivers import cameraFile
-        CAMERA = cameraFile.FileCamera(camParams, args.inputFolder, args.jetson)
-    else:
-        try:
-            print(parameters[args.camera]['cam_driver'])
-            mod = import_module("drivers." + parameters[args.camera]['cam_driver'])
-            CAMERA = mod.camera(parameters[args.camera], args.jetson)
-        except (ImportError, KeyError):
-            print('No camera with the name {0}, exiting'.format(args.camera))
-            sys.exit(0)
+    # Open camera settings and load camera(s)
+    CAMERAS = loadCameras(args.multiCamera, args.camera, args.inputFolder, args.jetson)
 
     # allow the camera to warmup
     time.sleep(2)
@@ -56,8 +41,8 @@ def main(args):
                            decode_sharpening=0.25,
                            debug=0)
 
-    # how many loops
-    loops = CAMERA.getNumberImages() if CAMERA.getNumberImages() else args.loop
+    # how many loops. If using a file input, just use first camera
+    loops = CAMERAS[0].getNumberImages() if CAMERAS[0].getNumberImages() else args.loop
 
     print("Starting {0} image capture and process...".format(loops))
 
@@ -72,24 +57,30 @@ def main(args):
 
     for i in range(loops):
         print("--------------------------------------")
-        # grab an image from the camera
-        file = CAMERA.getFileName()
-        (imageBW, timestamp) = CAMERA.getImage()
+        # grab an image from the cameras
+        tags = []
+        image_timestamp_camera = []
+        for CAMERA in CAMERAS:
+            file = CAMERA.getFileName()
+            (imageBW, timestamp) = CAMERA.getImage()
 
-        # we're out of images
-        if imageBW is None:
-            break
+            # we're out of images
+            if imageBW is None:
+                break
 
-        # AprilDetect, after accounting for distortion  (if fisheye)
-        tags = at_detector.detect(
-            imageBW, True, camParams['cam_params'], args.tagSize/1000)
+            image_timestamp_camera.append((imageBW, timestamp, CAMERA.camParams['cam_params']))
 
-        if file:
-            print("File: {0} ({1}/{2})".format(file, i, loops))
+        # do Apriltag detection and pose estimation on all captured images
+        for imageBW, timestamp, camParam in image_timestamp_camera:
+            # AprilDetect, after accounting for distortion  (if fisheye)
+            tags.extend(at_detector.detect(imageBW, True, camParam, args.tagSize/1000))
 
-        # get time to capture and convert
-        print("Time to capture and detect = {0:.1f} ms, found {1} tags".format(
-            1000*(time.time() - timestamp), len(tags)))
+            if file:
+                print("File: {0} ({1}/{2})".format(file, i, loops))
+
+            # get time to capture and convert
+            print("Time to capture and detect = {0:.1f} ms, found {1} tags".format(
+                1000*(time.time() - timestamp), len(tags)))
 
         for tag in tags:
 
@@ -141,5 +132,7 @@ if __name__ == '__main__':
                         default=2, help="Apriltag decimation")
     parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
                         default=False, action='store_true')
+    parser.add_argument("--multiCamera", type=str, default=None,
+                        help="multiple cameras using the specified yaml file")
     args = parser.parse_args()
     main(args)

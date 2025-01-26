@@ -67,27 +67,9 @@ def test_geo_execution():
     assert os.path.exists("geo_test_results.csv")
 
 
-def test_process_execution():
+def test_process_execution_single():
     """
-    Test the execution of the process_test.main function with various arguments.
-
-    This function sets up an argument parser with several options, parses the
-    arguments, and calls the process_test.main function with the parsed arguments.
-    It then asserts that the output file "processed.csv" exists.
-
-    Arguments:
-    --camera: str, default="SimCamera-720p"
-        Camera profile in camera.yaml.
-    --loop: int, default=10
-        Number of frames to process.
-    --tagSize: int, default=94
-        Apriltag size in mm.
-    --folder: str, default=""
-        Folder of images to use instead of camera.
-    --outfile: str, default="processed.csv"
-        File to output tag data.
-    --decimation: int, default=2
-        Apriltag decimation.
+    Test the execution of the process_test with sinle camera
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--camera", type=str, default="SimCamera-720p",
@@ -96,9 +78,9 @@ def test_process_execution():
                         help="Process this many frames")
     parser.add_argument("--tagSize", type=int, default=94,
                         help="Apriltag size in mm")
-    parser.add_argument("--folder", type=str, default="",
-                        help="Use a folder of images instead of camera")
-    parser.add_argument("--outfile", type=str, default="processed.csv",
+    parser.add_argument("--inputFolder", type=str, default=None,
+                        help="Use a folder of images instead of live camera")
+    parser.add_argument("--outFile", type=str, default="processed.csv",
                         help="Output tag data to this file")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
@@ -106,6 +88,36 @@ def test_process_execution():
                         default=False, action='store_true')
     parser.add_argument("--tagFamily", type=str, default="tag36h11",
                         help="Apriltag family")
+    parser.add_argument("--multiCamera", type=str, default=None,
+                        help="multiple cameras using the specified yaml file")
+    args = parser.parse_args()
+    process_test.main(args)
+    assert os.path.exists("processed.csv")
+
+
+def test_process_execution_multi():
+    """
+    Test the execution of the process_test with sinle camera
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--camera", type=str, default="",
+                        help="Camera profile in camera.yaml")
+    parser.add_argument("--loop", type=int, default=80,
+                        help="Process this many frames")
+    parser.add_argument("--tagSize", type=int, default=94,
+                        help="Apriltag size in mm")
+    parser.add_argument("--inputFolder", type=str, default=None,
+                        help="Use a folder of images instead of live camera")
+    parser.add_argument("--outFile", type=str, default="processed.csv",
+                        help="Output tag data to this file")
+    parser.add_argument("--decimation", type=int,
+                        default=2, help="Apriltag decimation")
+    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+                        default=False, action='store_true')
+    parser.add_argument("--tagFamily", type=str, default="tag36h11",
+                        help="Apriltag family")
+    parser.add_argument("--multiCamera", type=str, default="camera-multi.yaml",
+                        help="multiple cameras using the specified yaml file")
     args = parser.parse_args()
     process_test.main(args)
     assert os.path.exists("processed.csv")

@@ -42,11 +42,11 @@ def test_geo_execution():
                         help="Camera profile in camera.yaml")
     parser.add_argument("--loop", type=int, default=80,
                         help="Capture and process this many frames")
-    parser.add_argument("--maxerror", type=int, default=400,
+    parser.add_argument("--maxError", type=int, default=400,
                         help="Maximum pose error to use, in n*E-8 units")
-    parser.add_argument("--folder", type=str, default="",
+    parser.add_argument("--inputFolder", type=str, default="",
                         help="Use a folder of images instead of camera")
-    parser.add_argument("--outfile", type=str, default="geo_test_results.csv",
+    parser.add_argument("--outFile", type=str, default="geo_test_results.csv",
                         help="Output tag data to this file")
     parser.add_argument('--gui', dest='gui',
                         default=False, action='store_true')
@@ -54,9 +54,9 @@ def test_geo_execution():
                         default=2, help="Apriltag decimation")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
-    parser.add_argument("--imageFolder", type=str, default="",
+    parser.add_argument("--outputFolder", type=str, default="",
                         help="Save processed images to this folder")
-    parser.add_argument('--extraopt', dest='extraopt', help="Optimise best position better",
+    parser.add_argument('--extraOpt', dest='extraOpt', help="Optimise best position better",
                         default=True, action='store_true')
     parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
                         default=False, action='store_true')

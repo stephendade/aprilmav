@@ -19,10 +19,11 @@ except ImportError:
 class cameraBase:
     '''A Camera setup and capture base class'''
 
-    def __init__(self, camParams, use_jetson=False):
+    def __init__(self, camParams, use_jetson=False, camName=""):
         '''Initialise the camera, based on a dict of settings'''
 
         self.use_jetson = use_jetson
+        self.camName = camName
 
         if self.use_jetson:
             self.cudaFrame = jetson_utils.cudaImage(camParams['resolution'][0],

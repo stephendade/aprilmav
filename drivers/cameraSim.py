@@ -11,9 +11,9 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class'''
 
-    def __init__(self, camParams, use_jetson=False):
+    def __init__(self, camParams, use_jetson=False, camName=""):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams, use_jetson)
+        super().__init__(camParams, use_jetson, camName)
 
         self.rotation_per_frame = 20  # degrees
         self.current_rotation = 0

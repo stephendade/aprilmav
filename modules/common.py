@@ -26,29 +26,30 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
     SystemExit: If no camera with the specified name is found.
     '''
     # Open camera settings
-    camParams = []
+    camProfile = []
     if not multiCamera:
         with open('camera.yaml', 'r', encoding="utf-8") as stream:
             parameters = yaml.load(stream, Loader=yaml.FullLoader)
-        camParams.append(parameters[singleCameraProfile])
+        camProfile.append((parameters[singleCameraProfile], singleCameraProfile))
     else:
         with open(multiCamera, 'r', encoding="utf-8") as stream:
             parameters = yaml.load(stream, Loader=yaml.FullLoader)
         for camera in parameters:
-            camParams.append(parameters[camera])
+            camProfile.append((parameters[camera], camera))
 
     # initialize the camera(s)
     CAMERAS = []
-    for camParam in camParams:
+    for camParam, camName in camProfile:
         if inputFolder:
             from drivers import cameraFile
-            CAMERAS.append(cameraFile.FileCamera(camParam, inputFolder, jetson))
+            CAMERAS.append(cameraFile.FileCamera(camParam, inputFolder, jetson, camName))
+            print("Camera {0} initialized (driver: {1})".format(camName, "cameraFile"))
         else:
             try:
-                print(camParam['cam_driver'])
                 mod = import_module("drivers." + camParam['cam_driver'])
-                CAMERAS.append(mod.camera(camParam, jetson))
+                CAMERAS.append(mod.camera(camParam, jetson, camName))
             except (ImportError, KeyError):
-                print('No camera with the name {0}, exiting'.format(camera))
+                print('No camera with the name {0}, exiting'.format(camName))
                 sys.exit(0)
+            print("Camera {0} initialized (driver: {1})".format(camName, camParam['cam_driver']))
     return CAMERAS

@@ -10,9 +10,9 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for a USB Camera'''
 
-    def __init__(self, camParams, use_jetson=False):
+    def __init__(self, camParams, use_jetson=False, camName=""):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams, use_jetson)
+        super().__init__(camParams, use_jetson, camName)
 
         self.camera = cv2.VideoCapture(0)
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH,

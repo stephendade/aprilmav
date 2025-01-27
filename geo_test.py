@@ -70,8 +70,7 @@ def main(args):
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt,
-                         campos=camParams['positionRelVehicle'], camrot=camParams['rotationRelVehicle'])
+    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt)
 
     # how many loops
     loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
@@ -143,7 +142,7 @@ def main(args):
         for tag in tags:
             if tag.pose_err < args.maxError*1e-8:
                 tagsused.append(tag)
-                tagPlacement.addTag(tag)
+                tagPlacement.addTag(tag, camera.T_CamtoVeh)
 
         tagPlacement.getBestTransform(timestamp)
 

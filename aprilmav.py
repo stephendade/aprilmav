@@ -273,8 +273,7 @@ if __name__ == '__main__':
                            debug=0)
 
     # All tags live in here
-    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt,
-                         campos=camParams['positionRelVehicle'], camrot=camParams['rotationRelVehicle'])
+    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt)
 
     # left, up, fwd, pitch, yaw, roll
     with open(args.outFile, "w+", encoding="utf-8") as outFile:
@@ -333,7 +332,7 @@ if __name__ == '__main__':
         for tag in tags:
             if tag.pose_err < args.maxError*1e-8:
                 tagsused += 1
-                tagPlacement.addTag(tag)
+                tagPlacement.addTag(tag, camera.T_CamtoVeh)
 
         tagPlacement.getBestTransform(timestamp)
 

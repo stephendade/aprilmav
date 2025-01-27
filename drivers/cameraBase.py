@@ -5,6 +5,8 @@ A base class for the camera drivers
 import numpy
 import cv2
 
+from transforms3d.euler import euler2mat
+
 '''
 Need to install jetson-utils (https://github.com/dusty-nv/jetson-utils) and
 sudo apt install nvidia-cuda-dev
@@ -63,6 +65,20 @@ class cameraBase:
                     self.D[3][0] = camParams['cam_paramsD'][3]
         except (KeyError, IndexError, TypeError):
             pass
+
+        # create camera to vehicle transformation matrix
+        campos = camParams['positionRelVehicle']
+        camrot = camParams['rotationRelVehicle']
+        # Convert rotation tuple (Euler angles) to rotation matrix
+        rotation_matrix = euler2mat(numpy.deg2rad(camrot[0]), numpy.deg2rad(camrot[1]),
+                                    numpy.deg2rad(camrot[2]), axes='sxyz')
+
+        # Construct the transformation matrix
+        T_CamtoVeh = numpy.eye(4)
+        T_CamtoVeh[0:3, 0:3] = rotation_matrix
+        T_CamtoVeh[0:3, 3] = campos
+
+        self.T_CamtoVeh = T_CamtoVeh
 
     def getNumberImages(self):
         '''Get number of loaded images'''

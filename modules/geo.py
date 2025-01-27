@@ -52,7 +52,7 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=False, slidingWindow=5, campos=(0, 0, 0), camrot=(0, 0, 0), extraOpt=False):
+    def __init__(self, debug=False, slidingWindow=5, extraOpt=False):
         self.T_VehToWorld = deque(maxlen=slidingWindow+1)
         self.timestamps = deque(maxlen=slidingWindow+1)
         self.T_VehToWorldFiltered = deque(maxlen=slidingWindow+1)
@@ -76,31 +76,19 @@ class tagDB:
         # Define a threshold for Z-scores to identify outliers
         self.threshold = 2
 
-        '''Generate the transformation matrix from camera to vehicle frame'''
-        # Convert rotation tuple (Euler angles) to rotation matrix
-        rotation_matrix = euler2mat(numpy.deg2rad(camrot[0]), numpy.deg2rad(camrot[1]),
-                                    numpy.deg2rad(camrot[2]), axes='sxyz')
-
-        # Construct the transformation matrix
-        T_CamtoVeh = numpy.eye(4)
-        T_CamtoVeh[0:3, 0:3] = rotation_matrix
-        T_CamtoVeh[0:3, 3] = campos
-
-        self.T_CamtoVeh = T_CamtoVeh
-
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''
         self.tagDuplicatesT = {}
         self.tagnewT = {}
 
-    def addTag(self, tag):
+    def addTag(self, tag, T_CamtoVeh):
         '''Add tag to database in vehicle reference frame'''
         if tag.tag_id not in self.tagPlacement:
             # tag is in vehicle frame
             T_TagToCam = getTransform(tag)
             # T_TagToCam[0:3, 3] = T_TagToCam[0:3, 3]
             # T(Veh <- tag) = T(Veh <- Cam_t) * T(Cam_t <- tag)
-            self.tagnewT[tag.tag_id] = self.T_CamtoVeh @ T_TagToCam
+            self.tagnewT[tag.tag_id] = T_CamtoVeh @ T_TagToCam
             if self.debug:
                 print("New Tag ID {0} at pos {1}, rot {2}".format(tag.tag_id, getPos(self.tagnewT[tag.tag_id]).round(3),
                                                                   getRotation(self.tagnewT[tag.tag_id]).round(1)))
@@ -111,7 +99,7 @@ class tagDB:
 
             # save tag positions in Vehicle frame at time t for the duplicate
             # T(Veh <- tag) = T(Veh <- Cam_t) * T(Cam_t <- tag)
-            self.tagDuplicatesT[tag.tag_id] = self.T_CamtoVeh @ T_TagToCam
+            self.tagDuplicatesT[tag.tag_id] = T_CamtoVeh @ T_TagToCam
             if self.debug:
                 print("Dupl Tag ID {0} pos {1}, rot {2}".format(tag.tag_id,
                                                                 getPos(

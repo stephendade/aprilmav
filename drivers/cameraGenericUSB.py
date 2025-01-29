@@ -14,11 +14,21 @@ class camera(cameraBase):
         '''Initialise the camera, based on a dict of settings'''
         super().__init__(camParams, use_jetson)
 
-        self.camera = cv2.VideoCapture(0)
+        self.camera = cv2.VideoCapture()
+        self.camera.open(camParams['cameraPath'])
+
+        # read one frame to start camera.
+        self.camera.read()
+
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH,
                         self.camParams['resolution'][0])
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT,
                         self.camParams['resolution'][1])
+        self.camera.set(cv2.CAP_PROP_FPS, self.camParams['fps'])
+        self.camera.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+        self.camera.set(cv2.CAP_PROP_GAIN, self.camParams['gain'])
+        self.camera.set(cv2.CAP_PROP_EXPOSURE, self.camParams['exposure'])
+        self.camera.set(cv2.CAP_PROP_BACKLIGHT, self.camParams['backlight'])
 
         time.sleep(2)
 

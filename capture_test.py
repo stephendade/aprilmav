@@ -85,7 +85,7 @@ if __name__ == '__main__':
     print("Starting {0} image capture...".format(args.loop))
     signal.signal(signal.SIGINT, signal_handler)
 
-    if args.outputfolder != "":
+    if args.outputFolder != "":
         worker = threading.Thread(target=save_threadfunc, args=())
         worker.daemon = True
         worker.start()

@@ -10,13 +10,11 @@ import signal
 import time
 import argparse
 import os
-import sys
 import queue
 import threading
-from importlib import import_module
 import cv2
-import yaml
 
+from modules.common import loadCameras
 from modules.videoStream import videoThread
 
 save_queue = queue.Queue()
@@ -61,9 +59,8 @@ if __name__ == '__main__':
 
     print("Initialising Camera")
 
-    # Open camera settings
-    with open('camera.yaml', 'r', encoding="utf-8") as stream:
-        parameters = yaml.load(stream, Loader=yaml.FullLoader)
+    # Open camera settings and load camera(s)
+    CAMERAS = loadCameras(None, args.camera, None, None)
 
     # create the capture folder if required
     if args.outputFolder != "":
@@ -71,16 +68,6 @@ if __name__ == '__main__':
             os.makedirs(os.path.join(".", args.outputFolder))
         except FileExistsError:
             pass
-
-    # initialize the camera
-    camera = None
-    try:
-        print(parameters[args.camera]['cam_driver'])
-        mod = import_module("drivers." + parameters[args.camera]['cam_driver'])
-        camera = mod.camera(parameters[args.camera])
-    except (ImportError, KeyError):
-        print('No camera with the name {0}, exiting'.format(args.camera))
-        sys.exit(0)
 
     print("Starting {0} image capture...".format(args.loop))
     signal.signal(signal.SIGINT, signal_handler)
@@ -97,7 +84,7 @@ if __name__ == '__main__':
         threadVideo.start()
 
     for i in range(args.loop):
-        (imageBW, timestamp) = camera.getImage(get_raw=True)
+        (imageBW, timestamp) = CAMERAS[0].getImage(get_raw=True)
 
         # get time to capture and convert
         print("Captured {0:.0f}.png in {1:.0f}ms ({2}/{3})".format(
@@ -119,7 +106,7 @@ if __name__ == '__main__':
             break
 
     # close camera
-    camera.close()
+    CAMERAS[0].close()
 
     exit_event.set()
 

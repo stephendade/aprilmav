@@ -161,15 +161,31 @@ SimCamera-720p:
   rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
-# Arducam B0497 USB camera (IMX678)
+# Arducam B0445 IMX296 Camera with 2.1mm lens (LN005)
+imx296-2.1mmlens:
+  cam_params: !!python/tuple [853.6559652088487, 852.7964895593839, 681.749178982899, 549.4545843231076]
+  cam_paramsD: !!python/tuple [-0.10439676578612674, 0.0034394020491022312, -0.016184779578527122, 0.010754998962312383]
+  resolution: !!python/tuple [1456, 1088]
+  fisheye: True
+  halfres: False
+  cam_driver: "cameralibCamera"
+  exposure: 4000
+  analogue_gain: 3.0
+  fps: 60
+  model: "imx296"
+  rotationRelVehicle: !!python/tuple [0, 180, 90]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+
+# Arducam B0497 USB camera (IMX678) with default lens
 Arducam_B0497:
   cam_driver: "cameraGenericUSB"
+  cam_params: !!python/tuple [2514.4519625308344, 2514.7614761401096, 1858.299271966736, 1033.4589590209453]
+  cam_paramsD: !!python/tuple [0.029421221947865624, -0.16872877556445626, 0.6541226189133617, -0.6769467737600235]
   resolution: !!python/tuple [3840, 2160]
-  cam_params: !!python/tuple [650, 650, 640, 480]
   fisheye: True
-  exposure: 20    #in units of 100us. So 20 = 2ms
+  exposure: 30    #in units of 100us. So 20 = 2ms
   fps: 60
-  gain: 500
+  gain: 1100
   backlight: 1    # Ultra Low Light Mode: 1, Normal Mode: 0
   cameraPath: "/dev/v4l/by-id/usb-Arducam_Arducam_B0497__USB3_8.3MP__Arducam_20231205_0001-video-index0"
   rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees

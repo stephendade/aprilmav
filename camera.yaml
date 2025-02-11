@@ -97,19 +97,6 @@ imx296-2.7mmlens:
 
 # IMX219 (Raspi Camera V2) on a NVidia Jetson
 # Exposure time limited to 20000000ns (20ms)
-# 8 Mpixel  NOTE: The calibration is not correct. Don't use yet
-JetsonCameraIMX219-8MP:
-  cam_driver: "cameraGstreamer"
-  model: "nvarguscamerasrc sensor-id=1 wbmode=0 ee-mode=0 exposuretimerange=\"20000000 20000000\" ! video/x-raw(memory:NVMM), width=(int)3280, height=(int)2464, framerate=(fraction)20/1 ! nvvidconv"
-  cam_params: !!python/tuple [4325.719553695577, 5780.6221883232065, 1707.482885769248, 1311.2631825964472]
-  resolution: !!python/tuple [3280, 2464]
-  fisheye: False
-  halfres: False
-  rotationRelVehicle: !!python/tuple [45, 90, 0]   #roll-pitch-yaw in degrees
-  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
-
-# IMX219 (Raspi Camera V2) on a NVidia Jetson
-# Exposure time limited to 20000000ns (20ms)
 # 6 Mpixel
 JetsonCameraIMX219-6MP:
   cam_driver: "cameraGstreamer"
@@ -136,11 +123,11 @@ JetsonCameraIMX219-2MP:
   
 # IMX477 (Raspi HQ Camera) on a NVidia Jetson
 # with a 3.56mm (106deg FoV) lens
-# Exposure time limited to 2000000ns (2ms)
+# Exposure time limited to 5000000ns (5ms)
 # 8.3 Mpixel
 JetsonCameraIMX477-8MP:
   cam_driver: "cameraGstreamer"
-  model: "nvarguscamerasrc sensor-id=0 wbmode=0 ee-mode=0 tnr-mode=0 exposuretimerange=\"8000000 8000000\"! video/x-raw(memory:NVMM), width=(int)3840, height=(int)2160, framerate=(fraction)20/1 ! nvvidconv flip-method=2"
+  model: "nvarguscamerasrc sensor-id=0 wbmode=0 ee-mode=0 tnr-mode=0 exposuretimerange=\"5000000 5000000\"! video/x-raw(memory:NVMM), width=(int)3840, height=(int)2160, framerate=(fraction)20/1 ! nvvidconv flip-method=2"
   cam_params: !!python/tuple [2335.078673964562, 2334.978085360188, 1870.6133257480435, 1151.8455892410548]
   cam_paramsD: !!python/tuple [0.16782716375703705, 0.5450055154488477, -1.4989968998165049, 1.0003718040705523]
   resolution: !!python/tuple [3840, 2160]
@@ -183,9 +170,9 @@ Arducam_B0497:
   cam_paramsD: !!python/tuple [0.029421221947865624, -0.16872877556445626, 0.6541226189133617, -0.6769467737600235]
   resolution: !!python/tuple [3840, 2160]
   fisheye: True
-  exposure: 30    #in units of 100us. So 20 = 2ms
+  exposure: 10    #in units of 100us. So 10 = 1ms
   fps: 60
-  gain: 1100
+  gain: 600
   backlight: 1    # Ultra Low Light Mode: 1, Normal Mode: 0
   cameraPath: "/dev/v4l/by-id/usb-Arducam_Arducam_B0497__USB3_8.3MP__Arducam_20231205_0001-video-index0"
   rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees

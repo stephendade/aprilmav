@@ -106,7 +106,8 @@ if __name__ == '__main__':
             break
 
     # close camera
-    CAMERAS[0].close()
+    for CAMERA in CAMERAS:
+        CAMERA.close()
 
     exit_event.set()
 

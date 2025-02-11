@@ -173,6 +173,10 @@ def main(args):
         if exit_event.is_set():
             break
 
+    # close camera
+    for CAMERA in CAMERAS:
+        CAMERA.close()
+
     exit_event.set()
 
     # Tags

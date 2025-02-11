@@ -14,13 +14,12 @@ import time
 import argparse
 import os
 from collections import defaultdict
-import concurrent.futures
 
 import numpy
 from pyapriltags import Detector
 
 from modules.geo import getPos, getTransform, getRotation
-from modules.common import loadCameras
+from modules.common import do_multi_capture, get_average_timestamps, loadCameras
 
 exit_event = threading.Event()
 
@@ -96,24 +95,16 @@ def main(mainargs):
         img_by_cam = {}
         tags_by_cam = {}
 
-        timestamp = time.time()
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = {executor.submit(capture_image, CAMERA): CAMERA for CAMERA in CAMERAS}
-            for future in concurrent.futures.as_completed(futures):
-                cam_name, imageBW, filename = future.result()
-                if imageBW is not None:
-                    img_by_cam[cam_name] = imageBW
-                    # print("Camera {0} capture time is {1:.1f}ms".format(cam_name, 1000*(time.time() - timestamp)))
-                else:
-                    break
+        img_by_cam = do_multi_capture(CAMERAS)
+        timestamp = get_average_timestamps(img_by_cam)
 
         # Detect tags in each camera
         for CAMERA in CAMERAS:
             # AprilDetect, after accounting for distortion  (if fisheye)
-            tags = at_detector.detect(img_by_cam[CAMERA.camName], True, CAMERA.KFlat, mainargs.tagSize/1000)
+            tags = at_detector.detect(img_by_cam[CAMERA.camName][0], True, CAMERA.KFlat, mainargs.tagSize/1000)
             tags_by_cam[CAMERA.camName] = tags
-            if filename:
-                print("File: {0} ({1}/{2})".format(filename, i, loops))
+            if img_by_cam[CAMERA.camName][2]:
+                print("File: {0} ({1}/{2})".format(img_by_cam[CAMERA.camName][2], i, loops))
 
         # get time to capture and convert
         print("Time to capture and detect = {0:.1f} ms. ".format(1000*(time.time() - timestamp)))
@@ -136,7 +127,7 @@ def main(mainargs):
                                                                                             tagrot.round(1),
                                                                                             tag.pose_err*1E8))
                 with open(mainargs.outFile, "a", encoding="utf-8") as outFile:
-                    outFile.write("{0},{1},{2},".format(filename, CAMERA.camName, tag.tag_id))
+                    outFile.write("{0},{1},{2},".format(img_by_cam[CAMERA.camName][2], CAMERA.camName, tag.tag_id))
                     outFile.write("{0:.3f},{1:.3f},{2:.3f},{3:.1f},{4:.1f},{5:.1f},{6}\n".format(tagpos[0],
                                                                                                  tagpos[1],
                                                                                                  tagpos[2],

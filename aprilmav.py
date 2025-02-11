@@ -4,21 +4,19 @@ Main script. Will use Apriltags to localise position and send via mavlink
 
 '''
 import time
-from importlib import import_module
 from statistics import mean
 from collections import deque
 import argparse
 import threading
 import signal
-import sys
 import os
 
-import yaml
 import numpy
 
 from pyapriltags import Detector
 from pymavlink import mavutil
 
+from modules.common import loadCameras
 from modules.geo import tagDB
 from modules.videoStream import videoThread
 from modules.saveStream import saveThread
@@ -245,20 +243,8 @@ if __name__ == '__main__':
 
     print("Initialising")
 
-    # Open camera settings/
-    with open('camera.yaml', 'r', encoding="utf-8") as stream:
-        parameters = yaml.load(stream, Loader=yaml.FullLoader)
-    camParams = parameters[args.camera]
-
-    # initialize the camera
-    camera = None
-    try:
-        print(parameters[args.camera]['cam_driver'])
-        mod = import_module("drivers." + parameters[args.camera]['cam_driver'])
-        camera = mod.camera(parameters[args.camera], args.jetson)
-    except (ImportError, KeyError):
-        print('No camera with the name {0}, exiting'.format(args.camera))
-        sys.exit(0)
+    # Open camera settings and load camera(s)
+    CAMERAS = loadCameras(None, args.camera, None, args.jetson)
 
     # allow the camera to warmup
     time.sleep(2)
@@ -315,9 +301,8 @@ if __name__ == '__main__':
 
         # grab an image (and timestamp in usec) from the camera
         # estimate 50usec from timestamp to frame capture on next line
-        file = camera.getFileName()
         # print("Timestamp of capture = {0}".format(timestamp))
-        (imageBW, timestamp) = camera.getImage()
+        (imageBW, timestamp) = CAMERAS[0].getImage()
         i += 1
 
         # we're out of images
@@ -325,19 +310,16 @@ if __name__ == '__main__':
             break
 
         tags = at_detector.detect(
-            imageBW, True, camParams['cam_params'], args.tagSize/1000)
+            imageBW, True, CAMERAS[0].KFlat, args.tagSize/1000)
 
         # add any new tags to database, or existing one to duplicates
         tagsused = 0
         for tag in tags:
             if tag.pose_err < args.maxError*1e-8:
                 tagsused += 1
-                tagPlacement.addTag(tag, camera.T_CamtoVeh)
+                tagPlacement.addTag(tag, CAMERAS[0].T_CamtoVeh)
 
         tagPlacement.getBestTransform(timestamp)
-
-        if file:
-            print("File: {0}".format(file))
 
         # get current location and rotation state of vehicle in ArduPilot NED format (rel camera)
         posR = tagPlacement.reportedPos
@@ -346,7 +328,7 @@ if __name__ == '__main__':
         speed = tagPlacement.reportedVelocity
 
         with open(args.outFile, "a", encoding="utf-8") as outFile:
-            outFile.write("{0},{1},".format(file, timestamp))
+            outFile.write("{0},".format(timestamp))
             outFile.write("{0:.3f},{1:.3f},{2:.3f},".format(posR[0], posR[1], posR[2]))
             outFile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
             outFile.write("{0:.3f},{1:.3f},{2:.3f}\n".format(speed[0], speed[1], speed[2]))
@@ -380,6 +362,6 @@ if __name__ == '__main__':
             break
 
     # close camera
-    camera.close()
+    CAMERAS[0].close()
 
     exit_event.set()

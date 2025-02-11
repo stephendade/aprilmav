@@ -3,6 +3,7 @@ Commonly used functions in AprilMAV
 '''
 import sys
 from importlib import import_module
+import concurrent.futures
 
 import yaml
 
@@ -53,3 +54,70 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
                 sys.exit(0)
             print("Camera {0} initialized (driver: {1})".format(camName, camParam['cam_driver']))
     return CAMERAS
+
+
+def capture_image(CAMERA, get_raw=False):
+    """
+    Captures an image using the provided CAMERA object. Used in seperate threads
+
+    Args:
+        CAMERA: An object representing the camera
+
+    Returns:
+        tuple: A tuple containing:
+            - camName (str): The name of the camera.
+            - imageBW (numpy.ndarray or None): The captured image in black and white, or None if no image is captured.
+            - timestamp (float or None): The timestamp of the captured image, or None if no image is captured.
+            - filename (str or None): The filename of the captured image, or None if live camera feed is used.
+    """
+    filename = CAMERA.getFileName()
+    (imageBW, timestamp) = CAMERA.getImage(get_raw)
+
+    # we're out of images
+    if imageBW is None:
+        return CAMERA.camName, None, None
+
+    return CAMERA.camName, imageBW, timestamp, filename
+
+
+def do_multi_capture(CAMERAS, get_raw=False):
+    """
+    Captures images from multiple cameras simultaneously using thread pooling.
+    Args:
+        CAMERAS (list): A list of camera objects to capture from.
+    Returns:
+        dict: A dictionary containing captured images and metadata for each camera:
+            - Key: Camera name/identifier
+            - Value: Tuple containing:
+                - imageBW: Grayscale image captured from the camera
+                - timestamp: Time when image was captured
+                - filename: Name of file where image was saved
+    Notes:
+        - Uses ThreadPoolExecutor for parallel image capture
+        - If any camera capture fails (returns None), the function will break early
+    """
+    img_by_cam = {}
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {executor.submit(capture_image, CAMERA, get_raw): CAMERA for CAMERA in CAMERAS}
+        for future in concurrent.futures.as_completed(futures):
+            cam_name, imageBW, timestamp, filename = future.result()
+            if imageBW is not None:
+                img_by_cam[cam_name] = (imageBW, timestamp, filename)
+                # print("Camera {0} capture time is {1:.1f}ms".format(cam_name, 1000*(time.time() - timestamp)))
+            else:
+                break
+    return img_by_cam
+
+
+def get_average_timestamps(img_by_cam):
+    """
+    Get the average timestamp from a list of timestamps
+
+    Args:
+        timestamps (list): A list of timestamps
+
+    Returns:
+        float: The average timestamp
+    """
+    timestamps = [img_by_cam[cam][1] for cam in img_by_cam]
+    return sum(timestamps)/len(timestamps)

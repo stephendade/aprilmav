@@ -57,4 +57,5 @@ class camera(cameraBase):
     def close(self):
         ''' close the camera'''
         super().close()
+        self.camera.release()
         del self.camera

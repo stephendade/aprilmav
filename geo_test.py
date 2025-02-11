@@ -11,15 +11,13 @@ into camera.yaml
 '''
 import time
 import argparse
-import sys
 import threading
 import signal
 import os
-from importlib import import_module
-import yaml
 import numpy
 
 from pyapriltags import Detector
+from modules.common import loadCameras
 from modules.geo import tagDB
 from modules.saveStream import saveThread
 
@@ -38,24 +36,8 @@ def main(args):
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    # Open camera settings
-    with open('camera.yaml', 'r', encoding="utf-8") as stream:
-        parameters = yaml.load(stream, Loader=yaml.FullLoader)
-    camParams = parameters[args.camera]
-
-    # initialize the camera
-    camera = None
-    if args.inputFolder:
-        from drivers import cameraFile
-        camera = cameraFile.FileCamera(camParams, args.inputFolder, args.jetson)
-    else:
-        try:
-            print(parameters[args.camera]['cam_driver'])
-            mod = import_module("drivers." + parameters[args.camera]['cam_driver'])
-            camera = mod.camera(parameters[args.camera], args.jetson)
-        except (ImportError, KeyError):
-            print('No camera with the name {0}, exiting'.format(args.camera))
-            sys.exit(0)
+    # Open camera settings and load camera(s)
+    CAMERAS = loadCameras(None, args.camera, args.inputFolder, args.jetson)
 
     # allow the camera to warmup
     time.sleep(2)
@@ -73,7 +55,7 @@ def main(args):
     tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt)
 
     # how many loops
-    loops = camera.getNumberImages() if camera.getNumberImages() else args.loop
+    loops = CAMERAS[0].getNumberImages() if CAMERAS[0].getNumberImages() else args.loop
 
     # Start save image thread, if desired
     threadSave = None
@@ -126,8 +108,8 @@ def main(args):
 
         # grab an image from the camera
         startTime = time.time()
-        file = camera.getFileName()
-        (imageBW, timestamp) = camera.getImage()
+        file = CAMERAS[0].getFileName()
+        (imageBW, timestamp) = CAMERAS[0].getImage()
 
         # we're out of images
         if imageBW is None:
@@ -135,14 +117,14 @@ def main(args):
 
         # AprilDetect, after accounting for distortion (if fisheye)
         tags = at_detector.detect(
-            imageBW, True, camParams['cam_params'], args.tagSize/1000)
+            imageBW, True, CAMERAS[0].KFlat, args.tagSize/1000)
 
         # add any new tags to database, or existing one to duplicates
         tagsused = []
         for tag in tags:
             if tag.pose_err < args.maxError*1e-8:
                 tagsused.append(tag)
-                tagPlacement.addTag(tag, camera.T_CamtoVeh)
+                tagPlacement.addTag(tag, CAMERAS[0].T_CamtoVeh)
 
         tagPlacement.getBestTransform(timestamp)
 

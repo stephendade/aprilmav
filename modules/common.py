@@ -49,8 +49,11 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
             try:
                 mod = import_module("drivers." + camParam['cam_driver'])
                 CAMERAS.append(mod.camera(camParam, jetson, camName))
-            except (ImportError, KeyError):
+            except KeyError:
                 print('No camera with the name {0}, exiting'.format(camName))
+                sys.exit(0)
+            except ImportError as e:
+                print('Error importing camera driver {0}: {1}'.format(camParam['cam_driver'], e))
                 sys.exit(0)
             print("Camera {0} initialized (driver: {1})".format(camName, camParam['cam_driver']))
     return CAMERAS

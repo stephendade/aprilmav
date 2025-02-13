@@ -50,12 +50,13 @@ class cameraBase:
             self.dim1 = None
             self.map1 = None
             self.map2 = None
+            self.K[0, 0] = camParams['cam_params'][0]
+            self.K[1, 1] = camParams['cam_params'][1]
+            self.K[0, 2] = camParams['cam_params'][2]
+            self.K[1, 2] = camParams['cam_params'][3]
+            self.K[2, 2] = 1
+            self.KFlat = camParams['cam_params']
             if camParams['fisheye']:
-                self.K[0, 0] = camParams['cam_params'][0]
-                self.K[1, 1] = camParams['cam_params'][1]
-                self.K[0, 2] = camParams['cam_params'][2]
-                self.K[1, 2] = camParams['cam_params'][3]
-                self.K[2, 2] = 1
                 if self.use_jetson:
                     self.D = camParams['cam_paramsD']
                 else:

@@ -60,8 +60,6 @@ class camera(cameraBase):
             img = cv2.aruco.generateImageMarker(self.tag_dict, tag, self.tag_size)
             self.tag_img.append(img)
 
-        self.base_time = time.time()
-
         # Constants for Gaussian noise
         self.NOISE_MEAN = 75
         self.NOISE_STDDEV = 25
@@ -121,7 +119,7 @@ class camera(cameraBase):
         curFrame = self.doImageEnhancement(curFrame)
 
         # Return a fake time of 50ms for stable velocity calculations
-        return (curFrame, self.base_time + (0.05 * self.location_in_script))
+        return (curFrame, time.time() - 0.05)
 
     def getFileName(self):
         '''Get current file in camera. Returns None.'''

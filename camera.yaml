@@ -163,6 +163,20 @@ imx296-2.1mmlens:
   rotationRelVehicle: !!python/tuple [0, 180, 90]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
+imx296-4.4mmlens:
+  cam_params: !!python/tuple [1317.2390670053644, 1316.4073591774604, 685.5093471114692, 537.8967425931694]
+  cam_paramsD: !!python/tuple [-0.052096196655019314, 0.24248147973342898, -0.8939476966089185, 1.3396560988614616]
+  resolution: !!python/tuple [1456, 1088]
+  fisheye: True
+  halfres: False
+  cam_driver: "cameralibCamera"
+  exposure: 4000
+  analogue_gain: 3.0
+  fps: 60
+  model: "imx296"
+  rotationRelVehicle: !!python/tuple [0, 180, 90]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+
 # Arducam B0497 USB camera (IMX678) with default lens
 Arducam_B0497:
   cam_driver: "cameraGenericUSB"

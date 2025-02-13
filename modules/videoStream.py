@@ -32,17 +32,35 @@ class videoThread(threading.Thread):
                 return
             if self.frame_queue.empty():
                 continue
-            (image, posn, rot, tags) = self.frame_queue.get()
-            # process B&W image to colour and add text
-            imageColour = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-            if tags:
-                imageColour = self.labelTags(imageColour, tags)
+            (img_by_cam, posn, rot, tags_by_cam) = self.frame_queue.get()
+            imageColour = None
+            for camName in sorted(img_by_cam.keys()):
+                imageCam = cv2.cvtColor(img_by_cam[camName][0], cv2.COLOR_GRAY2BGR)
+                if tags_by_cam:
+                    img_by_cam[camName] = self.labelTags(imageCam, tags_by_cam[camName])
+                # overlay camera name on the image
+                cv2.putText(imageCam, camName, (10, 45),
+                            cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2)
+                # put a border around the image
+                imageCam = cv2.copyMakeBorder(
+                    imageCam, 5, 5, 5, 5, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+                # append to final image
+                if imageColour is None:
+                    imageColour = imageCam
+                else:
+                    imageColour = cv2.hconcat([imageColour, imageCam])
             if posn:
                 cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]), (10, 20),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             if rot:
                 cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]), (10, 40),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+            # resize to 1080p, while keeping ratio
+            height, width = imageColour.shape[:2]
+            if height > 1080 or width > 1920:
+                scaling_factor = min(1920 / width, 1080 / height)
+                new_size = (int(width * scaling_factor), int(height * scaling_factor))
+                imageColour = cv2.resize(imageColour, new_size, interpolation=cv2.INTER_AREA)
             # Start video server if not already started
             if not vidOut:
                 vidOut = cv2.VideoWriter('appsrc ! video/x-raw, format=BGR ! videoconvert ! x264enc \

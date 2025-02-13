@@ -120,21 +120,7 @@ if __name__ == '__main__':
 
         # Send to video stream, if option. Combine all images into one
         if threadVideo:
-            finalImage = None
-            for CAMERA in CAMERAS:
-                cam_image = img_by_cam[CAMERA.camName][0]
-                if args.multiCamera:
-                    # overlay camera name on the image
-                    cv2.putText(cam_image, CAMERA.camName, (10, 45),
-                                cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2)
-                    # put a border around the image
-                    cam_image = cv2.copyMakeBorder(
-                        cam_image, 5, 5, 5, 5, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-                if finalImage is None:
-                    finalImage = cam_image
-                else:
-                    finalImage = cv2.hconcat([finalImage, cam_image])
-            threadVideo.frame_queue.put((finalImage, None, None, None))
+            threadVideo.frame_queue.put((img_by_cam, None, None, None))
 
         if exit_event.is_set():
             break

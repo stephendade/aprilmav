@@ -46,7 +46,7 @@ class videoThread(threading.Thread):
             # Start video server if not already started
             if not vidOut:
                 vidOut = cv2.VideoWriter('appsrc ! video/x-raw, format=BGR ! videoconvert ! x264enc \
-                                         speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ! \
+                                         speed-preset=faster tune=zerolatency ! rtph264pay config-interval=1 name=pay0 pt=96 ! \
                                          udpsink host=' + self.ip + ' port=' +
                                          self.port + '', cv2.CAP_GSTREAMER, 0, 20, imageColour.shape[:2][::-1], True)
                 if not vidOut.isOpened():

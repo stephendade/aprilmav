@@ -101,7 +101,7 @@ if __name__ == '__main__':
         for CAMERA in CAMERAS:
             print("{0} captured {1:.0f}.png in {2:.0f}ms ({3}/{4})".format(
                 CAMERA.camName, img_by_cam[CAMERA.camName][1]*1000,
-                (time.time() - timestamp)*1000, i, args.loop))
+                (time.time() - timestamp)*1000, i + 1, args.loop))
 
         time.sleep(args.delay/1000)
 

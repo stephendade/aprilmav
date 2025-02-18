@@ -16,7 +16,7 @@ import numpy
 from pyapriltags import Detector
 from pymavlink import mavutil
 
-from modules.common import loadCameras
+from modules.common import do_multi_capture, get_average_timestamps, loadCameras
 from modules.geo import tagDB
 from modules.videoStream import videoThread
 from modules.saveStream import saveThread
@@ -239,12 +239,14 @@ if __name__ == '__main__':
                         default=False, action='store_true')
     parser.add_argument("--tagFamily", type=str, default="tagStandard41h12",
                         help="Apriltag family")
+    parser.add_argument("--multiCamera", type=str, default=None,
+                        help="multiple cameras using the specified yaml file")
     args = parser.parse_args()
 
     print("Initialising")
 
     # Open camera settings and load camera(s)
-    CAMERAS = loadCameras(None, args.camera, None, args.jetson)
+    CAMERAS = loadCameras(args.multiCamera, args.camera, None, args.jetson)
 
     # allow the camera to warmup
     time.sleep(2)
@@ -285,7 +287,7 @@ if __name__ == '__main__':
     # Start save image thread, if desired
     threadSave = None
     if args.outputFolder != "":
-        threadSave = saveThread(args.outputFolder, exit_event)
+        threadSave = saveThread(args.outputFolder, exit_event, CAMERAS)
         threadSave.start()
 
     # video stream out, if desired
@@ -297,27 +299,30 @@ if __name__ == '__main__':
     i = 0
     prev_timestamp = time.time() - 0.1
     while True:
-        # print("--------------------------------------")
+        print("--------------------------------------")
+        # Capture images from all cameras (in parallel)
+        img_by_cam = {}
+        tags_by_cam = {}
 
-        # grab an image (and timestamp in usec) from the camera
-        # estimate 50usec from timestamp to frame capture on next line
-        # print("Timestamp of capture = {0}".format(timestamp))
-        (imageBW, timestamp) = CAMERAS[0].getImage()
-        i += 1
+        img_by_cam = do_multi_capture(CAMERAS)
+        timestamp = get_average_timestamps(img_by_cam)
 
-        # we're out of images
-        if imageBW is None:
-            break
+        # Detect tags in each camera
+        for CAMERA in CAMERAS:
+            # AprilDetect, after accounting for distortion  (if fisheye)
+            tags = at_detector.detect(img_by_cam[CAMERA.camName][0], True, CAMERA.KFlat, args.tagSize/1000)
+            tags_by_cam[CAMERA.camName] = tags
 
-        tags = at_detector.detect(
-            imageBW, True, CAMERAS[0].KFlat, args.tagSize/1000)
+        # get time to capture and convert
+        print("Time to capture and detect = {0:.1f} ms. ".format(1000*(time.time() - timestamp)))
+        for CAMERA in CAMERAS:
+            print("Camera {0} found {1} tags. ".format(CAMERA.camName, len(tags_by_cam[CAMERA.camName])))
 
-        # add any new tags to database, or existing one to duplicates
-        tagsused = 0
-        for tag in tags:
-            if tag.pose_err < args.maxError*1e-8:
-                tagsused += 1
-                tagPlacement.addTag(tag, CAMERAS[0].T_CamtoVeh)
+        # feed tags into tagPlacement
+        for CAMERA in CAMERAS:
+            for tag in tags_by_cam[CAMERA.camName]:
+                if tag.pose_err < args.maxError*1e-8:
+                    tagPlacement.addTag(tag, CAMERA.T_CamtoVeh)
 
         tagPlacement.getBestTransform(timestamp)
 
@@ -345,15 +350,22 @@ if __name__ == '__main__':
 
         # Send to save thread
         if threadSave:
-            threadSave.save_queue.put((imageBW, os.path.join(
-                ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+            # threadSave.save_queue.put((imageBW, os.path.join(
+            #     ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+            if args.multiCamera:
+                for CAMERA in CAMERAS:
+                    threadSave.save_queue.put((img_by_cam[CAMERA.camName][0], os.path.join(
+                        ".", args.outputFolder, CAMERA.camName, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+            else:
+                threadSave.save_queue.put((img_by_cam[0][0], os.path.join(
+                    ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
 
         # Get ready for next frame
         tagPlacement.newFrame()
 
         # Send to video stream, if option
         if threadVideo:
-            threadVideo.frame_queue.put((imageBW, posR, rotD, tags))
+            threadVideo.frame_queue.put((img_by_cam, posR, rotD, tags_by_cam))
 
         # Update the timestamp
         prev_timestamp = timestamp

@@ -19,7 +19,7 @@ import numpy
 from pyapriltags import Detector
 
 from modules.geo import getPos, getTransform, getRotation
-from modules.common import do_multi_capture, get_average_timestamps, loadCameras
+from modules.common import do_multi_capture, get_average_timestamps, loadCameras, get_num_images
 
 exit_event = threading.Event()
 
@@ -29,30 +29,6 @@ def signal_handler(signum, frame):
     Signal handler for exit
     """
     exit_event.set()
-
-
-def capture_image(CAMERA):
-    """
-    Captures an image using the provided CAMERA object.
-
-    Args:
-        CAMERA: An object representing the camera, which must have the methods
-                getFileName() and getImage().
-
-    Returns:
-        tuple: A tuple containing:
-            - camName (str): The name of the camera.
-            - imageBW (numpy.ndarray or None): The captured image in black and white, or None if no image is captured.
-            - filename (str or None): The filename of the captured image, or None if no image is captured.
-    """
-    filename = CAMERA.getFileName()
-    (imageBW, _) = CAMERA.getImage()
-
-    # we're out of images
-    if imageBW is None:
-        return CAMERA.camName, None, None
-
-    return CAMERA.camName, imageBW, filename
 
 
 def main(mainargs):
@@ -73,8 +49,8 @@ def main(mainargs):
                            decode_sharpening=0.25,
                            debug=0)
 
-    # how many loops. If using a file input, just use first camera
-    loops = CAMERAS[0].getNumberImages() if CAMERAS[0].getNumberImages() else mainargs.loop
+    # how many loops. If using a file input, just use min images
+    loops = get_num_images(CAMERAS, mainargs.loop)
 
     print("Starting {0} image capture and process...".format(loops))
     signal.signal(signal.SIGINT, signal_handler)
@@ -96,7 +72,10 @@ def main(mainargs):
         tags_by_cam = {}
 
         img_by_cam = do_multi_capture(CAMERAS)
-        timestamp = get_average_timestamps(img_by_cam)
+        if mainargs.inputFolder:
+            timestamp = time.time()
+        else:
+            timestamp = get_average_timestamps(img_by_cam)
 
         # Detect tags in each camera
         for CAMERA in CAMERAS:
@@ -104,7 +83,9 @@ def main(mainargs):
             tags = at_detector.detect(img_by_cam[CAMERA.camName][0], True, CAMERA.KFlat, mainargs.tagSize/1000)
             tags_by_cam[CAMERA.camName] = tags
             if img_by_cam[CAMERA.camName][2]:
-                print("File: {0} ({1}/{2})".format(img_by_cam[CAMERA.camName][2], i, loops))
+                print("File: {0} ({1}/{2})".format(img_by_cam[CAMERA.camName][2], i + 1, loops))
+            else:
+                print("Capture {0}: ({1}/{2})".format(CAMERA.camName, i + 1, loops))
 
         # get time to capture and convert
         print("Time to capture and detect = {0:.1f} ms. ".format(1000*(time.time() - timestamp)))

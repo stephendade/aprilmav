@@ -17,7 +17,7 @@ import os
 import numpy
 
 from pyapriltags import Detector
-from modules.common import loadCameras
+from modules.common import do_multi_capture, get_average_timestamps, loadCameras, get_num_images
 from modules.geo import tagDB
 from modules.saveStream import saveThread
 
@@ -37,7 +37,7 @@ def main(args):
     signal.signal(signal.SIGINT, signal_handler)
 
     # Open camera settings and load camera(s)
-    CAMERAS = loadCameras(None, args.camera, args.inputFolder, args.jetson)
+    CAMERAS = loadCameras(args.multiCamera, args.camera, args.inputFolder, args.jetson)
 
     # allow the camera to warmup
     time.sleep(2)
@@ -55,12 +55,12 @@ def main(args):
     tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt)
 
     # how many loops
-    loops = CAMERAS[0].getNumberImages() if CAMERAS[0].getNumberImages() else args.loop
+    loops = get_num_images(CAMERAS, args.loop)
 
     # Start save image thread, if desired
     threadSave = None
     if args.outputFolder != "":
-        threadSave = saveThread(args.outputFolder, exit_event)
+        threadSave = saveThread(args.outputFolder, exit_event, CAMERAS)
         threadSave.start()
 
     print("Starting {0} image capture and process...".format(loops))
@@ -105,31 +105,38 @@ def main(args):
 
     for i in range(loops):
         print("--------------------------------------")
+        # Capture images from all cameras (in parallel)
+        img_by_cam = {}
+        tags_by_cam = {}
 
-        # grab an image from the camera
-        startTime = time.time()
-        file = CAMERAS[0].getFileName()
-        (imageBW, timestamp) = CAMERAS[0].getImage()
+        img_by_cam = do_multi_capture(CAMERAS)
+        if args.inputFolder:
+            timestamp = time.time()
+        else:
+            timestamp = get_average_timestamps(img_by_cam)
 
-        # we're out of images
-        if imageBW is None:
-            break
+        # Detect tags in each camera
+        for CAMERA in CAMERAS:
+            # AprilDetect, after accounting for distortion  (if fisheye)
+            tags = at_detector.detect(img_by_cam[CAMERA.camName][0], True, CAMERA.KFlat, args.tagSize/1000)
+            tags_by_cam[CAMERA.camName] = tags
+            if img_by_cam[CAMERA.camName][2]:
+                print("File: {0} ({1}/{2})".format(img_by_cam[CAMERA.camName][2], i + 1, loops))
+            else:
+                print("Capture {0}: ({1}/{2})".format(CAMERA.camName, i + 1, loops))
 
-        # AprilDetect, after accounting for distortion (if fisheye)
-        tags = at_detector.detect(
-            imageBW, True, CAMERAS[0].KFlat, args.tagSize/1000)
+        # get time to capture and convert
+        print("Time to capture and detect = {0:.1f} ms. ".format(1000*(time.time() - timestamp)))
+        for CAMERA in CAMERAS:
+            print("Camera {0} found {1} tags. ".format(CAMERA.camName, len(tags_by_cam[CAMERA.camName])))
 
-        # add any new tags to database, or existing one to duplicates
-        tagsused = []
-        for tag in tags:
-            if tag.pose_err < args.maxError*1e-8:
-                tagsused.append(tag)
-                tagPlacement.addTag(tag, CAMERAS[0].T_CamtoVeh)
+        # feed tags into tagPlacement
+        for CAMERA in CAMERAS:
+            for tag in tags_by_cam[CAMERA.camName]:
+                if tag.pose_err < args.maxError*1e-8:
+                    tagPlacement.addTag(tag, CAMERA.T_CamtoVeh)
 
         tagPlacement.getBestTransform(timestamp)
-
-        if file:
-            print("File: {0} ({1}/{2})".format(file, i, loops))
 
         posR = tagPlacement.reportedPos
         rotR = tagPlacement.reportedRot
@@ -137,7 +144,13 @@ def main(args):
         speed = tagPlacement.reportedVelocity
 
         with open(args.outFile, "a", encoding="utf-8") as outFile:
-            outFile.write("{0},".format(file))
+            if args.inputFolder:
+                for CAMERA in CAMERAS:
+                    file = img_by_cam[CAMERA.camName][2]
+                    outFile.write("{0}".format(file))
+                outFile.write(",")
+            else:
+                outFile.write(",")
             outFile.write("{0:.4f},{1:.4f},{2:.4f},".format(posR[0], posR[1], posR[2]))
             outFile.write("{0:.3f},{1:.3f},{2:.3f},".format(rotR[0], rotR[1], rotR[2]))
             outFile.write("{0:.3f},{1:.3f},{2:.3f},".format(speed[0], speed[1], speed[2]))
@@ -159,14 +172,21 @@ def main(args):
             plt.draw()
             fig.canvas.flush_events()
 
-        print("Time to capture, detect, localise = {0:.2f} ms, {2}/{1} tags".format(1000*(time.time() - startTime),
+        print("Time to capture, detect, localise = {0:.2f} ms, {2}/{1} tags".format(1000*(time.time() - timestamp),
                                                                                     len(tags),
                                                                                     len(tagPlacement.tagDuplicatesT)))
 
         # Send to save thread
         if threadSave:
-            threadSave.save_queue.put((imageBW, os.path.join(
-                ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+            # threadSave.save_queue.put((imageBW, os.path.join(
+            #     ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+            if args.multiCamera:
+                for CAMERA in CAMERAS:
+                    threadSave.save_queue.put((img_by_cam[CAMERA.camName][0], os.path.join(
+                        ".", args.outputFolder, CAMERA.camName, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+            else:
+                threadSave.save_queue.put((img_by_cam[0][0], os.path.join(
+                    ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
 
         tagPlacement.newFrame()
 
@@ -201,7 +221,7 @@ if __name__ == '__main__':
     parser.add_argument("--inputFolder", type=str, default=None,
                         help="Use a folder of images instead of live camera")
     parser.add_argument("--outFile", type=str, default="geo_test_results.csv",
-                        help="Output tag data to this file")
+                        help="Output position data to this file")
     parser.add_argument('--gui', dest='gui',
                         default=False, action='store_true')
     parser.add_argument("--decimation", type=int,
@@ -216,6 +236,8 @@ if __name__ == '__main__':
                         default=False, action='store_true')
     parser.add_argument("--tagFamily", type=str, default="tagStandard41h12",
                         help="Apriltag family")
+    parser.add_argument("--multiCamera", type=str, default=None,
+                        help="multiple cameras using the specified yaml file")
     args = parser.parse_args()
 
     main(args)

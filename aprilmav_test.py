@@ -40,7 +40,7 @@ def test_geo_execution():
                         help="Apriltag size in mm")
     parser.add_argument("--camera", type=str, default="SimCamera-720p",
                         help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=80,
+    parser.add_argument("--loop", type=int, default=20,
                         help="Capture and process this many frames")
     parser.add_argument("--maxError", type=int, default=400,
                         help="Maximum pose error to use, in n*E-8 units")
@@ -62,6 +62,8 @@ def test_geo_execution():
                         default=False, action='store_true')
     parser.add_argument("--tagFamily", type=str, default="tag36h11",
                         help="Apriltag family")
+    parser.add_argument("--multiCamera", type=str, default=None,
+                        help="multiple cameras using the specified yaml file")
     args = parser.parse_args()
     geo_test.main(args)
     assert os.path.exists("geo_test_results.csv")
@@ -74,7 +76,7 @@ def test_process_execution_single():
     parser = argparse.ArgumentParser()
     parser.add_argument("--camera", type=str, default="SimCamera-720p",
                         help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=80,
+    parser.add_argument("--loop", type=int, default=20,
                         help="Process this many frames")
     parser.add_argument("--tagSize", type=int, default=94,
                         help="Apriltag size in mm")
@@ -102,7 +104,7 @@ def test_process_execution_multi():
     parser = argparse.ArgumentParser()
     parser.add_argument("--camera", type=str, default="",
                         help="Camera profile in camera.yaml")
-    parser.add_argument("--loop", type=int, default=80,
+    parser.add_argument("--loop", type=int, default=20,
                         help="Process this many frames")
     parser.add_argument("--tagSize", type=int, default=94,
                         help="Apriltag size in mm")

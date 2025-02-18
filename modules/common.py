@@ -1,11 +1,14 @@
 '''
 Commonly used functions in AprilMAV
 '''
+import os
 import sys
 from importlib import import_module
 import concurrent.futures
 
 import yaml
+
+from drivers import cameraFile
 
 
 def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
@@ -41,9 +44,12 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
     # initialize the camera(s)
     CAMERAS = []
     for camParam, camName in camProfile:
-        if inputFolder:
-            from drivers import cameraFile
-            CAMERAS.append(cameraFile.FileCamera(camParam, inputFolder, jetson, camName))
+        # 3 options here: folder single, folder multi and live camera
+        if inputFolder and multiCamera:
+            imageFolder = inputFolder
+            if multiCamera:
+                imageFolder = os.path.join(inputFolder, camName)
+            CAMERAS.append(cameraFile.FileCamera(camParam, imageFolder, jetson, camName))
             print("Camera {0} initialized (driver: {1})".format(camName, "cameraFile"))
         else:
             try:
@@ -57,6 +63,25 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
                 sys.exit(0)
             print("Camera {0} initialized (driver: {1})".format(camName, camParam['cam_driver']))
     return CAMERAS
+
+
+def get_num_images(CAMERAS, loop):
+    """
+    Get the number of images available in the file camera(s)
+
+    Args:
+        CAMERAS (list): A list of camera objects to capture from.
+
+    Returns:
+        int: The number of images available in the file camera(s), Otherwise loop
+    """
+    num_images = CAMERAS[0].getNumberImages()
+    for CAMERA in CAMERAS:
+        if CAMERA.getNumberImages():
+            num_images = min(num_images, CAMERA.getNumberImages())
+    if num_images is None:
+        num_images = loop
+    return num_images
 
 
 def capture_image(CAMERA, get_raw=False):

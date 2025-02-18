@@ -12,7 +12,7 @@ class saveThread(threading.Thread):
     """
     Save images to a folder
     """
-    def __init__(self, folder, exit_event):
+    def __init__(self, folder, exit_event, CAMERAS=None):
         threading.Thread.__init__(self)
         self.save_queue = queue.Queue()
         self.exit_event = exit_event
@@ -23,6 +23,14 @@ class saveThread(threading.Thread):
         except FileExistsError:
             pass
 
+        # and camera folders if required
+        if CAMERAS:
+            for CAMERA in CAMERAS:
+                try:
+                    os.makedirs(os.path.join(".", folder, CAMERA.camName))
+                except FileExistsError:
+                    pass
+
     def run(self):
         while True:
             if self.exit_event.wait(timeout=0.001) and self.save_queue.empty():
@@ -30,6 +38,7 @@ class saveThread(threading.Thread):
             if self.save_queue.empty():
                 continue
             (image, filename, posn, rot, tags) = self.save_queue.get()
+            
             # add in data (colour)
             imageColour = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
             img_width = imageColour.shape[1]
@@ -41,6 +50,7 @@ class saveThread(threading.Thread):
                         (10, int(60 * scale)), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 255), int(2 * scale))
             imageColour = self.labelTags(imageColour, tags)
             cv2.imwrite(filename, imageColour, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+            print("Saved {0}".format(filename))
 
     def labelTags(self, image, tags):
         """

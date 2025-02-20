@@ -45,7 +45,7 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
     CAMERAS = []
     for camParam, camName in camProfile:
         # 3 options here: folder single, folder multi and live camera
-        if inputFolder and multiCamera:
+        if inputFolder:
             imageFolder = inputFolder
             if multiCamera:
                 imageFolder = os.path.join(inputFolder, camName)

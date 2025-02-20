@@ -7,6 +7,8 @@ import queue
 import threading
 import cv2
 
+from modules.common import labelTags
+
 
 class saveThread(threading.Thread):
     """
@@ -48,33 +50,6 @@ class saveThread(threading.Thread):
                         (10, int(30 * scale)), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 255), int(2 * scale))
             cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]),
                         (10, int(60 * scale)), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 255), int(2 * scale))
-            imageColour = self.labelTags(imageColour, tags)
+            imageColour = labelTags(imageColour, tags)
             cv2.imwrite(filename, imageColour, [cv2.IMWRITE_PNG_COMPRESSION, 0])
             print("Saved {0}".format(filename))
-
-    def labelTags(self, image, tags):
-        """
-        Label the tags in the image
-        """
-        # loop over the AprilTag detection results
-        for r in tags:
-            # extract the bounding box (x, y)-coordinates for the AprilTag
-            # and convert each of the (x, y)-coordinate pairs to integers
-            (ptA, ptB, ptC, ptD) = r.corners
-            ptB = (int(ptB[0]), int(ptB[1]))
-            ptC = (int(ptC[0]), int(ptC[1]))
-            ptD = (int(ptD[0]), int(ptD[1]))
-            ptA = (int(ptA[0]), int(ptA[1]))
-            # draw the bounding box of the AprilTag detection
-            cv2.line(image, ptA, ptB, (0, 255, 0), 2)
-            cv2.line(image, ptB, ptC, (0, 255, 0), 2)
-            cv2.line(image, ptC, ptD, (0, 255, 0), 2)
-            cv2.line(image, ptD, ptA, (0, 255, 0), 2)
-            # draw the center (x, y)-coordinates of the AprilTag
-            (cX, cY) = (int(r.center[0]), int(r.center[1]))
-            cv2.circle(image, (cX, cY), 5, (0, 0, 255), -1)
-            # draw the tag ID
-            scale = image.shape[1] / 1000
-            cv2.putText(image, str(r.tag_id), (ptA[0] + int(10 * scale), ptA[1] - int(10 * scale)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7 * scale, (0, 255, 0), int(1 * scale))
-        return image

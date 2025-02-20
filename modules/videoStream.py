@@ -10,6 +10,8 @@ import queue
 import threading
 import cv2
 
+from modules.common import labelTags
+
 
 class videoThread(threading.Thread):
     """
@@ -37,7 +39,7 @@ class videoThread(threading.Thread):
             for camName in sorted(img_by_cam.keys()):
                 imageCam = cv2.cvtColor(img_by_cam[camName][0], cv2.COLOR_GRAY2BGR)
                 if tags_by_cam:
-                    img_by_cam[camName] = self.labelTags(imageCam, tags_by_cam[camName])
+                    img_by_cam[camName] = labelTags(imageCam, tags_by_cam[camName])
                 # overlay camera name on the image
                 cv2.putText(imageCam, camName, (10, 45),
                             cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2)
@@ -73,29 +75,3 @@ class videoThread(threading.Thread):
                     return
             # Send processed image to video stream
             vidOut.write(imageColour)
-
-    def labelTags(self, image, tags):
-        """
-        Label the tags in the image
-        """
-        # loop over the AprilTag detection results
-        for r in tags:
-            # extract the bounding box (x, y)-coordinates for the AprilTag
-            # and convert each of the (x, y)-coordinate pairs to integers
-            (ptA, ptB, ptC, ptD) = r.corners
-            ptB = (int(ptB[0]), int(ptB[1]))
-            ptC = (int(ptC[0]), int(ptC[1]))
-            ptD = (int(ptD[0]), int(ptD[1]))
-            ptA = (int(ptA[0]), int(ptA[1]))
-            # draw the bounding box of the AprilTag detection
-            cv2.line(image, ptA, ptB, (0, 255, 0), 2)
-            cv2.line(image, ptB, ptC, (0, 255, 0), 2)
-            cv2.line(image, ptC, ptD, (0, 255, 0), 2)
-            cv2.line(image, ptD, ptA, (0, 255, 0), 2)
-            # draw the center (x, y)-coordinates of the AprilTag
-            (cX, cY) = (int(r.center[0]), int(r.center[1]))
-            cv2.circle(image, (cX, cY), 5, (0, 0, 255), -1)
-            # draw the tag ID
-            cv2.putText(image, str(
-                r.tag_id), (ptA[0] + 10, ptA[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
-        return image

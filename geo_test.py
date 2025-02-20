@@ -74,34 +74,9 @@ def main(args):
         outFile.write("timestamp (sec)\n")
 
     # GUI
-    fig = None
-    axMap = None
-    axHeight = None
-    lineVehicle = None
-    lineTag = None
-    lineHeight = []
-    coordsX = []
-    coordsY = []
-    coordsZ = []
-    coordsFile = []
     if args.gui:
-        print("plotting")
-        import matplotlib.pyplot as plt
-        # Create a figure containing a single axes.
-        fig, (axMap, axHeight) = plt.subplots(2)
-        axMap.set_xlim(-4, 4)
-        axMap.set_ylim(-4, 4)
-        axMap.grid()
-        axHeight.set_xlim(0, loops-1)
-        axHeight.set_ylim(-4, 4)
-        axMap.set(xlabel='Left (m)', ylabel='Fwd (m)', title='Horizonal Map')
-        axHeight.set(xlabel='', ylabel='Up (m)', title='Vehicle Height')
-        # Plot some data on the axes.
-        lineVehicle, = axMap.plot(coordsX, coordsY)
-        lineTag, = axMap.plot([], [], 'bs')
-        lineHeight, = axHeight.plot([], [])
-
-        plt.show(block=False)
+        from modules.gui import GUI
+        AprilGUI = GUI()
 
     for i in range(loops):
         print("--------------------------------------")
@@ -159,18 +134,8 @@ def main(args):
 
         # Update the live graph
         if args.gui:
-            coordsX.append(posR[2])
-            coordsY.append(posR[0])
-            coordsZ.append(posR[1])
-            coordsFile.append(i)
-            lineVehicle.set_xdata(coordsX)
-            lineVehicle.set_ydata(coordsY)
-            lineTag.set_xdata(tagPlacement.getTagPoints(2))
-            lineTag.set_ydata(tagPlacement.getTagPoints(0))
-            lineHeight.set_xdata(coordsFile)
-            lineHeight.set_ydata(coordsZ)
-            plt.draw()
-            fig.canvas.flush_events()
+            AprilGUI.update(posR, rotD)
+            AprilGUI.updateImage(img_by_cam, tags_by_cam)
 
         print("Time to capture, detect, localise = {0:.2f} ms, {2}/{1} tags".format(1000*(time.time() - timestamp),
                                                                                     len(tags),
@@ -201,11 +166,7 @@ def main(args):
 
     # Tags
     if args.gui:
-        for tagid, tag in tagPlacement.getTagdb().items():
-            axMap.annotate("T{0} ({1:.3f})m".format(
-                tagid, tag[1, 3]), (tag[2, 3]+0.1, tag[0, 3]+0.1))
-        print("Waiting for plot window to be closed")
-        plt.show()
+        AprilGUI.on_end()
 
 
 if __name__ == '__main__':

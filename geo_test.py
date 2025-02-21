@@ -158,6 +158,10 @@ def main(args):
         if exit_event.is_set():
             break
 
+    # print out the positions of all the tags
+    print("----Final tag positions----")
+    tagPlacement.printTags()
+
     # close camera
     for CAMERA in CAMERAS:
         CAMERA.close()

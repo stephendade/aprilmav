@@ -76,6 +76,12 @@ class tagDB:
         # Define a threshold for Z-scores to identify outliers
         self.threshold = 2
 
+    def printTags(self):
+        '''Print all tags in the database'''
+        for tagid, tag in self.tagPlacement.items():
+            print("Tag ID {0} at pos {1}, rot {2}".format(tagid, getPos(tag).round(3),
+                                                          getRotation(tag).round(1)))
+
     def newFrame(self):
         '''Reset the duplicates for a new frame of tags'''
         self.tagDuplicatesT = {}

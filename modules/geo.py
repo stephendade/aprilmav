@@ -62,10 +62,10 @@ class tagDB:
         self.tagnewT = {}
         self.tagDuplicatesT = {}
         self.debug = debug
-        self.reportedPos = (0, 0, 0)
-        self.reportedPosPrev = (0.0, 0.0, 0.0)
-        self.reportedRot = (0, 0, 0)
-        self.reportedVelocity = (0, 0, 0)
+        self.reportedPos = numpy.array((0, 0, 0))
+        self.reportedPosPrev = numpy.array((0, 0, 0))
+        self.reportedRot = numpy.array((0, 0, 0))
+        self.reportedVelocity = numpy.array((0, 0, 0))
         self.reportedTimestampPrev = 0
         self.T_VehToWorld.append(numpy.array(numpy.eye((4))))
         self.T_VehToWorld.append(numpy.array(numpy.eye((4))))

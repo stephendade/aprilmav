@@ -55,7 +55,8 @@ def main(mainargs):
 
     # hold all pose errors to get average at end:
     all_pose_error = []
-    all_tags = defaultdict(list)
+    all_tags_pos = defaultdict(list)
+    all_tags_rot = defaultdict(list)
 
     for i in range(loops):
         print("--------------------------------------")
@@ -96,7 +97,8 @@ def main(mainargs):
                 tagpos = getPos(tag_Veh)
                 tagrot = getRotation(tag_Veh)
                 all_pose_error.append(tag.pose_err*1E8)
-                all_tags[tag.tag_id].append(tagpos)
+                all_tags_pos[tag.tag_id].append(tagpos)
+                all_tags_rot[tag.tag_id].append(tagrot)
 
                 print("Cam {0}, Tag {1} pos = {2} m, Rot = {3} deg. ErrE8 = {4:.4f}".format(CAMERA.camName,
                                                                                             tag.tag_id,
@@ -122,14 +124,19 @@ def main(mainargs):
         print("Pose error (1E8) mean: {0:.3f} and Std dev {1:.3f}".format(numpy.mean(all_pose_error),
                                                                           numpy.std(all_pose_error)))
     # Compute statistics for each tag
-    for tag_id, posns in all_tags.items():
+    for tag_id, posn in all_tags_pos.items():
         # Convert to NumPy arrays
-        posns_array = numpy.array(posns)
+        posns_array = numpy.array(posn)
         translation_mean = numpy.mean(posns_array, axis=0)
         translation_std = numpy.std(posns_array, axis=0)
-        print("Tag ID {0} mean: {1} and Std dev {2}".format(tag_id, translation_mean,
-                                                            translation_std))
-
+        print("Tag ID Pos {0} mean: {1} and Std dev {2}".format(tag_id, translation_mean,
+                                                                translation_std))
+    for tag_id, rots in all_tags_rot.items():
+        # Convert to NumPy arrays
+        rots_array = numpy.array(rots)
+        rot_mean = numpy.mean(rots_array, axis=0)
+        rot_std = numpy.std(rots_array, axis=0)
+        print("Tag ID Rot {0} mean: {1} and Std dev {2}".format(tag_id, rot_mean, rot_std))
     # close camera
     for CAMERA in CAMERAS:
         CAMERA.close()

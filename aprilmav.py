@@ -13,13 +13,13 @@ import os
 
 import numpy
 
-from pyapriltags import Detector
 from pymavlink import mavutil
 
 from modules.common import do_multi_capture, get_average_timestamps, loadCameras
 from modules.geo import tagDB
 from modules.videoStream import videoThread
 from modules.saveStream import saveThread
+from modules.aprilDetect import aprilDetect
 
 exit_event = threading.Event()
 
@@ -241,6 +241,8 @@ if __name__ == '__main__':
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
+    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
+                        default=False, action='store_true')
     args = parser.parse_args()
 
     print("Initialising")
@@ -251,14 +253,7 @@ if __name__ == '__main__':
     # allow the camera to warmup
     time.sleep(2)
 
-    at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
-                           families=args.tagFamily,
-                           nthreads=max(1, os.cpu_count() - 1),
-                           quad_decimate=args.decimation,
-                           quad_sigma=0.4,
-                           refine_edges=1,
-                           decode_sharpening=1,
-                           debug=0)
+    at_detector = aprilDetect(args.tagSize, args.tagFamily, args.decimation, args.opencv)
 
     # All tags live in here
     tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt)
@@ -310,7 +305,10 @@ if __name__ == '__main__':
         # Detect tags in each camera
         for CAMERA in CAMERAS:
             # AprilDetect, after accounting for distortion  (if fisheye)
-            tags = at_detector.detect(img_by_cam[CAMERA.camName][0], True, CAMERA.KFlat, args.tagSize/1000)
+            if at_detector.OpenCV:
+                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.K)
+            else:
+                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.KFlat)
             tags_by_cam[CAMERA.camName] = tags
 
         # get time to capture and convert

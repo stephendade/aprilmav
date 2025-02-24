@@ -64,7 +64,7 @@ def test_geo_execution():
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
-    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
+    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Works for tagStandard31h11",
                         default=False, action='store_true')
     args = parser.parse_args()
     geo_test.main(args)
@@ -94,7 +94,7 @@ def test_process_execution_single():
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
-    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
+    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Works for tagStandard31h11",
                         default=False, action='store_true')
     args = parser.parse_args()
     process_test.main(args)
@@ -124,7 +124,7 @@ def test_process_execution_multi():
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default="camera-multi.yaml",
                         help="multiple cameras using the specified yaml file")
-    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
+    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Works for tagStandard31h11",
                         default=True, action='store_true')
     args = parser.parse_args()
     process_test.main(args)

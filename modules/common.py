@@ -17,9 +17,9 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
     Load camera parameters from the camera_params.yaml file and initialize the cameras.
 
     Parameters:
-    multiCamera (str or None): Path to the YAML file containing multiple camera profiles. If None, singleCameraProfile is used.
+    multiCamera (str or None): Path to the YAML file containing multiple camera profiles
     singleCameraProfile (str): The profile name to be used from the YAML file when multiCamera is None.
-    inputFolder (str or None): Path to the folder containing input files for the camera. If None, live camera feed is used.
+    inputFolder (str or None): Path to the folder containing input files for the camera
     jetson (bool): Flag indicating whether the system is running on a Jetson device.
 
     Returns:

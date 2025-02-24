@@ -40,7 +40,7 @@ class saveThread(threading.Thread):
             if self.save_queue.empty():
                 continue
             (image, filename, posn, rot, tags) = self.save_queue.get()
-            
+
             # add in data (colour)
             imageColour = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
             img_width = imageColour.shape[1]

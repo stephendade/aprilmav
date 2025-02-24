@@ -97,6 +97,7 @@ $ aprilmav.py
 - ``--averaging=N``   Use a moving average of N frames for determining position and velocity.
 - ``--jetson``        Use hardware accelerator (CUDA, VPI) on NVIDIA Jetson
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
+- ``--opencv``        Use OpenCV instead of pyapriltag for decoding. Only works for tag family tagStandard31h11
   
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.
@@ -158,6 +159,8 @@ Note a separate profile will be required for a specific lens and resolution comb
 
 ArduPilot requires a good velocity estimate from AprilMAV. This can be graphed via the xxx MAVLink messages.
 
+``process_test.py`` can used in a static scence to confirm the detected distance is correct and the distance stability.
+
 ``geo_test.py`` can be used to output a csv file showing the postion and velocity values for analysis. This analysis is best when with an image capture set of the vehicle moving at a constant velocity in 1 direction.
 
 If the velocity numbers are too noisy, the following options will help:
@@ -166,6 +169,7 @@ If the velocity numbers are too noisy, the following options will help:
 - Decrease camera gain to reduce any noise in the images. Apriltags are capabile of being detected in quite low-light environments
 - A good camera calibration (if not using one of the supplied calibrations) is essential
 - Use the ``--averaging=N`` option to average over N frames. N should be a maximum of camera fps/2
+- Ensure at least 3 Apriltags are visible at all times
   
 ### Running Simulations
 

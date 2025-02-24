@@ -62,7 +62,7 @@ class camera(cameraBase):
 
         # Constants for Gaussian noise
         self.NOISE_MEAN = 75
-        self.NOISE_STDDEV = 25
+        self.NOISE_STDDEV = 15
 
     def getNumberImages(self):
         '''Get number of loaded images

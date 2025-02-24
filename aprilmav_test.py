@@ -64,6 +64,8 @@ def test_geo_execution():
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
+    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
+                        default=False, action='store_true')
     args = parser.parse_args()
     geo_test.main(args)
     assert os.path.exists("geo_test_results.csv")
@@ -92,6 +94,8 @@ def test_process_execution_single():
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
+    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
+                        default=False, action='store_true')
     args = parser.parse_args()
     process_test.main(args)
     assert os.path.exists("processed.csv")
@@ -99,7 +103,7 @@ def test_process_execution_single():
 
 def test_process_execution_multi():
     """
-    Test the execution of the process_test with sinle camera
+    Test the execution of the process_test with multiple cameras and opencv
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--camera", type=str, default="",
@@ -120,6 +124,8 @@ def test_process_execution_multi():
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default="camera-multi.yaml",
                         help="multiple cameras using the specified yaml file")
+    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
+                        default=True, action='store_true')
     args = parser.parse_args()
     process_test.main(args)
     assert os.path.exists("processed.csv")

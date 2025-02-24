@@ -6,7 +6,11 @@ import numpy
 import cv2
 from pyapriltags import Detector
 
+
 class ApriltagDectection:
+    '''
+    Placeholder for detected tag information when using OpenCV
+    '''
     tag_id = None
     corners = None
     center = None
@@ -19,6 +23,9 @@ class ApriltagDectection:
 
 
 class aprilDetect:
+    '''
+    Apriltag detector, using either pyapriltags or OpenCV
+    '''
     def __init__(self, tagSize, tagFamily="tag36h11", decimate=1.0, OpenCV=False):
         self.tagSize = tagSize/1000
         self.decimate = decimate
@@ -67,12 +74,12 @@ class aprilDetect:
         '''
         if self.OpenCV:
             # Detect tags
-            corners, ids, rejected = self.at_detector.detectMarkers(image)
+            corners, ids, _ = self.at_detector.detectMarkers(image)
 
             # Determine each tag position
             tags = []
             if ids is not None:
-                for idx, id in enumerate(ids):
+                for idx, tagid in enumerate(ids):
                     # Calculate pose for each tag
                     success, rvec, tvec = cv2.solvePnP(
                         self.objPoints,
@@ -86,7 +93,7 @@ class aprilDetect:
                         pose_err = numpy.linalg.norm(tvec)
                         rotation_matrix, _ = cv2.Rodrigues(rvec)
                         tag = ApriltagDectection()
-                        tag.tag_id = id[0]
+                        tag.tag_id = tagid[0]
                         tag.corners = corners[idx][0]
                         tag.center = corners[idx][0].mean(axis=0)
                         tag.hamming = 0

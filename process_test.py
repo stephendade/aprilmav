@@ -12,14 +12,13 @@ import signal
 import threading
 import time
 import argparse
-import os
 from collections import defaultdict
 
 import numpy
-from pyapriltags import Detector
 
 from modules.geo import getPos, getTransform, getRotation
 from modules.common import do_multi_capture, get_average_timestamps, loadCameras, get_num_images
+from modules.aprilDetect import aprilDetect
 
 exit_event = threading.Event()
 
@@ -40,14 +39,7 @@ def main(mainargs):
     # allow the camera to warmup
     time.sleep(2)
 
-    at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
-                           families=mainargs.tagFamily,
-                           nthreads=max(1, os.cpu_count() - 1),
-                           quad_decimate=mainargs.decimation,
-                           quad_sigma=0.0,
-                           refine_edges=1,
-                           decode_sharpening=0.25,
-                           debug=0)
+    at_detector = aprilDetect(mainargs.tagSize, mainargs.tagFamily, mainargs.decimation, mainargs.opencv)
 
     # how many loops. If using a file input, just use min images
     loops = get_num_images(CAMERAS, mainargs.loop)
@@ -80,7 +72,11 @@ def main(mainargs):
         # Detect tags in each camera
         for CAMERA in CAMERAS:
             # AprilDetect, after accounting for distortion  (if fisheye)
-            tags = at_detector.detect(img_by_cam[CAMERA.camName][0], True, CAMERA.KFlat, mainargs.tagSize/1000)
+            if at_detector.OpenCV:
+                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.K)
+            else:
+                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.KFlat)
+
             tags_by_cam[CAMERA.camName] = tags
             if img_by_cam[CAMERA.camName][2]:
                 print("File: {0} ({1}/{2})".format(img_by_cam[CAMERA.camName][2], i + 1, loops))
@@ -159,5 +155,7 @@ if __name__ == '__main__':
                         default=False, action='store_true')
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
+    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
+                        default=False, action='store_true')
     args = parser.parse_args()
     main(args)

@@ -6,7 +6,7 @@ import cv2
 import numpy
 import matplotlib.pyplot as plt
 
-from modules.common import labelTags
+from modules.common import getFontSize, labelTags
 
 
 class GUI:
@@ -20,6 +20,10 @@ class GUI:
         self.rotX = []
         self.rotY = []
         self.rotZ = []
+
+        self.text_height = None
+        self.font_scale = 1
+        self.thickness = 4
 
         print("plotting")
 
@@ -100,14 +104,20 @@ class GUI:
         imageColour = None
         for camName in sorted(img_by_cam.keys()):
             imageCam = cv2.cvtColor(img_by_cam[camName][0], cv2.COLOR_GRAY2BGR)
+
+            if not self.text_height:
+                self.font_scale, self.thickness, self.text_height = getFontSize(imageCam)
+
             if tags_by_cam:
-                img_by_cam[camName] = labelTags(imageCam, tags_by_cam[camName])
-            # overlay camera name on the image
-            cv2.putText(imageCam, camName, (10, 45),
-                        cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2)
+                img_by_cam[camName] = labelTags(imageCam, tags_by_cam[camName], self.thickness,
+                                                self.font_scale)
+
+            cv2.putText(imageCam, camName, (10, self.text_height + 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, self.font_scale, (255, 0, 0), self.thickness)
+
             # put a border around the image
             imageCam = cv2.copyMakeBorder(
-                imageCam, 5, 5, 5, 5, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+                imageCam, 15, 15, 15, 15, cv2.BORDER_CONSTANT, value=(255, 255, 255))
             # append to final image
             if imageColour is None:
                 imageColour = imageCam

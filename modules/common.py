@@ -152,7 +152,7 @@ def get_average_timestamps(img_by_cam):
     return sum(timestamps)/len(timestamps)
 
 
-def labelTags( image, tags):
+def labelTags(image, tags, thickness=1, fontsize=1):
     """
     Label the tags in the image
     """
@@ -166,15 +166,44 @@ def labelTags( image, tags):
         ptD = (int(ptD[0]), int(ptD[1]))
         ptA = (int(ptA[0]), int(ptA[1]))
         # draw the bounding box of the AprilTag detection
-        cv2.line(image, ptA, ptB, (0, 255, 0), 2)
-        cv2.line(image, ptB, ptC, (0, 255, 0), 2)
-        cv2.line(image, ptC, ptD, (0, 255, 0), 2)
-        cv2.line(image, ptD, ptA, (0, 255, 0), 2)
+        cv2.line(image, ptA, ptB, (0, 255, 0), thickness)
+        cv2.line(image, ptB, ptC, (0, 255, 0), thickness)
+        cv2.line(image, ptC, ptD, (0, 255, 0), thickness)
+        cv2.line(image, ptD, ptA, (0, 255, 0), thickness)
         # draw the center (x, y)-coordinates of the AprilTag
         (cX, cY) = (int(r.center[0]), int(r.center[1]))
-        cv2.circle(image, (cX, cY), 5, (0, 0, 255), -1)
+        cv2.circle(image, (cX, cY), 10, (0, 0, 255), -1)
         # draw the tag ID
-        scale = image.shape[1] / 1000
-        cv2.putText(image, str(r.tag_id), (ptA[0] + int(10 * scale), ptA[1] - int(10 * scale)),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7 * scale, (0, 255, 0), int(1 * scale))
+        cv2.putText(image, str(r.tag_id), (ptA[0] + int(10 * thickness), ptA[1] - int(10 * thickness)),
+                    cv2.FONT_HERSHEY_SIMPLEX, fontsize, (0, 255, 0), thickness)
     return image
+
+
+def getFontSize(image):
+    """
+    Calculate the optimal font size for the camera name to be displayed on the image
+
+    Args:
+        image: OpenCV image
+
+    Returns:
+        tuple: A tuple containing: font_scale, thickness, text_height
+    """
+    text_height = None
+    font_scale = 1
+
+    img_height, img_width = image.shape[:2]
+    thickness = int(img_width/500)
+    target_width = img_width * 0.25  # 25% of image width
+    testText = "Test1_1234567890"
+
+    # Binary search to find optimal font scale
+    (text_width, text_height), baseline = cv2.getTextSize(
+        testText, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
+
+    while text_width < target_width:
+        font_scale *= 1.1
+        (text_width, text_height), baseline = cv2.getTextSize(
+            testText, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
+
+    return font_scale, thickness, text_height

@@ -7,7 +7,7 @@ import queue
 import threading
 import cv2
 
-from modules.common import labelTags
+from modules.common import getFontSize, labelTags
 
 
 class saveThread(threading.Thread):
@@ -19,6 +19,10 @@ class saveThread(threading.Thread):
         self.save_queue = queue.Queue()
         self.exit_event = exit_event
 
+        self.text_height = None
+        self.font_scale = 1
+        self.thickness = 4
+
         # create the capture folder if required
         try:
             os.makedirs(os.path.join(".", folder))
@@ -26,7 +30,7 @@ class saveThread(threading.Thread):
             pass
 
         # and camera folders if required
-        if CAMERAS:
+        if CAMERAS and len(CAMERAS) > 1:
             for CAMERA in CAMERAS:
                 try:
                     os.makedirs(os.path.join(".", folder, CAMERA.camName))
@@ -43,13 +47,16 @@ class saveThread(threading.Thread):
 
             # add in data (colour)
             imageColour = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-            img_width = imageColour.shape[1]
-            scale = img_width / 3 / 500  # Assuming 50 is the base width for scaling
+
+            if not self.text_height:
+                self.font_scale, self.thickness, self.text_height = getFontSize(imageColour)
 
             cv2.putText(imageColour, "Pos (m) = {0:.3f}, {1:.3f}, {2:.3f}".format(posn[0], posn[1], posn[2]),
-                        (10, int(30 * scale)), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 255), int(2 * scale))
+                        (10, self.text_height + 10), cv2.FONT_HERSHEY_SIMPLEX,
+                        self.font_scale, (0, 0, 255), self.thickness, cv2.LINE_AA)
             cv2.putText(imageColour, "Rot (deg) = {0:.1f}, {1:.1f}, {2:.1f}".format(rot[0], rot[1], rot[2]),
-                        (10, int(60 * scale)), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 255), int(2 * scale))
-            imageColour = labelTags(imageColour, tags)
+                        (10, 2*(self.text_height + 10)), cv2.FONT_HERSHEY_SIMPLEX,
+                        self.font_scale, (0, 0, 255), self.thickness, cv2.LINE_AA)
+            imageColour = labelTags(imageColour, tags, self.thickness, self.font_scale)
             cv2.imwrite(filename, imageColour, [cv2.IMWRITE_PNG_COMPRESSION, 0])
             print("Saved {0}".format(filename))

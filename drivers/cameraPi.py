@@ -49,7 +49,7 @@ class camera(cameraBase):
         self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         if not get_raw:
-            self.image = self.doImageEnhancement(self.image)
+            self.image = self.maybedoImageEnhancement(self.image)
             self.image = self.maybeDoFishEyeConversion(self.image)
 
         return (self.image, timestamp)

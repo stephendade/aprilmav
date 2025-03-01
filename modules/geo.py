@@ -288,7 +288,7 @@ class tagDB:
                             print("Optimising with error {0:.3f}m".format(summeddist))
                         lowestCost = summeddist
                         bestTransform = new_transform
-            if lowestCost > 0.5:
+            if lowestCost > 0.5 * len(self.tagDuplicatesT):
                 print("WARNING: bad position estimate. Ignoring this frame.")
             else:
                 # We have our least-cost transform

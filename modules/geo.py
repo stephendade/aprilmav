@@ -52,12 +52,9 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=False, slidingWindow=5, extraOpt=False):
-        self.T_VehToWorld = deque(maxlen=slidingWindow+1)
-        self.timestamps = deque(maxlen=slidingWindow+1)
-        self.T_VehToWorldFiltered = deque(maxlen=slidingWindow+1)
-        self.timestampsFiltered = deque(maxlen=slidingWindow+1)
-        self.deltaVelocityFiltered = deque(maxlen=slidingWindow+1)
+    def __init__(self, debug=True, extraOpt=False):
+        self.T_VehToWorld = []
+        self.timestamps = []
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
@@ -68,13 +65,16 @@ class tagDB:
         self.reportedVelocity = numpy.array((0, 0, 0))
         self.reportedTimestampPrev = 0
         self.T_VehToWorld.append(numpy.array(numpy.eye((4))))
-        self.T_VehToWorld.append(numpy.array(numpy.eye((4))))
-        self.T_VehToWorldFiltered.append(numpy.array(numpy.eye((4))))
-        self.T_VehToWorldFiltered.append(numpy.array(numpy.eye((4))))
-        self.slidingWindow = slidingWindow
         self.extraOpt = extraOpt
-        # Define a threshold for Z-scores to identify outliers
-        self.threshold = 2
+
+    def getTaginWorld(self, tag, T_CamtoVeh):
+        '''Get the tag in world reference frame'''
+        T_TagToCam = getTransform(tag)
+        T_TagToVeh = T_CamtoVeh @ T_TagToCam
+        T_TagToWorld = self.T_VehToWorld[-1] @ T_TagToVeh
+        TagPos = getPos(T_TagToWorld)
+        TagRot = getRotation(T_TagToWorld, True)
+        return TagPos, TagRot
 
     def printTags(self):
         '''Print all tags in the database'''
@@ -112,76 +112,21 @@ class tagDB:
                                                                     self.tagDuplicatesT[tag.tag_id]).round(3),
                                                                 getRotation(self.tagDuplicatesT[tag.tag_id]).round(1)))
 
-    def generateReportedLoc(self, timestamp):
+    def generateReportedLoc(self):
         '''Generate the vehicle's current position
          and velocity and rotation in ArduPilot NED format,
          noting that Apriltag coords are (image right, image down, image out) relative to camera.
          Timestamp is seconds since epoch'''
-        self.T_VehToWorldFiltered.append(self.T_VehToWorld[-1])
-        self.timestampsFiltered.append(self.timestamps[-1])
 
-        # Generate position, rotation in ArduPilot format, average 5 times (SMA) if required
-        averagedpos = []
-        averagedrot = []
-        for i in range(1, self.slidingWindow+1):
-            if len(self.T_VehToWorldFiltered) >= i:
-                averagedpos.append(getPos(self.T_VehToWorldFiltered[-i]))
-                averagedrot.append(getRotation(self.T_VehToWorldFiltered[-i], True))
-        # only start filtering when we have enough data
-        if self.slidingWindow > 0 and len(self.T_VehToWorldFiltered) > self.slidingWindow:
-            self.reportedPos = self.zscoreFilter(averagedpos)
-            self.reportedRot = self.zscoreFilter(averagedrot)
-        else:
-            self.reportedPos = getPos(self.T_VehToWorldFiltered[-1])
-            self.reportedRot = getRotation(self.T_VehToWorldFiltered[-1], True)
+        self.reportedPos = getPos(self.T_VehToWorld[-1])
+        self.reportedRot = getRotation(self.T_VehToWorld[-1], True)
 
         # store the delta velocity
         delta = numpy.array(self.reportedPos) - numpy.array(self.reportedPosPrev)
-        self.deltaVelocityFiltered.append(delta / (timestamp - self.reportedTimestampPrev))
-        if self.slidingWindow > 0 and len(self.deltaVelocityFiltered) > self.slidingWindow:
-            self.reportedVelocity = self.zscoreFilter(self.deltaVelocityFiltered)
-        else:  # not enough data yet
-            self.reportedVelocity = self.deltaVelocityFiltered[-1]
+        if len(self.timestamps) > 1:
+            self.reportedVelocity = delta / (self.timestamps[-1] - self.timestamps[-2])
 
         self.reportedPosPrev = self.reportedPos
-        self.reportedTimestampPrev = timestamp
-
-    def zscoreFilter(self, averagedpos):
-        """
-        Filters out outlier positions based on Z-scores and returns the mean of the remaining positions.
-
-        Parameters:
-        averagedpos (list or numpy.ndarray): A list or array of positions where each position is a list or array of
-        coordinates.
-
-        Returns:
-        tuple: The mean position of the filtered positions as a tuple of coordinates.
-
-        The method performs the following steps:
-        1. Converts the input positions to a numpy array.
-        2. Calculates the mean and standard deviation for each coordinate.
-        3. Computes the Z-scores for each coordinate.
-        4. Filters out positions where any coordinate has a Z-score greater than the threshold.
-        5. Calculates the mean of the remaining positions.
-        6. Returns the mean position as a tuple.
-        """
-        averagedpos = numpy.array(averagedpos)
-
-        # Calculate mean and standard deviation for each coordinate
-        mean_pos = numpy.mean(averagedpos, axis=0)
-        std_pos = numpy.std(averagedpos, axis=0)
-
-        # Calculate Z-scores for each coordinate
-        z_scores = numpy.abs((averagedpos - mean_pos) / std_pos)
-
-        # Filter out positions with any coordinate having a Z-score greater than the threshold
-        filtered_positions = averagedpos[(z_scores < self.threshold).all(axis=1)]
-
-        # Calculate the mean of the remaining positions
-        mean_filtered_pos = numpy.mean(filtered_positions, axis=0)
-
-        newPos = numpy.array(mean_filtered_pos)
-        return newPos
 
     def getTagdb(self):
         '''get coords of all tags by axis'''
@@ -301,7 +246,7 @@ class tagDB:
                                                         getRotation(bestTransform).round(1)))
 
                 # Update position, rotation, velocity
-                self.generateReportedLoc(timestamp)
+                self.generateReportedLoc()
             if self.debug:
                 print("New Pos {0}, Rot = {2} with {1} tags".format(self.reportedPos.round(3),
                                                                     len(self.tagDuplicatesT),

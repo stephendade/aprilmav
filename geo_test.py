@@ -45,7 +45,7 @@ def main(args):
     at_detector = aprilDetect(args.tagSize, args.tagFamily, args.decimation, args.opencv)
 
     # All tags live in here
-    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt)
+    tagPlacement = tagDB(extraOpt=args.extraOpt)
 
     # how many loops
     loops = get_num_images(CAMERAS, args.loop)

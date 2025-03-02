@@ -26,6 +26,7 @@ class cameraBase:
 
         self.use_jetson = use_jetson
         self.camName = camName
+        self.doEnhancement = camParams['doEnhancement'] if 'doEnhancement' in camParams else False
 
         if self.use_jetson:
             self.cudaFrame = jetson_utils.cudaImage(camParams['resolution'][0],
@@ -89,17 +90,17 @@ class cameraBase:
         '''Get current file in camera'''
         return None
 
-    def doImageEnhancement(self, image):
+    def maybedoImageEnhancement(self, image):
         '''Enhance the image to optimize AprilTag detection'''
+
+        if not self.doEnhancement:
+            return image
 
         # denoise the image via a 5x5 kernal gaussian blur
         # then sharpen the image via subtracting a blurred version
         # From https://www.iaarc.org/publications/fulltext/166_ISARC_2024_Paper_207.pdf
         blurred = cv2.GaussianBlur(image, (5, 5), 0)
         image = cv2.addWeighted(image, 1.5, blurred, -0.5, 0)
-        # create a CLAHE object (Arguments are optional).
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        image = clahe.apply(image)
         return image
 
     def maybeDoFishEyeConversion(self, image):

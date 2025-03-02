@@ -54,7 +54,7 @@ def test_geo_execution():
                         default=2, help="Apriltag decimation")
     parser.add_argument("--averaging", type=int,
                         default=5, help="Use moving average of N frames")
-    parser.add_argument("--outputFolder", type=str, default="",
+    parser.add_argument("--outputFolder", type=str, default="./test1",
                         help="Save processed images to this folder")
     parser.add_argument('--extraOpt', dest='extraOpt', help="Optimise best position better",
                         default=True, action='store_true')

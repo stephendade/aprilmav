@@ -256,7 +256,7 @@ if __name__ == '__main__':
     at_detector = aprilDetect(args.tagSize, args.tagFamily, args.decimation, args.opencv)
 
     # All tags live in here
-    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt)
+    tagPlacement = tagDB(extraOpt=args.extraOpt)
 
     # left, up, fwd, pitch, yaw, roll
     with open(args.outFile, "w+", encoding="utf-8") as outFile:

@@ -217,13 +217,13 @@ class tagDB:
                 if lowestCost > summeddist:
                     if self.debug:
                         print("Using tag {0} with error {1:.3f}m".format(
-                            tagid, summeddist))
+                            tagid, summeddist / len(self.tagDuplicatesT)))
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur
                 else:
                     if self.debug:
                         print("Ignoring tag {0} with error {1:.3f}m".format(
-                            tagid, summeddist))
+                            tagid, summeddist / len(self.tagDuplicatesT)))
 
             # now iterate the bestTransform a little to see if we can get a better fit
             if self.extraOpt:

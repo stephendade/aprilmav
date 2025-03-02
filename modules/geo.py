@@ -1,42 +1,13 @@
 '''
 Geometrical functions
 '''
-
-import math
 from collections import deque
+import math
 import numpy
 
 from transforms3d.euler import mat2euler, euler2mat
 
-
-def getTransform(tag):
-    '''tag pose to transformation matrix'''
-    T_Tag = numpy.array(numpy.eye((4)))
-    T_Tag[0:3, 0:3] = numpy.array(tag.pose_R)
-    pose_t = numpy.array(tag.pose_t)
-    T_Tag[0:3, 3] = pose_t.reshape(3)
-
-    # flip x axis
-    # T_Tag = [[-1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]] @ T_Tag
-    #
-    # now convert to NED coord frame
-    # so x-90, y+90, z in order
-    # https://www.andre-gaschler.com/rotationconverter/
-    # [[0,0,1,0],[-1,0,0,0],[0,-1,0,0],[0,0,0,1]]
-    # T_Tag = [[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]] @ T_Tag
-    return T_Tag
-
-
-def getPos(T_tag):
-    '''output the transformation matrix position as xyz tuple'''
-    return numpy.array([T_tag[0, 3], T_tag[1, 3], T_tag[2, 3]])
-
-
-def getRotation(T_Tag, useRadians=False):
-    '''Get the vehicle's current rotation in Euler XYZ degrees'''
-    if useRadians:
-        return numpy.array(mat2euler(T_Tag[0:3][0:3], 'sxyz'))
-    return numpy.array(numpy.rad2deg(mat2euler(T_Tag[0:3][0:3], 'sxyz')))
+from modules.common import getPos, getRotation, getTransform
 
 
 def isclose(x, y, rtol=1.e-5, atol=1.e-8):

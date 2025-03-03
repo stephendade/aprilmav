@@ -35,20 +35,22 @@ class FileCamera(cameraBase):
         if len(self.images) == 0:
             print("Warning: FileCamera out of images")
             return None
-
+        startTime = time.time()
         try:
             basename = os.path.splitext(os.path.basename(self.images[0]))[0]
             timestamp = int(basename)/1000
         except ValueError:
             timestamp = time.time()
         img = cv2.imread(self.images.pop(0), cv2.IMREAD_GRAYSCALE)
+        timestamp_capture = time.time()
         # img = cv2.fastNlMeansDenoising(img,None, 3, 5, 17)
 
         if not get_raw:
             img = self.maybedoImageEnhancement(img)
             img = self.maybeDoFishEyeConversion(img)
+        timestamp_rectify = time.time()
 
-        return (img, timestamp)
+        return (img, timestamp, timestamp_capture - startTime, timestamp_rectify - timestamp_capture)
 
     def getFileName(self):
         '''Get current file in camera'''

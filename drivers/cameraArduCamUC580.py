@@ -47,6 +47,7 @@ class camera(cameraBase):
         self.frame = self.camera.capture(encoding="i420")
         image = self.frame.as_array.reshape(
             int(self.camParams['resolution'][1]*1.5), self.camParams['resolution'][0])
+        timestamp_capture = time.time()
 
         # Convert to greyscale and crop
         image = cv2.cvtColor(image, cv2.COLOR_YUV2GRAY_I420)
@@ -61,8 +62,9 @@ class camera(cameraBase):
         if not get_raw:
             imageCrop = self.maybedoImageEnhancement(imageCrop)
             imageCrop = self.maybeDoFishEyeConversion(imageCrop)
+        timestamp_rectify = time.time()
 
-        return (imageCrop, timestamp)
+        return (imageCrop, timestamp, timestamp_capture - timestamp, timestamp_rectify - timestamp_capture)
 
     def close(self):
         ''' close the camera'''

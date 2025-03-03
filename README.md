@@ -155,13 +155,15 @@ To add a new camera, follow the following steps:
 
 Note a separate profile will be required for a specific lens and resolution combination, and camera rotation/position.
 
-### Accuracy Performance
+### Accuracy and Performance
 
 ArduPilot requires a good velocity estimate from AprilMAV. This can be graphed via the xxx MAVLink messages.
 
 ``process_test.py`` can used in a static scence to confirm the detected distance is correct and the distance stability.
 
 ``geo_test.py`` can be used to output a csv file showing the postion and velocity values for analysis. This analysis is best when with an image capture set of the vehicle moving at a constant velocity in 1 direction.
+
+``geo_test.py`` will output the timing statistics for various stages of the pipeline. This is useful for performance tuning.
 
 If the velocity numbers are too noisy, the following options will help:
 - Ensure the camera's focus is as sharp as possible for the typical Apriltag distances

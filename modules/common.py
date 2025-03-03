@@ -101,15 +101,17 @@ def capture_image(CAMERA, get_raw=False):
             - imageBW (numpy.ndarray or None): The captured image in black and white, or None if no image is captured.
             - timestamp (float or None): The timestamp of the captured image, or None if no image is captured.
             - filename (str or None): The filename of the captured image, or None if live camera feed is used.
+            - capture_time (float or None): The time taken to capture the image, or None if no image is captured.
+            - rectify_time (float or None): The time taken to rectify the image, or None if no image is captured.
     """
     filename = CAMERA.getFileName()
-    (imageBW, timestamp) = CAMERA.getImage(get_raw)
+    (imageBW, timestamp, capture_time, rectify_time) = CAMERA.getImage(get_raw)
 
     # we're out of images
     if imageBW is None:
-        return CAMERA.camName, None, None
+        return CAMERA.camName, None, None, None, None, None
 
-    return CAMERA.camName, imageBW, timestamp, filename
+    return CAMERA.camName, imageBW, timestamp, filename, capture_time, rectify_time
 
 
 def do_multi_capture(CAMERAS, get_raw=False):
@@ -124,6 +126,8 @@ def do_multi_capture(CAMERAS, get_raw=False):
                 - imageBW: Grayscale image captured from the camera
                 - timestamp: Time when image was captured
                 - filename: Name of file where image was saved
+                - capture_time: Time taken to capture the image (sec)
+                - rectify_time: Time taken to rectify the image (sec)
     Notes:
         - Uses ThreadPoolExecutor for parallel image capture
         - If any camera capture fails (returns None), the function will break early
@@ -132,9 +136,9 @@ def do_multi_capture(CAMERAS, get_raw=False):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {executor.submit(capture_image, CAMERA, get_raw): CAMERA for CAMERA in CAMERAS}
         for future in concurrent.futures.as_completed(futures):
-            cam_name, imageBW, timestamp, filename = future.result()
+            cam_name, imageBW, timestamp, filename, capture_time, rectify_time = future.result()
             if imageBW is not None:
-                img_by_cam[cam_name] = (imageBW, timestamp, filename)
+                img_by_cam[cam_name] = (imageBW, timestamp, filename, capture_time, rectify_time)
                 # print("Camera {0} capture time is {1:.1f}ms".format(cam_name, 1000*(time.time() - timestamp)))
             else:
                 break

@@ -46,13 +46,15 @@ class camera(cameraBase):
         # and convert to OpenCV greyscale format
         self.image = self.image.reshape(
             (self.camera.resolution[1], self.camera.resolution[0], 3))
+        timestamp_capture = time.time()
         self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         if not get_raw:
             self.image = self.maybedoImageEnhancement(self.image)
             self.image = self.maybeDoFishEyeConversion(self.image)
+        timestamp_rectify = time.time()
 
-        return (self.image, timestamp)
+        return (self.image, timestamp, timestamp_capture - timestamp, timestamp_rectify - timestamp_capture)
 
     def close(self):
         ''' close the camera'''

@@ -119,7 +119,7 @@ class camera(cameraBase):
         curFrame = self.maybedoImageEnhancement(curFrame)
 
         # Return a fake time of 50ms for stable velocity calculations
-        return (curFrame, time.time() - 0.05)
+        return (curFrame, time.time() - 0.05, 0.05, 0.05)
 
     def getFileName(self):
         '''Get current file in camera. Returns None.'''

@@ -71,6 +71,12 @@ def main(args):
         from modules.gui import GUI
         AprilGUI = GUI()
 
+    # Timing stats
+    allTimeCapture = []
+    allTimeRectify = []
+    allTimeDetect = []
+    allTimeLocalise = []
+
     for i in range(loops):
         print("--------------------------------------")
         # Capture images from all cameras (in parallel)
@@ -82,8 +88,12 @@ def main(args):
             timestamp = time.time()
         else:
             timestamp = get_average_timestamps(img_by_cam)
+        # get the capture and recitify times
+        allTimeCapture.append(max([img_by_cam[CAMERA.camName][3] for CAMERA in CAMERAS]))
+        allTimeRectify.append(max([img_by_cam[CAMERA.camName][4] for CAMERA in CAMERAS]))
 
         # Detect tags in each camera
+        detectStart = time.time()
         for CAMERA in CAMERAS:
             # AprilDetect, after accounting for distortion  (if fisheye)
             if at_detector.OpenCV:
@@ -96,6 +106,7 @@ def main(args):
                 print("File: {0} ({1}/{2})".format(img_by_cam[CAMERA.camName][2], i + 1, loops))
             else:
                 print("Capture {0}: ({1}/{2})".format(CAMERA.camName, i + 1, loops))
+        allTimeDetect.append(time.time() - detectStart)
 
         # get time to capture and convert
         print("Time to capture and detect = {0:.1f} ms. ".format(1000*(time.time() - timestamp)))
@@ -103,6 +114,7 @@ def main(args):
             print("Camera {0} found {1} tags. ".format(CAMERA.camName, len(tags_by_cam[CAMERA.camName])))
 
         # feed tags into tagPlacement
+        localiseStart = time.time()
         for CAMERA in CAMERAS:
             for tag in tags_by_cam[CAMERA.camName]:
                 if tag.pose_err < args.maxError*1e-8:
@@ -114,6 +126,8 @@ def main(args):
         rotR = tagPlacement.reportedRot
         rotD = numpy.rad2deg(tagPlacement.reportedRot)
         speed = tagPlacement.reportedVelocity
+
+        allTimeLocalise.append(time.time() - localiseStart)
 
         with open(args.outFile, "a", encoding="utf-8") as outFile:
             if args.inputFolder:
@@ -159,6 +173,13 @@ def main(args):
     # print out the positions of all the tags
     print("----Final tag positions----")
     tagPlacement.printTags()
+
+    # print out the average timing stats
+    print("----Timing stats----")
+    print("Capture: {0:.2f} ms".format(1000*numpy.mean(allTimeCapture)))
+    print("Rectify: {0:.2f} ms".format(1000*numpy.mean(allTimeRectify)))
+    print("Detect: {0:.2f} ms".format(1000*numpy.mean(allTimeDetect)))
+    print("Localise: {0:.2f} ms".format(1000*numpy.mean(allTimeLocalise)))
 
     # close camera
     for CAMERA in CAMERAS:

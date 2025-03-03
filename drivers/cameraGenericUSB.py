@@ -45,14 +45,16 @@ class camera(cameraBase):
 
         timestamp = time.time()
         return_value, image = self.camera.read()
+        timestamp_capture = time.time()
 
         imageBW = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         if not get_raw:
             imageBW = self.maybedoImageEnhancement(imageBW)
             imageBW = self.maybeDoFishEyeConversion(imageBW)
+        timestamp_rectify = time.time()
 
-        return (imageBW, timestamp)
+        return (imageBW, timestamp, timestamp_capture - timestamp, timestamp_rectify - timestamp_capture)
 
     def close(self):
         ''' close the camera'''

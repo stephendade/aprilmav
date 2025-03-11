@@ -6,6 +6,8 @@ import numpy
 import cv2
 from pyapriltags import Detector
 
+from modules.common import getRotation
+
 
 class ApriltagDectection:
     '''
@@ -32,6 +34,7 @@ class aprilDetect:
         self.at_detector = None
         self.OpenCV = OpenCV
         self.tagFamily = tagFamily
+        self.PrevFrameTags = []
 
         if OpenCV:
             # Setup Aruco detector
@@ -108,4 +111,47 @@ class aprilDetect:
             # Detect tags
             tags = self.at_detector.detect(image, True, K, self.tagSize)
 
-        return tags
+        # Determine if tag rotation is similar to previous frame and filter out if not
+        filteredTags = self.filterTags(tags)
+
+        return filteredTags
+
+    def filterTags(self, tags):
+        '''
+        Filter out tags that have a rotation that is not similar to the previous frame
+        :param tags: The tags to filter
+        :return: The filtered tags
+        '''
+        # Determine if tag rotation is similar (<30 degrees) to same tag in previous frame and filter out if not
+        filteredTags = []
+        for tag in tags:
+            found = False
+            for prevTag in self.PrevFrameTags:
+                if tag.tag_id == prevTag.tag_id:
+                    diff = self.getAngle(prevTag.pose_R, tag.pose_R)
+                    if abs(diff) < 30:   # degrees
+                        filteredTags.append(tag)
+                    else:
+                        print(f"Ignoring flipped tag {tag.tag_id}, delta rotation = {diff}")
+                        print("Rotations are {0} and {1}".format(getRotation(prevTag.pose_R), getRotation(tag.pose_R)))
+                    found = True
+                    break
+            if not found:
+                # new tag
+                filteredTags.append(tag)
+
+        self.PrevFrameTags = tags
+
+        return filteredTags
+
+    @staticmethod
+    def getAngle(P, Q):
+        '''
+        Calculate the angle between two rotation matrices
+        :param P: The first rotation matrix
+        :param Q: The second rotation matrix
+        :return: The angle between the two rotation matrices in degrees
+        '''
+        R = numpy.dot(P, numpy.transpose(Q))
+        cos_theta = (numpy.trace(R)-1)/2
+        return numpy.arccos(cos_theta) * (180/numpy.pi)

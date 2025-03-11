@@ -9,6 +9,8 @@ from transforms3d.euler import mat2euler, euler2mat
 
 from modules.common import getPos, getRotation, getTransform
 
+numpy.set_printoptions(precision=3, suppress=True)
+
 
 def isclose(x, y, rtol=1.e-5, atol=1.e-8):
     '''Return true if two floating point numbers are close enough'''
@@ -46,6 +48,8 @@ class tagDB:
         self.extraOpt = extraOpt
         # Define a threshold for Z-scores to identify outliers
         self.threshold = 2
+        # Tag candidates. If they are present for 5 frames, add them to the database
+        self.tagCandidates = deque(maxlen=5)
 
     def printTags(self):
         '''Print all tags in the database'''
@@ -278,9 +282,24 @@ class tagDB:
                                                                     len(self.tagDuplicatesT),
                                                                     self.reportedRot.round(1)))
         # finally add any new tags (veh frame) to database (in world reference frame)
+        thisFrameCandidates = {}
         for tagid, tagT in self.tagnewT.items():
             # TTagDB(World<-Tag) = TVeh(World <- veh_t) * TNewTag(veh_t <-Tag)
-            self.tagPlacement[tagid] = self.T_VehToWorld[-1] @ tagT
-            if self.debug:
-                print("Added Tag ID {0} at pos {1}, rot {2}".format(tagid, getPos(self.tagPlacement[tagid]).round(3),
-                                                                    getRotation(self.tagPlacement[tagid]).round(1)))
+            tagInWorld = self.T_VehToWorld[-1] @ tagT
+            thisFrameCandidates[tagid] = [getPos(tagInWorld), getRotation(tagInWorld, True)]
+        self.tagCandidates.append(thisFrameCandidates)
+
+        # if a tag was present in every frame, add it to the database
+        if len(self.tagCandidates) == 5:
+            for tagid in self.tagCandidates[0]:
+                if all(tagid in list(frame.keys()) for frame in self.tagCandidates):
+                    median_pos = numpy.median([frame[tagid][0] for frame in self.tagCandidates], axis=0)
+                    median_rot = numpy.median([frame[tagid][1] for frame in self.tagCandidates], axis=0)
+                    T_tag = numpy.eye(4)
+                    T_tag[:3, :3] = euler2mat(*median_rot, 'sxyz')
+                    T_tag[:3, 3] = median_pos
+                    self.tagPlacement[tagid] = T_tag
+                    if self.debug:
+                        print("Added Tag ID {0} at pos {1}, rot {2}".format(tagid,
+                                                                            getPos(self.tagPlacement[tagid]).round(3),
+                                                                            getRotation(self.tagPlacement[tagid]).round(1)))

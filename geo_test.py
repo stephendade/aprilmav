@@ -180,6 +180,9 @@ def main(args):
     print("Rectify: {0:.2f} ms".format(1000*numpy.mean(allTimeRectify)))
     print("Detect: {0:.2f} ms".format(1000*numpy.mean(allTimeDetect)))
     print("Localise: {0:.2f} ms".format(1000*numpy.mean(allTimeLocalise)))
+    totalTime = numpy.mean(allTimeCapture) + numpy.mean(allTimeRectify)
+    totalTime += numpy.mean(allTimeDetect) + numpy.mean(allTimeLocalise)
+    print("Total: {0:.2f} ms / {1:.0f} FPS".format(1000*totalTime, 1/totalTime))
 
     # close camera
     for CAMERA in CAMERAS:

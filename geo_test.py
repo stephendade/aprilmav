@@ -211,7 +211,7 @@ if __name__ == '__main__':
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
     parser.add_argument("--averaging", type=int,
-                        default=5, help="Use moving average of N frames")
+                        default=5, help="Use moving average of N frames for velocity. Also outlier detection")
     parser.add_argument("--outputFolder", type=str, default="",
                         help="Save processed images to this folder")
     parser.add_argument('--extraOpt', dest='extraOpt', help="Optimise best position better",

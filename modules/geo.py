@@ -46,7 +46,7 @@ class tagDB:
         self.T_VehToWorldFiltered.append(numpy.array(numpy.eye((4))))
         self.slidingWindow = slidingWindow
         self.extraOpt = extraOpt
-        # Define a threshold for Z-scores to identify outliers
+        # Z-score threshold for outlier detection
         self.threshold = 2
         # Tag candidates. If they are present for 5 frames, add them to the database
         self.tagCandidates = deque(maxlen=5)
@@ -95,68 +95,57 @@ class tagDB:
         self.T_VehToWorldFiltered.append(self.T_VehToWorld[-1])
         self.timestampsFiltered.append(self.timestamps[-1])
 
-        # Generate position, rotation in ArduPilot format, average 5 times (SMA) if required
-        averagedpos = []
-        averagedrot = []
-        for i in range(1, self.slidingWindow+1):
-            if len(self.T_VehToWorldFiltered) >= i:
-                averagedpos.append(getPos(self.T_VehToWorldFiltered[-i]))
-                averagedrot.append(getRotation(self.T_VehToWorldFiltered[-i], True))
         # only start filtering when we have enough data
-        if self.slidingWindow > 0 and len(self.T_VehToWorldFiltered) > self.slidingWindow:
-            self.reportedPos = self.zscoreFilter(averagedpos)
-            self.reportedRot = self.zscoreFilter(averagedrot)
+        if len(self.T_VehToWorldFiltered) > self.slidingWindow and self.slidingWindow > 2:
+            # Generate position, rotation in ArduPilot format, zscore to remove outliers
+            timeSeriesPos = []
+            timeSeriesRot = []
+            for i in range(1, self.slidingWindow+1):
+                if len(self.T_VehToWorldFiltered) >= i:
+                    timeSeriesPos.append(getPos(self.T_VehToWorldFiltered[-i]))
+                    timeSeriesRot.append(getRotation(self.T_VehToWorldFiltered[-i], True))
+            self.reportedPos = self.zscoreFilter(timeSeriesPos)
+            self.reportedRot = self.zscoreFilter(timeSeriesRot)
         else:
             self.reportedPos = getPos(self.T_VehToWorldFiltered[-1])
             self.reportedRot = getRotation(self.T_VehToWorldFiltered[-1], True)
 
-        # store the delta velocity
+        # store the delta velocity and z-score filter it
         delta = numpy.array(self.reportedPos) - numpy.array(self.reportedPosPrev)
         self.deltaVelocityFiltered.append(delta / (timestamp - self.reportedTimestampPrev))
-        if self.slidingWindow > 0 and len(self.deltaVelocityFiltered) > self.slidingWindow:
+        if len(self.deltaVelocityFiltered) > self.slidingWindow and self.slidingWindow > 2:
             self.reportedVelocity = self.zscoreFilter(self.deltaVelocityFiltered)
         else:  # not enough data yet
             self.reportedVelocity = self.deltaVelocityFiltered[-1]
 
+        # SMA average the velocity
+        if len(self.deltaVelocityFiltered) > self.slidingWindow and self.slidingWindow > 2:
+            self.reportedVelocity = numpy.mean(self.deltaVelocityFiltered, axis=0)
+
         self.reportedPosPrev = self.reportedPos
         self.reportedTimestampPrev = timestamp
 
-    def zscoreFilter(self, averagedpos):
+    def zscoreFilter(self, timeseries):
         """
-        Filters out outlier positions based on Z-scores and returns the mean of the remaining positions.
+        Filters out outliers from a time series using Z-scores.
 
         Parameters:
-        averagedpos (list or numpy.ndarray): A list or array of positions where each position is a list or array of
+        timeseries (list or numpy.ndarray): A list or array of positions where each position is a list or array of
         coordinates.
 
         Returns:
-        tuple: The mean position of the filtered positions as a tuple of coordinates.
-
-        The method performs the following steps:
-        1. Converts the input positions to a numpy array.
-        2. Calculates the mean and standard deviation for each coordinate.
-        3. Computes the Z-scores for each coordinate.
-        4. Filters out positions where any coordinate has a Z-score greater than the threshold.
-        5. Calculates the mean of the remaining positions.
-        6. Returns the mean position as a tuple.
+        tuple: The the last position if it's not an outlier, else the 2nd last position.
         """
-        averagedpos = numpy.array(averagedpos)
+        timeseries = numpy.array(timeseries)
 
         # Calculate mean and standard deviation for each coordinate
-        mean_pos = numpy.mean(averagedpos, axis=0)
-        std_pos = numpy.std(averagedpos, axis=0)
+        mean_pos = numpy.mean(timeseries, axis=0)
+        std_pos = numpy.std(timeseries, axis=0)
 
-        # Calculate Z-scores for each coordinate
-        z_scores = numpy.abs((averagedpos - mean_pos) / std_pos)
-
-        # Filter out positions with any coordinate having a Z-score greater than the threshold
-        filtered_positions = averagedpos[(z_scores < self.threshold).all(axis=1)]
-
-        # Calculate the mean of the remaining positions
-        mean_filtered_pos = numpy.mean(filtered_positions, axis=0)
-
-        newPos = numpy.array(mean_filtered_pos)
-        return newPos
+        # return the last position if it's not an outlier, else return the 2nd last position
+        if all(numpy.abs((timeseries[-1] - mean_pos) / std_pos) < self.threshold):
+            return timeseries[-1]
+        return timeseries[-2]
 
     def getTagdb(self):
         '''get coords of all tags by axis'''
@@ -220,7 +209,7 @@ class tagDB:
 
                 if lowestCost > summeddist:
                     if self.debug:
-                        print("Using tag {0} with error {1:.3f}m".format(
+                        print("Using tag {0} with per-tag average error {1:.3f}m".format(
                             tagid, summeddist / len(self.tagDuplicatesT)))
                     lowestCost = summeddist
                     bestTransform = Ttprevtocur

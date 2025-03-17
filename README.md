@@ -92,9 +92,9 @@ $ aprilmav.py
 - ``--source-system`` MAVLink Source system
 - ``--outputFolder``  Save processed images to this folder
 - ``--video``         Output an RTP H264 video to this IP:Port, 0 to disable
-- ``--decimation``    Apriltag decimation. Tradeoff against detection speed and accuracy.
+- ``--decimation``    Apriltag decimation. Tradeoff against detection speed and distance.
 - ``--extraOpt``      Optimise detected position better. Uses a lot of extra CPU.
-- ``--averaging=N``   Use a moving average of N frames for determining position and velocity.
+- ``--averaging=N``   Use a moving average of N frames for velocity. Also reject position, rotation and velocity outliers based on mean and std dev of last N frames.
 - ``--jetson``        Use hardware accelerator (CUDA, VPI) on NVIDIA Jetson
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
 - ``--opencv``        Use OpenCV instead of pyapriltag for decoding. Only works for tag family tagStandard31h11
@@ -158,6 +158,8 @@ Note a separate profile will be required for a specific lens and resolution comb
 ### Accuracy and Performance
 
 ArduPilot requires a good velocity estimate from AprilMAV. This can be graphed via the xxx MAVLink messages.
+
+In general, 10+ FPS is required for a stable calculation of the pose and velocity. Raising ``--decimation`` will increase the framerate, at the cost of lowering the maximum detection distance. It does not affect the accuracy of the tag pose estimate.
 
 ``process_test.py`` can used in a static scence to confirm the detected distance is correct and the distance stability.
 

@@ -133,7 +133,6 @@ class aprilDetect:
                         filteredTags.append(tag)
                     else:
                         print(f"Ignoring flipped tag {tag.tag_id}, delta rotation = {diff}")
-                        print("Rotations are {0} and {1}".format(getRotation(prevTag.pose_R), getRotation(tag.pose_R)))
                     found = True
                     break
             if not found:

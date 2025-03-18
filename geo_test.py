@@ -16,7 +16,7 @@ import signal
 import os
 import numpy
 
-from modules.common import do_multi_capture, get_average_timestamps, loadCameras, get_num_images
+from modules.common import do_multi_capture, get_average_timestamps, loadCameras, get_num_images, tryCheckCuda
 from modules.geo import tagDB
 from modules.saveStream import saveThread
 from modules.aprilDetect import aprilDetect
@@ -33,6 +33,8 @@ def signal_handler(signum, frame):
 
 def main(args):
     print("Initialising")
+
+    tryCheckCuda(args.jetson)
 
     signal.signal(signal.SIGINT, signal_handler)
 

@@ -244,3 +244,22 @@ def getRotation(T_Tag, useRadians=False):
     if useRadians:
         return numpy.array(mat2euler(T_Tag[0:3][0:3], 'sxyz'))
     return numpy.array(numpy.rad2deg(mat2euler(T_Tag[0:3][0:3], 'sxyz')))
+
+
+def tryCheckCuda(useCuda):
+    '''Check if CUDA is available'''
+    if useCuda:
+        try:
+            if cv2.cuda.getCudaEnabledDeviceCount() > 0:
+                return True
+            else:
+                print("Error: No CUDA devices found or OpenCV not compiled with CUDA support")
+                sys.exit(0)
+        except cv2.error:
+            print("Error: No CUDA devices found or OpenCV not compiled with CUDA support")
+            sys.exit(0)
+        except AttributeError:
+            print("Error: No CUDA devices found or OpenCV not compiled with CUDA support")
+            sys.exit(0)
+    else:
+        return True

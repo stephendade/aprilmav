@@ -51,12 +51,26 @@ class camera(cameraBase):
         timestamp = time.time()
         return_value, image = self.camera.read()
         timestamp_capture = time.time()
-        imageBW = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        if self.use_jetson:
+            # Upload the image to the GPU
+
+            pro_image = cv2.cuda_GpuMat()
+            pro_image.upload(image)
+
+            pro_image = cv2.cuda.cvtColor(pro_image, cv2.COLOR_BGR2GRAY)
+        else:
+            pro_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         if not get_raw:
-            imageBW = self.maybedoImageEnhancement(imageBW)
-            imageBW = self.maybeDoFishEyeConversion(imageBW)
+            pro_image = self.maybedoImageEnhancement(pro_image)
+            pro_image = self.maybeDoFishEyeConversion(pro_image)
         timestamp_rectify = time.time()
+
+        # Download the result back to the CPU
+        if self.use_jetson:
+            imageBW = pro_image.download()
+        else:
+            imageBW = pro_image
 
         return (imageBW, timestamp, timestamp_capture - timestamp, timestamp_rectify - timestamp_capture)
 

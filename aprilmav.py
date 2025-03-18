@@ -235,7 +235,7 @@ if __name__ == '__main__':
                         default=5, help="Use moving average of N frames for velocity. Also outlier detection")
     parser.add_argument('--extraOpt', dest='extraOpt', help="Optimise best position better",
                         default=False, action='store_true')
-    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+    parser.add_argument('--cuda', dest='cuda', help="Use OpenCV CUDA Extensions",
                         default=False, action='store_true')
     parser.add_argument("--tagFamily", type=str, default="tagStandard41h12",
                         help="Apriltag family")
@@ -247,10 +247,10 @@ if __name__ == '__main__':
 
     print("Initialising")
 
-    tryCheckCuda(args.jetson)
+    tryCheckCuda(args.cuda)
 
     # Open camera settings and load camera(s)
-    CAMERAS = loadCameras(args.multiCamera, args.camera, None, args.jetson)
+    CAMERAS = loadCameras(args.multiCamera, args.camera, None, args.cuda)
 
     # allow the camera to warmup
     time.sleep(2)

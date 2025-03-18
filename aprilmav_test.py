@@ -58,7 +58,7 @@ def test_geo_execution():
                         help="Save processed images to this folder")
     parser.add_argument('--extraOpt', dest='extraOpt', help="Optimise best position better",
                         default=True, action='store_true')
-    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+    parser.add_argument('--cuda', dest='cuda', help="Use OpenCV CUDA Extensions",
                         default=False, action='store_true')
     parser.add_argument("--tagFamily", type=str, default="tag36h11",
                         help="Apriltag family")
@@ -88,7 +88,7 @@ def test_process_execution_single():
                         help="Output tag data to this file")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
-    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+    parser.add_argument('--cuda', dest='cuda', help="Use OpenCV CUDA Extensions",
                         default=False, action='store_true')
     parser.add_argument("--tagFamily", type=str, default="tag36h11",
                         help="Apriltag family")
@@ -118,7 +118,7 @@ def test_process_execution_multi():
                         help="Output tag data to this file")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
-    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+    parser.add_argument('--cuda', dest='cuda', help="Use OpenCV CUDA Extensions",
                         default=False, action='store_true')
     parser.add_argument("--tagFamily", type=str, default="tag36h11",
                         help="Apriltag family")

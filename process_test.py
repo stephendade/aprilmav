@@ -33,10 +33,10 @@ def signal_handler(signum, frame):
 def main(mainargs):
     print("Initialising")
 
-    tryCheckCuda(mainargs.jetson)
+    tryCheckCuda(mainargs.cuda)
 
     # Open camera settings and load camera(s)
-    CAMERAS = loadCameras(mainargs.multiCamera, mainargs.camera, mainargs.inputFolder, mainargs.jetson)
+    CAMERAS = loadCameras(mainargs.multiCamera, mainargs.camera, mainargs.inputFolder, mainargs.cuda)
 
     # allow the camera to warmup
     time.sleep(2)
@@ -160,7 +160,7 @@ if __name__ == '__main__':
                         help="Output tag data to this file")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
-    parser.add_argument('--jetson', dest='jetson', help="Use Jetson hardware acceleration",
+    parser.add_argument('--cuda', dest='cuda', help="Use OpenCV CUDA Extensions",
                         default=False, action='store_true')
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")

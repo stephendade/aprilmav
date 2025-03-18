@@ -43,14 +43,25 @@ class FileCamera(cameraBase):
             timestamp = time.time()
         img = cv2.imread(self.images.pop(0), cv2.IMREAD_GRAYSCALE)
         timestamp_capture = time.time()
-        # img = cv2.fastNlMeansDenoising(img,None, 3, 5, 17)
+        if self.use_jetson:
+            # Upload the image to the GPU
+            pro_image = cv2.cuda_GpuMat()
+            pro_image.upload(img)
+        else:
+            pro_image = img
 
         if not get_raw:
-            img = self.maybedoImageEnhancement(img)
-            img = self.maybeDoFishEyeConversion(img)
+            pro_image = self.maybedoImageEnhancement(pro_image)
+            pro_image = self.maybeDoFishEyeConversion(pro_image)
         timestamp_rectify = time.time()
 
-        return (img, timestamp, timestamp_capture - startTime, timestamp_rectify - timestamp_capture)
+        # Download the result back to the CPU
+        if self.use_jetson:
+            imageBW = pro_image.download()
+        else:
+            imageBW = pro_image
+
+        return (imageBW, timestamp, timestamp_capture - startTime, timestamp_rectify - timestamp_capture)
 
     def getFileName(self):
         '''Get current file in camera'''

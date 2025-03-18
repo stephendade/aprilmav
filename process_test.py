@@ -17,7 +17,7 @@ from collections import defaultdict
 import numpy
 
 from modules.geo import getPos, getTransform, getRotation
-from modules.common import do_multi_capture, get_average_timestamps, loadCameras, get_num_images
+from modules.common import do_multi_capture, get_average_timestamps, loadCameras, get_num_images, tryCheckCuda
 from modules.aprilDetect import aprilDetect
 
 exit_event = threading.Event()
@@ -32,6 +32,8 @@ def signal_handler(signum, frame):
 
 def main(mainargs):
     print("Initialising")
+
+    tryCheckCuda(mainargs.jetson)
 
     # Open camera settings and load camera(s)
     CAMERAS = loadCameras(mainargs.multiCamera, mainargs.camera, mainargs.inputFolder, mainargs.jetson)

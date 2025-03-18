@@ -15,7 +15,7 @@ import numpy
 
 from pymavlink import mavutil
 
-from modules.common import do_multi_capture, get_average_timestamps, loadCameras
+from modules.common import do_multi_capture, get_average_timestamps, loadCameras, tryCheckCuda
 from modules.geo import tagDB
 from modules.videoStream import videoThread
 from modules.saveStream import saveThread
@@ -246,6 +246,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print("Initialising")
+
+    tryCheckCuda(args.jetson)
 
     # Open camera settings and load camera(s)
     CAMERAS = loadCameras(args.multiCamera, args.camera, None, args.jetson)

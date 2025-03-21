@@ -12,9 +12,9 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for Libcamera'''
 
-    def __init__(self, camParams, use_jetson=False, camName=""):
+    def __init__(self, camParams, use_cuda=False, camName=""):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams, use_jetson, camName)
+        super().__init__(camParams, use_cuda, camName)
 
         # find the camera by name
         self.camera = None

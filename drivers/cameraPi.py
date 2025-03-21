@@ -15,7 +15,7 @@ class camera(cameraBase):
 
     def __init__(self, camParams, camName=""):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams, use_jetson=False, camName=camName)
+        super().__init__(camParams, use_cuda=False, camName=camName)
 
         self.camera = PiCamera(resolution=camParams['resolution'], framerate=camParams['framerate'],
                                sensor_mode=camParams['sensor_mode'])

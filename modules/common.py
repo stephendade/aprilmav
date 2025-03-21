@@ -15,7 +15,7 @@ from transforms3d.euler import mat2euler
 from drivers import cameraFile
 
 
-def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
+def loadCameras(multiCamera, singleCameraProfile, inputFolder, use_cuda):
     '''
     Load camera parameters from the camera_params.yaml file and initialize the cameras.
 
@@ -23,7 +23,7 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
     multiCamera (str or None): Path to the YAML file containing multiple camera profiles
     singleCameraProfile (str): The profile name to be used from the YAML file when multiCamera is None.
     inputFolder (str or None): Path to the folder containing input files for the camera
-    jetson (bool): Flag indicating whether the system is running on a Jetson device.
+    use_cuda (bool): Flag indicating whether to use OpenCV CUDA extensions
 
     Returns:
     list: A list of initialized camera objects.
@@ -53,12 +53,12 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, jetson):
             imageFolder = inputFolder
             if multiCamera:
                 imageFolder = os.path.join(inputFolder, camName)
-            CAMERAS.append(cameraFile.FileCamera(camParam, imageFolder, jetson, camName))
+            CAMERAS.append(cameraFile.FileCamera(camParam, imageFolder, use_cuda, camName))
             print("Camera {0} initialized (driver: {1})".format(camName, "cameraFile"))
         else:
             try:
                 mod = import_module("drivers." + camParam['cam_driver'])
-                CAMERAS.append(mod.camera(camParam, jetson, camName))
+                CAMERAS.append(mod.camera(camParam, use_cuda, camName))
             except KeyError:
                 print('No camera with the name {0}, exiting'.format(camName))
                 sys.exit(0)

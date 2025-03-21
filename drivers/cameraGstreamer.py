@@ -10,9 +10,9 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for a GStreamer source via OpenCV'''
 
-    def __init__(self, camParams, use_jetson=False, camName=""):
+    def __init__(self, camParams, use_cuda=False, camName=""):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams, use_jetson, camName)
+        super().__init__(camParams, use_cuda, camName)
 
         # Check if OpenCV has GStreamer enabled
         if 'GStreamer:                   YES' not in cv2.getBuildInformation():
@@ -55,7 +55,7 @@ class camera(cameraBase):
         return_value, self.frame = self.camera.read()
         timestamp_capture = time.time()
 
-        if self.use_jetson:
+        if self.use_cuda:
             # Pre-allocation of GPU memory
             if self.pro_image is None:
                 self.pro_image = cv2.cuda_GpuMat()
@@ -72,7 +72,7 @@ class camera(cameraBase):
         timestamp_rectify = time.time()
 
         # Download the result back to the CPU
-        if self.use_jetson:
+        if self.use_cuda:
             imageBW = self.pro_image.download()
         else:
             imageBW = self.pro_image

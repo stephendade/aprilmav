@@ -11,9 +11,9 @@ from .cameraBase import cameraBase
 class FileCamera(cameraBase):
     '''A Camera setup and capture class'''
 
-    def __init__(self, camParams, folder=".", use_jetson=False, camName=""):
+    def __init__(self, camParams, folder=".", use_cuda=False, camName=""):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams, use_jetson, camName)
+        super().__init__(camParams, use_cuda, camName)
 
         self.images = [
             os.path.join(folder, file)
@@ -43,7 +43,7 @@ class FileCamera(cameraBase):
             timestamp = time.time()
         img = cv2.imread(self.images.pop(0), cv2.IMREAD_GRAYSCALE)
         timestamp_capture = time.time()
-        if self.use_jetson:
+        if self.use_cuda:
             # Upload the image to the GPU
             pro_image = cv2.cuda_GpuMat()
             pro_image.upload(img)
@@ -56,7 +56,7 @@ class FileCamera(cameraBase):
         timestamp_rectify = time.time()
 
         # Download the result back to the CPU
-        if self.use_jetson:
+        if self.use_cuda:
             imageBW = pro_image.download()
         else:
             imageBW = pro_image

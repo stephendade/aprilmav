@@ -11,10 +11,10 @@ from transforms3d.euler import euler2mat
 class cameraBase:
     '''A Camera setup and capture base class'''
 
-    def __init__(self, camParams, use_jetson=False, camName=""):
+    def __init__(self, camParams, use_cuda=False, camName=""):
         '''Initialise the camera, based on a dict of settings'''
 
-        self.use_jetson = use_jetson
+        self.use_cuda = use_cuda
         self.camName = camName
         self.doEnhancement = camParams['doEnhancement'] if 'doEnhancement' in camParams else False
 
@@ -81,7 +81,7 @@ class cameraBase:
         # denoise the image via a 5x5 kernal gaussian blur
         # then sharpen the image via subtracting a blurred version
         # From https://www.iaarc.org/publications/fulltext/166_ISARC_2024_Paper_207.pdf
-        if self.use_jetson:
+        if self.use_cuda:
             blurred = cv2.cuda.createGaussianFilter(image.type(), -1, (5, 5), 0).apply(image)
             image = cv2.cuda.addWeighted(image, 1.5, blurred, -0.5, 0)
         else:
@@ -94,11 +94,11 @@ class cameraBase:
 
         # Generate the undistorted image mapping if fisheye
         if self.fisheye and self.dim1 is None:
-            if self.use_jetson:
+            if self.use_cuda:
                 self.dim1 = (image.size()[0], image.size()[1])  # width, height
             else:
                 self.dim1 = image.shape[:2][::-1]
-            if self.use_jetson:
+            if self.use_cuda:
                 gpu_map1, gpu_map2 = cv2.fisheye.initUndistortRectifyMap(
                     self.K, self.D, numpy.eye(3), self.K, self.dim1, cv2.CV_32FC1)
                 self.map1 = cv2.cuda_GpuMat()
@@ -109,7 +109,7 @@ class cameraBase:
                 self.map1, self.map2 = cv2.fisheye.initUndistortRectifyMap(
                     self.K, self.D, numpy.eye(3), self.K, self.dim1, cv2.CV_16SC2)
         if self.fisheye:
-            if self.use_jetson:
+            if self.use_cuda:
                 imageUndistort = cv2.cuda.remap(image, self.map1, self.map2, interpolation=cv2.INTER_LINEAR,
                                                 borderMode=cv2.BORDER_CONSTANT)
             else:

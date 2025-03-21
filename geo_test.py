@@ -161,11 +161,13 @@ def main(args):
             if args.multiCamera:
                 for CAMERA in CAMERAS:
                     threadSave.save_queue.put((img_by_cam[CAMERA.camName][0], os.path.join(
-                        ".", args.outputFolder, CAMERA.camName, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+                        ".", args.outputFolder, CAMERA.camName, "processed_{:04d}.png".format(i)), posR, rotD,
+                        tags_by_cam[CAMERA.camName]))
             else:
                 for CAMERA in CAMERAS:
                     threadSave.save_queue.put((img_by_cam[CAMERA.camName][0], os.path.join(
-                        ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+                        ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD,
+                        tags_by_cam[CAMERA.camName]))
 
         tagPlacement.newFrame()
 

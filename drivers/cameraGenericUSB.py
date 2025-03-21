@@ -15,7 +15,7 @@ class camera(cameraBase):
         super().__init__(camParams, use_jetson, camName)
 
         self.camera = cv2.VideoCapture()
-        self.camera.open(camParams['cameraPath'])
+        self.camera.open(camParams['cameraPath'], cv2.CAP_V4L2)
 
         # read one frame to start camera.
         self.camera.read()
@@ -29,6 +29,9 @@ class camera(cameraBase):
         self.camera.set(cv2.CAP_PROP_GAIN, self.camParams['gain'])
         self.camera.set(cv2.CAP_PROP_EXPOSURE, self.camParams['exposure'])
         self.camera.set(cv2.CAP_PROP_BACKLIGHT, self.camParams['backlight'])
+
+        self.frame = None
+        self.pro_image = None
 
         time.sleep(2)
 
@@ -44,29 +47,30 @@ class camera(cameraBase):
         ''' Capture a single image from the Camera '''
 
         timestamp = time.time()
-        return_value, image = self.camera.read()
+        return_value, self.frame = self.camera.read()
         timestamp_capture = time.time()
 
         if self.use_jetson:
-            # Upload the image to the GPU
+            # Pre-allocation of GPU memory
+            if self.pro_image is None:
+                self.pro_image = cv2.cuda_GpuMat()
 
-            pro_image = cv2.cuda_GpuMat()
-            pro_image.upload(image)
-
-            pro_image = cv2.cuda.cvtColor(pro_image, cv2.COLOR_BGR2GRAY)
+            # it's actually quicker to convert to grayscale on the CPU and upload smaller
+            # image to GPU
+            self.pro_image.upload(cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY))
         else:
-            pro_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            self.pro_image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
 
         if not get_raw:
-            pro_image = self.maybedoImageEnhancement(pro_image)
-            pro_image = self.maybeDoFishEyeConversion(pro_image)
+            self.pro_image = self.maybedoImageEnhancement(self.pro_image)
+            self.pro_image = self.maybeDoFishEyeConversion(self.pro_image)
         timestamp_rectify = time.time()
 
         # Download the result back to the CPU
         if self.use_jetson:
-            imageBW = pro_image.download()
+            imageBW = self.pro_image.download()
         else:
-            imageBW = pro_image
+            imageBW = self.pro_image
 
         return (imageBW, timestamp, timestamp_capture - timestamp, timestamp_rectify - timestamp_capture)
 

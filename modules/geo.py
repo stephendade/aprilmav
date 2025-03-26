@@ -25,29 +25,29 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=False, slidingWindow=5, extraOpt=False):
+    def __init__(self, debug=True, slidingWindow=5, extraOpt=False):
         self.T_VehToWorld = deque(maxlen=slidingWindow+1)
         self.timestamps = deque(maxlen=slidingWindow+1)
-        self.T_VehToWorldFiltered = deque(maxlen=slidingWindow+1)
-        self.timestampsFiltered = deque(maxlen=slidingWindow+1)
+        self.filteredPosRotTime = deque(maxlen=slidingWindow+1)
         self.deltaVelocityFiltered = deque(maxlen=slidingWindow+1)
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
         self.debug = debug
+
+        # reported current position, rotation and velocity
         self.reportedPos = numpy.array((0, 0, 0))
-        self.reportedPosPrev = numpy.array((0, 0, 0))
         self.reportedRot = numpy.array((0, 0, 0))
         self.reportedVelocity = numpy.array((0, 0, 0))
-        self.reportedTimestampPrev = 0
+
+        # starting position and velocity
         self.T_VehToWorld.append(numpy.array(numpy.eye((4))))
-        self.T_VehToWorld.append(numpy.array(numpy.eye((4))))
-        self.T_VehToWorldFiltered.append(numpy.array(numpy.eye((4))))
-        self.T_VehToWorldFiltered.append(numpy.array(numpy.eye((4))))
+        self.deltaVelocityFiltered.append(numpy.array((0, 0, 0)))
+
         self.slidingWindow = slidingWindow
         self.extraOpt = extraOpt
         # Z-score threshold for outlier detection
-        self.threshold = 2
+        self.threshold = 1.5
         # Tag candidates. If they are present for 5 frames, add them to the database
         self.tagCandidates = deque(maxlen=5)
 
@@ -92,38 +92,51 @@ class tagDB:
          and velocity and rotation in ArduPilot NED format,
          noting that Apriltag coords are (image right, image down, image out) relative to camera.
          Timestamp is seconds since epoch'''
-        self.T_VehToWorldFiltered.append(self.T_VehToWorld[-1])
-        self.timestampsFiltered.append(self.timestamps[-1])
 
         # only start filtering when we have enough data
-        if len(self.T_VehToWorldFiltered) > self.slidingWindow and self.slidingWindow > 2:
+        if len(self.T_VehToWorld) > self.slidingWindow and self.slidingWindow > 2:
             # Generate position, rotation in ArduPilot format, zscore to remove outliers
-            timeSeriesPos = []
-            timeSeriesRot = []
-            for i in range(1, self.slidingWindow+1):
-                if len(self.T_VehToWorldFiltered) >= i:
-                    timeSeriesPos.append(getPos(self.T_VehToWorldFiltered[-i]))
-                    timeSeriesRot.append(getRotation(self.T_VehToWorldFiltered[-i], True))
+            timeSeriesPos = numpy.array([getPos(T) for T in self.T_VehToWorld])
+            timeSeriesRot = numpy.array([getRotation(T, True) for T in self.T_VehToWorld])
             self.reportedPos = self.zscoreFilter(timeSeriesPos)
             self.reportedRot = self.zscoreFilter(timeSeriesRot)
+            # now smooth the position
+            self.reportedPos = numpy.mean(timeSeriesPos, axis=0)
         else:
-            self.reportedPos = getPos(self.T_VehToWorldFiltered[-1])
-            self.reportedRot = getRotation(self.T_VehToWorldFiltered[-1], True)
+            self.reportedPos = getPos(self.T_VehToWorld[-1])
+            self.reportedRot = getRotation(self.T_VehToWorld[-1], True)
 
-        # store the delta velocity and z-score filter it
-        delta = numpy.array(self.reportedPos) - numpy.array(self.reportedPosPrev)
-        self.deltaVelocityFiltered.append(delta / (timestamp - self.reportedTimestampPrev))
-        if len(self.deltaVelocityFiltered) > self.slidingWindow and self.slidingWindow > 2:
-            self.reportedVelocity = self.zscoreFilter(self.deltaVelocityFiltered)
-        else:  # not enough data yet
-            self.reportedVelocity = self.deltaVelocityFiltered[-1]
+        self.filteredPosRotTime.append((self.reportedPos, self.reportedRot, timestamp))
+        print(self.filteredPosRotTime)
 
-        # SMA average the velocity
-        if len(self.deltaVelocityFiltered) > self.slidingWindow and self.slidingWindow > 2:
-            self.reportedVelocity = numpy.mean(self.deltaVelocityFiltered, axis=0)
+        # Fit the position to a 1-degree polynomial (constant vel) and calculate the derivative
+        if len(self.filteredPosRotTime) > self.slidingWindow and self.slidingWindow > 20:
+            time_series = numpy.array([T[2] for T in self.filteredPosRotTime])
+            pos_series = numpy.array([T[0] for T in self.filteredPosRotTime])
 
-        self.reportedPosPrev = self.reportedPos
-        self.reportedTimestampPrev = timestamp
+            # Fit a 1-degree polynomial for each axis
+            poly_x = numpy.polyfit(time_series, pos_series[:, 0], 1)
+            poly_y = numpy.polyfit(time_series, pos_series[:, 1], 1)
+            poly_z = numpy.polyfit(time_series, pos_series[:, 2], 1)
+
+            # Derive the velocity (first derivative of the polynomial)
+            velocity_x = poly_x[0]
+            velocity_y = poly_y[0]
+            velocity_z = poly_z[0]
+
+            self.deltaVelocityFiltered.append(numpy.array([velocity_x, velocity_y, velocity_z]))
+        elif len(self.filteredPosRotTime) > 1:
+            deltapos = self.filteredPosRotTime[-1][0] - self.filteredPosRotTime[-2][0]
+            deltatime = self.filteredPosRotTime[-1][2] - self.filteredPosRotTime[-2][2]
+            vel = deltapos / deltatime
+            self.deltaVelocityFiltered.append(numpy.array(vel))
+
+        self.reportedVelocity = self.deltaVelocityFiltered[-1]
+        # Z-score filter the velocity
+        #if len(self.deltaVelocityFiltered) > self.slidingWindow and self.slidingWindow > 2:
+        #    self.reportedVelocity = self.zscoreFilter(self.deltaVelocityFiltered)
+        #elif len(self.deltaVelocityFiltered) > 0:  # not enough data yet
+        #    self.reportedVelocity = self.deltaVelocityFiltered[-1]
 
     def zscoreFilter(self, timeseries):
         """
@@ -142,10 +155,10 @@ class tagDB:
         mean_pos = numpy.mean(timeseries, axis=0)
         std_pos = numpy.std(timeseries, axis=0)
 
-        # return the last position if it's not an outlier, else return the 2nd last position
-        if all(numpy.abs((timeseries[-1] - mean_pos) / std_pos) < self.threshold):
-            return timeseries[-1]
-        return timeseries[-2]
+        # return the last-most position that is not an outlier
+        for pos in reversed(timeseries):
+            if all(numpy.abs((pos - mean_pos) / std_pos) < self.threshold):
+                return pos
 
     def getTagdb(self):
         '''get coords of all tags by axis'''

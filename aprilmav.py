@@ -285,8 +285,15 @@ if __name__ == '__main__':
         tags_by_cam = {}
 
         img_by_cam = do_multi_capture(CAMERAS)
+        # check for any bad captures
+        shouldExit = False
+        for CAMERA in CAMERAS:
+            if img_by_cam[CAMERA.camName][0] is None:
+                print("Bad capture from {0}. Exiting...".format(CAMERA.camName))
+                shouldExit = True
+        if shouldExit:
+            break
         timestamp = get_average_timestamps(img_by_cam)
-
         # Detect tags in each camera
         for CAMERA in CAMERAS:
             # AprilDetect, after accounting for distortion  (if fisheye)

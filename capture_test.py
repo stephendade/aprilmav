@@ -95,6 +95,13 @@ if __name__ == '__main__':
         img_by_cam = {}
 
         img_by_cam = do_multi_capture(CAMERAS, True)
+        # check for any bad captures
+        for CAMERA in CAMERAS:
+            if img_by_cam[CAMERA.camName][0] is None:
+                print("Bad capture from {0}. Exiting".format(CAMERA.camName))
+                shouldExit = True
+        if shouldExit:
+            break
         timestamp = get_average_timestamps(img_by_cam)
 
         # get time to capture and convert
@@ -135,6 +142,5 @@ if __name__ == '__main__':
     if args.outputFolder != "":
         shouldExit = True
         print("Waiting for images to be saved to file...")
-        worker.join()
 
 print("Done")

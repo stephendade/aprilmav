@@ -141,6 +141,8 @@ def do_multi_capture(CAMERAS, get_raw=False):
                 img_by_cam[cam_name] = (imageBW, timestamp, filename, capture_time, rectify_time)
                 # print("Camera {0} capture time is {1:.1f}ms".format(cam_name, 1000*(time.time() - timestamp)))
             else:
+                # print("Bad capture")
+                img_by_cam[cam_name] = (None, timestamp, filename, capture_time, rectify_time)
                 break
     return img_by_cam
 

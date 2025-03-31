@@ -30,7 +30,6 @@ class tagDB:
         self.T_VehToWorld = deque(maxlen=slidingWindow+1)
         self.timestamps = deque(maxlen=slidingWindow+1)
         self.filteredPosRotTime = deque(maxlen=slidingWindow+1)
-        self.deltaVelocityFiltered = deque(maxlen=slidingWindow+1)
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
@@ -43,7 +42,6 @@ class tagDB:
 
         # starting position and velocity
         self.T_VehToWorld.append(numpy.array(numpy.eye((4))))
-        self.deltaVelocityFiltered.append(numpy.array((0, 0, 0)))
 
         self.slidingWindow = slidingWindow
         self.extraOpt = extraOpt
@@ -52,33 +50,32 @@ class tagDB:
         # Tag candidates. If they are present for 5 frames, add them to the database
         self.tagCandidates = deque(maxlen=5)
 
-        self.kalmanX = KalmanFilter(2, 1)
-        self.kalmanY = KalmanFilter(2, 1)
-        self.kalmanZ = KalmanFilter(2, 1)
-        self.kalmanX.x = numpy.array([[0.], [0.]])
-        self.kalmanY.x = numpy.array([[0.], [0.]])
-        self.kalmanZ.x = numpy.array([[0.], [0.]])
-        self.kalmanX.F = numpy.array([[1., 1.], [0., 1.]])
-        self.kalmanY.F = numpy.array([[1., 1.], [0., 1.]])
-        self.kalmanZ.F = numpy.array([[1., 1.], [0., 1.]])
-        self.kalmanX.H = numpy.array([[1., 0.]])
-        self.kalmanY.H = numpy.array([[1., 0.]])
-        self.kalmanZ.H = numpy.array([[1., 0.]])
+        # Initialize a 6-state Kalman filter (x,y,z,vx,vy,vz)
+        self.kalman = KalmanFilter(6, 3)  # 6 state variables, 3 measurements
+        self.kalman.x = numpy.zeros((6, 1))  # Initial state [x, y, z, vx, vy, vz]
 
-        # Initial state uncertainty - higher for velocity to make it more responsive
-        self.kalmanX.P = numpy.array([[10., 0.], [0., 30.]])
-        self.kalmanY.P = numpy.array([[10., 0.], [0., 30.]])
-        self.kalmanZ.P = numpy.array([[10., 0.], [0., 30.]])
+        # State transition matrix - update position with velocity
+        self.kalman.F = numpy.eye(6)  
+        self.kalman.F[0, 3] = 1.0  # x += vx * dt (dt will be set during prediction)
+        self.kalman.F[1, 4] = 1.0  # y += vy * dt
+        self.kalman.F[2, 5] = 1.0  # z += vz * dt
 
-        # Measurement noise
-        self.kalmanX.R = numpy.array([[0.04]])
-        self.kalmanY.R = numpy.array([[0.04]])
-        self.kalmanZ.R = numpy.array([[0.04]])
+        # Measurement matrix - we only measure position (x,y,z)
+        self.kalman.H = numpy.zeros((3, 6))
+        self.kalman.H[0, 0] = 1.0  # measure x
+        self.kalman.H[1, 1] = 1.0  # measure y
+        self.kalman.H[2, 2] = 1.0  # measure z
 
-        # Process noise - higher for velocity component to make it more responsive
-        self.kalmanX.Q = numpy.array([[0.01, 0.01], [0.01, 0.04]])
-        self.kalmanY.Q = numpy.array([[0.01, 0.01], [0.01, 0.04]])
-        self.kalmanZ.Q = numpy.array([[0.01, 0.01], [0.01, 0.04]])
+        # Initial state uncertainty
+        self.kalman.P = numpy.eye(6) * 10.0
+        self.kalman.P[3:6, 3:6] *= 3.0  # Higher initial uncertainty for velocity
+
+        # Measurement noise (lower = trust measurements more)
+        self.kalman.R = numpy.eye(3) * 0.04  # Adjust based on your position measurement noise
+
+        # Process noise (how much we expect state to change between updates)
+        self.kalman.Q = numpy.eye(6) * 0.01
+        self.kalman.Q[3:6, 3:6] *= 3.0  # Higher process noise for velocity to make it more responsive
 
     def printTags(self):
         '''Print all tags in the database'''
@@ -135,21 +132,38 @@ class tagDB:
 
         self.filteredPosRotTime.append((self.reportedPos, self.reportedRot, self.timestamps[-1]))
 
+        # Kalman filter for position and velocity
         if len(self.timestamps) > 1:
             deltaT = self.timestamps[-1] - self.timestamps[-2]
         else:
             deltaT = 0.01  # Default small time step if no previous timestamp exists
 
-        self.kalmanX.predict(F=numpy.array([[1., deltaT], [0., 1.]]))
-        self.kalmanY.predict(F=numpy.array([[1., deltaT], [0., 1.]]))
-        self.kalmanZ.predict(F=numpy.array([[1., deltaT], [0., 1.]]))
-        self.kalmanX.update(self.reportedPos[0])
-        self.kalmanY.update(self.reportedPos[1])
-        self.kalmanZ.update(self.reportedPos[2])
+        # Update state transition matrix with current time delta
+        self.kalman.F[0, 3] = deltaT  # x += vx * dt
+        self.kalman.F[1, 4] = deltaT  # y += vy * dt
+        self.kalman.F[2, 5] = deltaT  # z += vz * dt
 
-        # self.kalman.update(self.reportedPos)
-        self.reportedPos = numpy.array([self.kalmanX.x[0][0], self.kalmanY.x[0][0], self.kalmanZ.x[0][0]])
-        self.reportedVelocity = numpy.array([self.kalmanX.x[1][0], self.kalmanY.x[1][0], self.kalmanZ.x[1][0]])
+        # Predict the next state
+        self.kalman.predict()
+
+        # Update with measurement (position)
+        self.kalman.update(self.reportedPos)
+
+        # Extract position and velocity from state
+        self.reportedPos = numpy.array([
+            self.kalman.x[0, 0],
+            self.kalman.x[1, 0],
+            self.kalman.x[2, 0]
+        ])
+
+        self.reportedVelocity = numpy.array([
+            self.kalman.x[3, 0],
+            self.kalman.x[4, 0],
+            self.kalman.x[5, 0]
+        ])
+
+        if self.debug:
+            print(f"Position: {self.reportedPos.round(3)}, Velocity: {self.reportedVelocity.round(3)}")
 
     def zscoreFilter(self, timeseries):
         """

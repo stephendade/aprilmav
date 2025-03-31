@@ -6,6 +6,7 @@ import math
 import numpy
 
 from transforms3d.euler import mat2euler, euler2mat
+from filterpy.kalman import KalmanFilter
 
 from modules.common import getPos, getRotation, getTransform
 
@@ -46,10 +47,38 @@ class tagDB:
 
         self.slidingWindow = slidingWindow
         self.extraOpt = extraOpt
-        # Z-score threshold for outlier detection
-        self.threshold = 1.5
+        # Z-score threshold for outlier detection (95%)
+        self.threshold = 3
         # Tag candidates. If they are present for 5 frames, add them to the database
         self.tagCandidates = deque(maxlen=5)
+
+        self.kalmanX = KalmanFilter(2, 1)
+        self.kalmanY = KalmanFilter(2, 1)
+        self.kalmanZ = KalmanFilter(2, 1)
+        self.kalmanX.x = numpy.array([[0.], [0.]])
+        self.kalmanY.x = numpy.array([[0.], [0.]])
+        self.kalmanZ.x = numpy.array([[0.], [0.]])
+        self.kalmanX.F = numpy.array([[1., 1.], [0., 1.]])
+        self.kalmanY.F = numpy.array([[1., 1.], [0., 1.]])
+        self.kalmanZ.F = numpy.array([[1., 1.], [0., 1.]])
+        self.kalmanX.H = numpy.array([[1., 0.]])
+        self.kalmanY.H = numpy.array([[1., 0.]])
+        self.kalmanZ.H = numpy.array([[1., 0.]])
+
+        # Initial state uncertainty - higher for velocity to make it more responsive
+        self.kalmanX.P = numpy.array([[10., 0.], [0., 30.]])
+        self.kalmanY.P = numpy.array([[10., 0.], [0., 30.]])
+        self.kalmanZ.P = numpy.array([[10., 0.], [0., 30.]])
+
+        # Measurement noise
+        self.kalmanX.R = numpy.array([[0.04]])
+        self.kalmanY.R = numpy.array([[0.04]])
+        self.kalmanZ.R = numpy.array([[0.04]])
+
+        # Process noise - higher for velocity component to make it more responsive
+        self.kalmanX.Q = numpy.array([[0.01, 0.01], [0.01, 0.04]])
+        self.kalmanY.Q = numpy.array([[0.01, 0.01], [0.01, 0.04]])
+        self.kalmanZ.Q = numpy.array([[0.01, 0.01], [0.01, 0.04]])
 
     def printTags(self):
         '''Print all tags in the database'''
@@ -87,11 +116,11 @@ class tagDB:
                                                                     self.tagDuplicatesT[tag.tag_id]).round(3),
                                                                 getRotation(self.tagDuplicatesT[tag.tag_id]).round(1)))
 
-    def generateReportedLoc(self, timestamp):
+    def generateReportedLoc(self):
         '''Generate the vehicle's current position
          and velocity and rotation in ArduPilot NED format,
          noting that Apriltag coords are (image right, image down, image out) relative to camera.
-         Timestamp is seconds since epoch'''
+        '''
 
         # only start filtering when we have enough data
         if len(self.T_VehToWorld) > self.slidingWindow and self.slidingWindow > 2:
@@ -100,43 +129,27 @@ class tagDB:
             timeSeriesRot = numpy.array([getRotation(T, True) for T in self.T_VehToWorld])
             self.reportedPos = self.zscoreFilter(timeSeriesPos)
             self.reportedRot = self.zscoreFilter(timeSeriesRot)
-            # now smooth the position
-            self.reportedPos = numpy.mean(timeSeriesPos, axis=0)
         else:
             self.reportedPos = getPos(self.T_VehToWorld[-1])
             self.reportedRot = getRotation(self.T_VehToWorld[-1], True)
 
-        self.filteredPosRotTime.append((self.reportedPos, self.reportedRot, timestamp))
-        print(self.filteredPosRotTime)
+        self.filteredPosRotTime.append((self.reportedPos, self.reportedRot, self.timestamps[-1]))
 
-        # Fit the position to a 1-degree polynomial (constant vel) and calculate the derivative
-        if len(self.filteredPosRotTime) > self.slidingWindow and self.slidingWindow > 20:
-            time_series = numpy.array([T[2] for T in self.filteredPosRotTime])
-            pos_series = numpy.array([T[0] for T in self.filteredPosRotTime])
+        if len(self.timestamps) > 1:
+            deltaT = self.timestamps[-1] - self.timestamps[-2]
+        else:
+            deltaT = 0.01  # Default small time step if no previous timestamp exists
 
-            # Fit a 1-degree polynomial for each axis
-            poly_x = numpy.polyfit(time_series, pos_series[:, 0], 1)
-            poly_y = numpy.polyfit(time_series, pos_series[:, 1], 1)
-            poly_z = numpy.polyfit(time_series, pos_series[:, 2], 1)
+        self.kalmanX.predict(F=numpy.array([[1., deltaT], [0., 1.]]))
+        self.kalmanY.predict(F=numpy.array([[1., deltaT], [0., 1.]]))
+        self.kalmanZ.predict(F=numpy.array([[1., deltaT], [0., 1.]]))
+        self.kalmanX.update(self.reportedPos[0])
+        self.kalmanY.update(self.reportedPos[1])
+        self.kalmanZ.update(self.reportedPos[2])
 
-            # Derive the velocity (first derivative of the polynomial)
-            velocity_x = poly_x[0]
-            velocity_y = poly_y[0]
-            velocity_z = poly_z[0]
-
-            self.deltaVelocityFiltered.append(numpy.array([velocity_x, velocity_y, velocity_z]))
-        elif len(self.filteredPosRotTime) > 1:
-            deltapos = self.filteredPosRotTime[-1][0] - self.filteredPosRotTime[-2][0]
-            deltatime = self.filteredPosRotTime[-1][2] - self.filteredPosRotTime[-2][2]
-            vel = deltapos / deltatime
-            self.deltaVelocityFiltered.append(numpy.array(vel))
-
-        self.reportedVelocity = self.deltaVelocityFiltered[-1]
-        # Z-score filter the velocity
-        #if len(self.deltaVelocityFiltered) > self.slidingWindow and self.slidingWindow > 2:
-        #    self.reportedVelocity = self.zscoreFilter(self.deltaVelocityFiltered)
-        #elif len(self.deltaVelocityFiltered) > 0:  # not enough data yet
-        #    self.reportedVelocity = self.deltaVelocityFiltered[-1]
+        # self.kalman.update(self.reportedPos)
+        self.reportedPos = numpy.array([self.kalmanX.x[0][0], self.kalmanY.x[0][0], self.kalmanZ.x[0][0]])
+        self.reportedVelocity = numpy.array([self.kalmanX.x[1][0], self.kalmanY.x[1][0], self.kalmanZ.x[1][0]])
 
     def zscoreFilter(self, timeseries):
         """
@@ -278,7 +291,7 @@ class tagDB:
                                                         getRotation(bestTransform).round(1)))
 
                 # Update position, rotation, velocity
-                self.generateReportedLoc(timestamp)
+                self.generateReportedLoc()
             if self.debug:
                 print("New Pos {0}, Rot = {2} with {1} tags".format(self.reportedPos.round(3),
                                                                     len(self.tagDuplicatesT),

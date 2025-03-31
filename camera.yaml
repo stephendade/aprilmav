@@ -193,3 +193,19 @@ Arducam_B0497:
   cameraPath: "/dev/v4l/by-id/usb-Arducam_Arducam_B0497__USB3_8.3MP__Arducam_20231205_0001-video-index0"
   rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+
+# Allied Vision Alvium 1800 U-811
+AlliedVision1800:
+  cam_driver: "cameraAlliedVision"
+  cam_params: !!python/tuple [2848, 2848, 1424, 1424]
+  cam_paramsD: !!python/tuple [0, 0, 0, 0]
+  resolution: !!python/tuple [2848, 2848]
+  fisheye: False
+  exposure: 5000    #in units of 1us. So 5000 = 5ms
+  Gamma: 1
+  fps: 60
+  gain: 15     # dB
+  doEnhancement: False    # do extra denoising and sharpening. Optional
+  cameraName: "DEV_1AB22C0632B8"
+  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters

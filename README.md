@@ -141,7 +141,7 @@ The following cameras have been tested as compatible with Aprilmav:
 - Generic USB webcams. Will need a specific calibration and settings file for each camera model. Use ``--camera=GenericUSB``
 - IMX219 Cameras on the Nvidia Jetson at a variety of resolutions: ``--camera=JetsonCameraIMX219-8MP``, ``--camera=JetsonCameraIMX219-6MP`` and ``--camera=JetsonCameraIMX219-2MP``.
 - IMX678 Camera (Arducam B0497 USB camera). Works quite well. Requires a high-end platform (Jetson or Laptop) to process in realtime. Use ``--camera=Arducam_B0497``
-
+- Allied Vision Alvium Camera, via the VimbaX SDK. See the ``AlliedVision1800`` entry in ``camera.yaml``.
 Cameras with global shutters are preferred, as they give much more accurate position solutions.
 
 ### Adding a new camera

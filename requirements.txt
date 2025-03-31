@@ -4,3 +4,4 @@ transforms3d==0.4.2
 PyYAML==6.0.2
 pymavlink==2.4.42
 matplotlib==3.7.5
+filterpy==1.4.5

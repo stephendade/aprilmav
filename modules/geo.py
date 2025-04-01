@@ -26,10 +26,9 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=True, slidingWindow=5, extraOpt=False):
+    def __init__(self, debug=False, slidingWindow=5, extraOpt=False):
         self.T_VehToWorld = deque(maxlen=slidingWindow+1)
         self.timestamps = deque(maxlen=slidingWindow+1)
-        self.filteredPosRotTime = deque(maxlen=slidingWindow+1)
         self.tagPlacement = {}
         self.tagnewT = {}
         self.tagDuplicatesT = {}
@@ -129,8 +128,6 @@ class tagDB:
         else:
             self.reportedPos = getPos(self.T_VehToWorld[-1])
             self.reportedRot = getRotation(self.T_VehToWorld[-1], True)
-
-        self.filteredPosRotTime.append((self.reportedPos, self.reportedRot, self.timestamps[-1]))
 
         # Kalman filter for position and velocity
         if len(self.timestamps) > 1:

@@ -231,8 +231,8 @@ if __name__ == '__main__':
                         help="Output video to IP:port")
     parser.add_argument("--decimation", type=int,
                         default=2, help="Apriltag decimation")
-    parser.add_argument("--averaging", type=int,
-                        default=5, help="Use moving average of N frames for velocity. Also outlier detection")
+    parser.add_argument("--outliers", type=int,
+                        default=5, help="Reject any outlier positions, based on last N frames")
     parser.add_argument('--extraOpt', dest='extraOpt', help="Optimise best position better",
                         default=False, action='store_true')
     parser.add_argument('--cuda', dest='cuda', help="Use OpenCV CUDA Extensions",
@@ -258,7 +258,7 @@ if __name__ == '__main__':
     at_detector = aprilDetect(args.tagSize, args.tagFamily, args.decimation, args.opencv)
 
     # All tags live in here
-    tagPlacement = tagDB(slidingWindow=args.averaging, extraOpt=args.extraOpt)
+    tagPlacement = tagDB(slidingWindow=args.outliers, extraOpt=args.extraOpt)
 
     # left, up, fwd, pitch, yaw, roll
     with open(args.outFile, "w+", encoding="utf-8") as outFile:

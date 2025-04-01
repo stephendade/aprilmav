@@ -94,7 +94,7 @@ $ aprilmav.py
 - ``--video``         Output an RTP H264 video to this IP:Port, 0 to disable
 - ``--decimation``    Apriltag decimation. Tradeoff against detection speed and distance.
 - ``--extraOpt``      Optimise detected position better. Uses a lot of extra CPU.
-- ``--averaging=N``   Use a moving average of N frames for velocity. Also reject position, rotation and velocity outliers based on mean and std dev of last N frames.
+- ``--outliers=N``    Reject any outlier positions (more than 3 std dev above mean), based on last N frames.
 - ``--cuda``          Use OpenCV CUDA Extensions. Only applies to Gstreamer, GenericUSB and File camera drivers.
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
 - ``--opencv``        Use OpenCV instead of pyapriltag for decoding. Only works for tag family tagStandard31h11

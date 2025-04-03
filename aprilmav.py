@@ -68,28 +68,15 @@ class mavThread(threading.Thread):
         self.device = device
         self.baud = baud
         self.source_system = source_system
-        self.heartbeatTimestamp = time.time()
         self.lock = threading.Lock()
         self.conn = None
         self.goodToSend = False
         self.reset_counter = 0
-        self.pos = (0, 0, 0)
-        self.speed = (0, 0, 0)
-        self.rot = (0, 0, 0)
-        self.time = 0
         self.pktSent = 0
         self.target_system = 1
         self.origin_lat = -35.363261
         self.origin_lon = 149.165230
-        self.origin_alt = 0.001
-
-    def updateData(self, newPos, newRot, t, speed):
-        '''Sync data with thread'''
-        with self.lock:
-            self.speed = speed
-            self.pos = newPos
-            self.rot = newRot
-            self.time = t
+        self.origin_alt = 0.01
 
     def run(self):
         # Start mavlink connection
@@ -119,30 +106,27 @@ class mavThread(threading.Thread):
 
         while True:
             # self.conn.recv_match(blocking=True, timeout=0.5)
-            # loop at 20 Hz
-            time.sleep(0.05)
-            self.sendPos()
-            self.sendSpeed()
-            self.sendHeartbeat()
-            if exit_event.is_set():
-                self.send_msg_to_gcs("Stopping")
-                return
-            # check if we need to send the EKF origin
-            msg = self.conn.recv_match(
-                type='GLOBAL_POSITION_INT', blocking=False)
-            if msg and msg.lat == 0 and msg.lon == 0:
-                print("Setting EKF origin")
-                self.set_default_global_origin()
+            # loop at 1 Hz
+            time.sleep(1)
+            with self.lock:
+                self.sendHeartbeat()
+                if exit_event.is_set():
+                    self.send_msg_to_gcs("Stopping")
+                    return
+                # check if we need to send the EKF origin
+                msg = self.conn.recv_match(
+                    type='GLOBAL_POSITION_INT', blocking=False)
+                if msg and msg.lat == 0 and msg.lon == 0:
+                    print("Setting EKF origin")
+                    self.set_default_global_origin()
 
     def sendHeartbeat(self):
         '''send heartbeat if more than 1 sec since last message'''
-        if (self.heartbeatTimestamp + 1) < time.time():
-            self.conn.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
-                                         mavutil.mavlink.MAV_AUTOPILOT_GENERIC,
-                                         0,
-                                         0,
-                                         0)
-            self.heartbeatTimestamp = time.time()
+        self.conn.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
+                                     mavutil.mavlink.MAV_AUTOPILOT_GENERIC,
+                                     0,
+                                     0,
+                                     0)
 
     def getPktSent(self):
         '''Return the last packet send'''
@@ -169,7 +153,7 @@ class mavThread(threading.Thread):
                                                  int(self.origin_alt*1.0e3),
                                                  current_time_us)
 
-    def sendPos(self):
+    def sendPos(self, pos, rot):
         '''Send a vision pos estimate
         https://mavlink.io/en/messages/common.html#VISION_POSITION_ESTIMATE
         '''
@@ -187,11 +171,11 @@ class mavThread(threading.Thread):
                                       cov_twist])
             with self.lock:
                 self.conn.mav.vision_position_estimate_send(
-                    current_time_us, self.pos[0], self.pos[1], self.pos[2], self.rot[0], self.rot[1], self.rot[2],
+                    current_time_us, pos[0], pos[1], pos[2], rot[0], rot[1], rot[2],
                     covariance, reset_counter=self.reset_counter)
                 self.pktSent += 1
 
-    def sendSpeed(self):
+    def sendSpeed(self, vehSpeed):
         '''Send a vision speed estimate
         https://mavlink.io/en/messages/common.html#VISION_SPEED_ESTIMATE
         '''
@@ -204,7 +188,7 @@ class mavThread(threading.Thread):
                                       0, 0, cov_pose])
             with self.lock:
                 self.conn.mav.vision_speed_estimate_send(
-                    current_time_us, self.speed[0], self.speed[1], self.speed[2], covariance,
+                    current_time_us, vehSpeed[0], vehSpeed[1], vehSpeed[2], covariance,
                     reset_counter=self.reset_counter)
                 self.pktSent += 1
 
@@ -339,8 +323,9 @@ if __name__ == '__main__':
             outFile.write("{0:.3f},{1:.3f},{2:.3f}\n".format(speed[0], speed[1], speed[2]))
         # print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart,
 
-        # Create and send MAVLink packet
-        threadMavlink.updateData(posR, rotR, timestamp, speed)
+        # Create and send MAVLink packet at same rate as camera
+        threadMavlink.sendPos(posR, rotR)
+        threadMavlink.sendSpeed(speed)
 
         # Send to status thread
         threadStatus.updateData(time.time() - timestamp,

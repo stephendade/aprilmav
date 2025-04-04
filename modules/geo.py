@@ -54,7 +54,7 @@ class tagDB:
         self.kalman.x = numpy.zeros((6, 1))  # Initial state [x, y, z, vx, vy, vz]
 
         # State transition matrix - update position with velocity
-        self.kalman.F = numpy.eye(6)  
+        self.kalman.F = numpy.eye(6)
         self.kalman.F[0, 3] = 1.0  # x += vx * dt (dt will be set during prediction)
         self.kalman.F[1, 4] = 1.0  # y += vy * dt
         self.kalman.F[2, 5] = 1.0  # z += vz * dt

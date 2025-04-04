@@ -280,7 +280,6 @@ if __name__ == '__main__':
     i = 0
     prev_timestamp = time.time() - 0.1
     while True:
-        print("--------------------------------------")
         # Capture images from all cameras (in parallel)
         img_by_cam = {}
         tags_by_cam = {}
@@ -296,11 +295,6 @@ if __name__ == '__main__':
             else:
                 tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.KFlat)
             tags_by_cam[CAMERA.camName] = tags
-
-        # get time to capture and convert
-        print("Time to capture and detect = {0:.1f} ms. ".format(1000*(time.time() - timestamp)))
-        for CAMERA in CAMERAS:
-            print("Camera {0} found {1} tags. ".format(CAMERA.camName, len(tags_by_cam[CAMERA.camName])))
 
         # feed tags into tagPlacement
         for CAMERA in CAMERAS:

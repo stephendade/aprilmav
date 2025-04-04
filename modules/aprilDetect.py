@@ -6,8 +6,6 @@ import numpy
 import cv2
 from pyapriltags import Detector
 
-from modules.common import getRotation
-
 
 class ApriltagDectection:
     '''
@@ -131,8 +129,8 @@ class aprilDetect:
                     diff = self.getAngle(prevTag.pose_R, tag.pose_R)
                     if abs(diff) < 30:   # degrees
                         filteredTags.append(tag)
-                    else:
-                        print(f"Ignoring flipped tag {tag.tag_id}, delta rotation = {diff}")
+                    # else:
+                    #     print(f"Ignoring flipped tag {tag.tag_id}, delta rotation = {diff}")
                     found = True
                     break
             if not found:

@@ -64,8 +64,8 @@ def test_geo_execution():
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
-    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Works for tagStandard31h11",
-                        default=False, action='store_true')
+    parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
+                        default='PyAprilTags', choices=['OpenCV', 'PyAprilTags'])
     args = parser.parse_args()
     geo_test.main(args)
     assert os.path.exists("geo_test_results.csv")
@@ -94,8 +94,8 @@ def test_process_execution_single():
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
-    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Works for tagStandard31h11",
-                        default=False, action='store_true')
+    parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
+                        default='PyAprilTags', choices=['OpenCV', 'PyAprilTags'])
     args = parser.parse_args()
     process_test.main(args)
     assert os.path.exists("processed.csv")
@@ -124,8 +124,8 @@ def test_process_execution_multi():
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default="camera-multi.yaml",
                         help="multiple cameras using the specified yaml file")
-    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Works for tagStandard31h11",
-                        default=True, action='store_true')
+    parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
+                        default='OpenCV', choices=['OpenCV', 'PyAprilTags'])
     args = parser.parse_args()
     process_test.main(args)
     assert os.path.exists("processed.csv")

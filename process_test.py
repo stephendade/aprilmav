@@ -18,7 +18,7 @@ import numpy
 
 from modules.geo import getPos, getTransform, getRotation
 from modules.common import do_multi_capture, get_average_timestamps, loadCameras, get_num_images, tryCheckCuda
-from modules.aprilDetect import aprilDetect
+from modules.aprilDetect import aprilDetect, tagEngines
 
 exit_event = threading.Event()
 
@@ -41,7 +41,7 @@ def main(mainargs):
     # allow the camera to warmup
     time.sleep(2)
 
-    at_detector = aprilDetect(mainargs.tagSize, mainargs.tagFamily, mainargs.decimation, mainargs.opencv)
+    at_detector = aprilDetect(mainargs.tagSize, mainargs.tagFamily, mainargs.decimation, mainargs.tagEngine)
 
     # how many loops. If using a file input, just use min images
     loops = get_num_images(CAMERAS, mainargs.loop)
@@ -83,7 +83,7 @@ def main(mainargs):
         # Detect tags in each camera
         for CAMERA in CAMERAS:
             # AprilDetect, after accounting for distortion  (if fisheye)
-            if at_detector.OpenCV:
+            if at_detector.tagEngine == tagEngines.OpenCV:
                 tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.K)
             else:
                 tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.KFlat)
@@ -172,7 +172,7 @@ if __name__ == '__main__':
                         default=False, action='store_true')
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
-    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
-                        default=False, action='store_true')
+    parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
+                        default='PyAprilTags', choices=['OpenCV', 'PyAprilTags'])
     args = parser.parse_args()
     main(args)

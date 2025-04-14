@@ -97,7 +97,7 @@ $ aprilmav.py
 - ``--outliers=N``    Reject any outlier positions (more than 3 std dev above mean), based on last N frames.
 - ``--cuda``          Use OpenCV CUDA Extensions. Only applies to Gstreamer, GenericUSB and File camera drivers.
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
-- ``--opencv``        Use OpenCV instead of pyapriltag for decoding. Only works for tag family tagStandard31h11
+- ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default) or OpenCV
   
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.

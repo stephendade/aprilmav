@@ -19,7 +19,7 @@ from modules.common import do_multi_capture, get_average_timestamps, loadCameras
 from modules.geo import tagDB
 from modules.videoStream import videoThread
 from modules.saveStream import saveThread
-from modules.aprilDetect import aprilDetect
+from modules.aprilDetect import aprilDetect, tagEngines
 
 exit_event = threading.Event()
 
@@ -225,8 +225,8 @@ if __name__ == '__main__':
                         help="Apriltag family")
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
-    parser.add_argument('--opencv', dest='opencv', help="Use OpenCV instead of pyapriltag. Only works for tagStandard31h11",
-                        default=False, action='store_true')
+    parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
+                        default='PyAprilTags', choices=['OpenCV', 'PyAprilTags'])
     args = parser.parse_args()
 
     print("Initialising")
@@ -239,7 +239,7 @@ if __name__ == '__main__':
     # allow the camera to warmup
     time.sleep(2)
 
-    at_detector = aprilDetect(args.tagSize, args.tagFamily, args.decimation, args.opencv)
+    at_detector = aprilDetect(args.tagSize, args.tagFamily, args.decimation, args.tagEngine)
 
     # All tags live in here
     tagPlacement = tagDB(slidingWindow=args.outliers, extraOpt=args.extraOpt)
@@ -297,7 +297,7 @@ if __name__ == '__main__':
         # Detect tags in each camera
         for CAMERA in CAMERAS:
             # AprilDetect, after accounting for distortion  (if fisheye)
-            if at_detector.OpenCV:
+            if at_detector.tagEngine == tagEngines.OpenCV:
                 tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.K)
             else:
                 tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.KFlat)

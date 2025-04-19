@@ -4,7 +4,6 @@ AprilTag detection module and shortcuts
 import os
 import numpy
 import cv2
-from pyapriltags import Detector
 
 
 class ApriltagDectection:
@@ -22,19 +21,54 @@ class ApriltagDectection:
     pose_err = None
 
 
+class tagEngines:
+    '''
+    Enum for tag engines
+    '''
+    OpenCV = 0
+    PyAprilTags = 1
+    JetsonVPI = 2
+
+    '''converts to string'''
+    @staticmethod
+    def toString(tagEngine):
+        if tagEngine == tagEngines.OpenCV:
+            return "OpenCV"
+        elif tagEngine == tagEngines.PyAprilTags:
+            return "PyAprilTags"
+        elif tagEngine == tagEngines.JetsonVPI:
+            return "JetsonVPI"
+        else:
+            return "Unknown"
+
+    '''converts from string'''
+    @staticmethod
+    def fromString(tagEngine):
+        if tagEngine == "OpenCV":
+            return tagEngines.OpenCV
+        elif tagEngine == "PyAprilTags":
+            return tagEngines.PyAprilTags
+        elif tagEngine == "JetsonVPI":
+            return tagEngines.JetsonVPI
+        else:
+            return None
+
+
 class aprilDetect:
     '''
     Apriltag detector, using either pyapriltags or OpenCV
     '''
-    def __init__(self, tagSize, tagFamily="tag36h11", decimate=1.0, OpenCV=False):
+    def __init__(self, tagSize, tagFamily="tag36h11", decimate=1.0, tagEngine="PyAprilTags"):
         self.tagSize = tagSize/1000
         self.decimate = decimate
         self.at_detector = None
-        self.OpenCV = OpenCV
+        self.tagEngine = tagEngines.fromString(tagEngine)
+        if self.tagEngine is None:
+            raise ValueError("Unknown tag engine {0}".format(tagEngine))
         self.tagFamily = tagFamily
         self.PrevFrameTags = []
 
-        if OpenCV:
+        if self.tagEngine == tagEngines.OpenCV:
             # Setup Aruco detector
             aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36H11)
             aruco_parameters = cv2.aruco.DetectorParameters()
@@ -56,7 +90,8 @@ class aprilDetect:
                 [self.tagSize/2, -self.tagSize/2, 0],
                 [-self.tagSize/2, -self.tagSize/2, 0]
             ])
-        else:
+        elif self.tagEngine == tagEngines.PyAprilTags:
+            from pyapriltags import Detector
             self.at_detector = Detector(searchpath=['apriltags3py/apriltags/lib', 'apriltags3py/apriltags/lib'],
                                         families=self.tagFamily,
                                         nthreads=max(1, os.cpu_count() - 1),
@@ -73,7 +108,7 @@ class aprilDetect:
         :param K: The camera matrix
         :return: A list of detected tags
         '''
-        if self.OpenCV:
+        if self.tagEngine == tagEngines.OpenCV:
             # Detect tags
             corners, ids, _ = self.at_detector.detectMarkers(image)
 
@@ -105,7 +140,7 @@ class aprilDetect:
                         tag.pose_err = pose_err/1E8
 
                         tags.append(tag)
-        else:
+        elif self.tagEngine == tagEngines.PyAprilTags:
             # Detect tags
             tags = self.at_detector.detect(image, True, K, self.tagSize)
 

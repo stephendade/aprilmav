@@ -97,7 +97,7 @@ $ aprilmav.py
 - ``--outliers=N``    Reject any outlier positions (more than 3 std dev above mean), based on last N frames.
 - ``--cuda``          Use OpenCV CUDA Extensions. Only applies to Gstreamer, GenericUSB and File camera drivers.
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
-- ``--opencv``        Use OpenCV instead of pyapriltag for decoding. Only works for tag family tagStandard31h11
+- ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default) or OpenCV
   
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.
@@ -154,6 +154,8 @@ To add a new camera, follow the following steps:
 - Run ``cameracal.py`` using the above images and put the resultant camera parameters in in ``camera.yaml``
 
 Note a separate profile will be required for a specific lens and resolution combination, and camera rotation/position.
+
+In ``camera.yaml``, note that the ``cam_params`` are in the order of [fx, fy, cx, cy] for the "K" matrix. ``cam_paramsD`` is in the order of [k1, k2, k3, k4] for "D" matrix for fisheye undistortion.
 
 ### Accuracy and Performance
 

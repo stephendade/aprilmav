@@ -1,4 +1,6 @@
 # Camera settings
+# Note that the cam_params are in the order of [fx, fy, cx, cy] for the "K" matrix
+# and cam_paramsD are in the order of [k1, k2, k3, k4] for "D" matrix
 PiCamV2LowRes:
   cam_driver: "cameraPi"
   cam_params: !!python/tuple [818.0968859467251, 817.2573949039664, 433.78963953637407, 254.56860763807128]

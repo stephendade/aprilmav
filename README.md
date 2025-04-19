@@ -155,6 +155,8 @@ To add a new camera, follow the following steps:
 
 Note a separate profile will be required for a specific lens and resolution combination, and camera rotation/position.
 
+In ``camera.yaml``, note that the ``cam_params`` are in the order of [fx, fy, cx, cy] for the "K" matrix. ``cam_paramsD`` is in the order of [k1, k2, k3, k4] for "D" matrix for fisheye undistortion.
+
 ### Accuracy and Performance
 
 ArduPilot requires a good velocity estimate from AprilMAV. This can be graphed via the xxx MAVLink messages.

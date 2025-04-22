@@ -120,7 +120,7 @@ Note that coordinate frame conversion from the camera (see [here](https://github
 vehicle (NED) frames takes place in aprilmav. Use the ``rotationRelVehicle`` in ``camera.yaml`` to define the camera-to-vehicle 
 conversion. Thus the ``VISO_ORIENT`` should be 0 in ArduPilot. An example of this is a ``rotationRelVehicle = !!python/tuple [0, 180, 90]`` for a upwards facing camera, with the bottom of the image towards the pack of the vehicle.
 
-The ``VISO_DELAY_MS`` should be set to 1000/framerate (ie 7fps gives a ``VISO_DELAY_MS`` of 142).
+The ``VISO_DELAY_MS`` should be as per the "Latency" section below. This will typically be 100-300ms
 
 The ``--video`` and ``--imageFolder`` options will have a performance impact. It is recommended not to use these options unless for debugging purposes.
 
@@ -174,8 +174,13 @@ If the velocity numbers are too noisy, the following options will help:
 - Decrease exposure time as much as possible to reduce motion blur during sharp turns (<5ms preferred)
 - Decrease camera gain to reduce any noise in the images. Apriltags are capabile of being detected in quite low-light environments
 - A good camera calibration (if not using one of the supplied calibrations) is essential
-- Use the ``--averaging=N`` option to average over N frames. N should be a maximum of camera fps/2
 - Ensure at least 3 Apriltags are visible at all times
+
+### Latency
+
+Aprilmav's latency is typcially 1-2 frames, due to the in-built Kalman filter. This should be combined with the average processing
+time (as per the ``geo_test.py`` summary). For a Raspberry Pi5 with the IMX298 camera, the average processing time is 50ms per
+frame (20fps). Multiplying by 2 for the Kalman filter gives a total 100ms delay.
   
 ### Running Simulations
 

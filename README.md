@@ -97,7 +97,7 @@ $ aprilmav.py
 - ``--outliers=N``    Reject any outlier positions (more than 3 std dev above mean), based on last N frames.
 - ``--cuda``          Use OpenCV CUDA Extensions. Only applies to Gstreamer, GenericUSB and File camera drivers.
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
-- ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default) or OpenCV
+- ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default), OpenCV or JetsonVPI
   
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.
@@ -181,6 +181,13 @@ If the velocity numbers are too noisy, the following options will help:
 Aprilmav's latency is typcially 1-2 frames, due to the in-built Kalman filter. This should be combined with the average processing
 time (as per the ``geo_test.py`` summary). For a Raspberry Pi5 with the IMX298 camera, the average processing time is 50ms per
 frame (20fps). Multiplying by 2 for the Kalman filter gives a total 100ms delay.
+
+### Hardware Acceleration
+
+If running on a NVIDIA Jetson, hardware acceleration of some parts of the detection pipeline are available:
+
+- Use ``--cuda`` to use CUDA-accelerated fisheye undistortion
+- Use ``--tagEngine=JetsonVPI`` to use the Jetson VPI processor for Apriltag detection
   
 ### Running Simulations
 

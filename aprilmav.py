@@ -226,7 +226,7 @@ if __name__ == '__main__':
     parser.add_argument("--multiCamera", type=str, default=None,
                         help="multiple cameras using the specified yaml file")
     parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
-                        default='PyAprilTags', choices=['OpenCV', 'PyAprilTags'])
+                        default='PyAprilTags', choices=['OpenCV', 'PyAprilTags', 'JetsonVPI'])
     args = parser.parse_args()
 
     print("Initialising")

@@ -168,6 +168,7 @@ class aprilDetect:
                 tag.pose_t = tagVPI.translation
                 tag.pose_err = 0
                 tag.homography = None
+                tags.append(tag)
 
         # Determine if tag rotation is similar to previous frame and filter out if not
         filteredTags = self.filterTags(tags)

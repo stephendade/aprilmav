@@ -100,6 +100,9 @@ class aprilDetect:
                                         refine_edges=1,
                                         decode_sharpening=0.25,
                                         debug=0)
+        elif self.tagEngine == tagEngines.JetsonVPI:
+            # Can't initialize VPI detector here, as we need to know the image size
+            self.at_detector = None
 
     def detect(self, image, K):
         '''
@@ -143,6 +146,28 @@ class aprilDetect:
         elif self.tagEngine == tagEngines.PyAprilTags:
             # Detect tags
             tags = self.at_detector.detect(image, True, K, self.tagSize)
+        elif self.tagEngine == tagEngines.JetsonVPI:
+            # Initialize VPI detector
+            if self.at_detector is None:
+                from .apriltagVPI import ApriltagVPI
+                height, width = image.shape[:2]
+                self.at_detector = ApriltagVPI(family=self.tagFamily, hamming=0, width=width, height=height)
+
+            # Detect tags
+            tagsVPI = self.at_detector.detect(image, tagSize=self.tagSize, fx=K[0], fy=K[1], cx=K[2], cy=K[3])
+            # Convert to ApriltagDectection objects
+            tags = []
+            for tagVPI in tagsVPI:
+                tag = ApriltagDectection()
+                tag.tag_id = tagVPI.id
+                tag.corners = tagVPI.corners
+                tag.center = tagVPI.center
+                tag.hamming = 0
+                tag.decision_margin = 0
+                tag.pose_R = tagVPI.rotation
+                tag.pose_t = tagVPI.translation
+                tag.pose_err = 0
+                tag.homography = None
 
         # Determine if tag rotation is similar to previous frame and filter out if not
         filteredTags = self.filterTags(tags)

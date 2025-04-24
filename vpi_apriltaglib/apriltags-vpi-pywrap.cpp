@@ -1,5 +1,5 @@
 /*
-sudo apt install python3-pybind11
+PyBind11 bindings for ApriltagVPI
 */
 
 #define NPY_NO_DEPRECATED_API NPY_API_VERSION
@@ -14,7 +14,6 @@ sudo apt install python3-pybind11
 
 #include "apriltags-vpi.h"
 
-// Because I'm lazy and there is no risk of name collision
 namespace apriltagvpi = pybind11;
 
 PYBIND11_MODULE(apriltagVPI, m) {
@@ -36,6 +35,7 @@ PYBIND11_MODULE(apriltagVPI, m) {
         .def_readwrite("decisionMargin", &apriltags_vpi::TagDetection::decisionMargin)
         .def_readwrite("rotation", &apriltags_vpi::TagDetection::rotation)
         .def_readwrite("translation", &apriltags_vpi::TagDetection::translation)
+        .def_readwrite("error", &apriltags_vpi::TagDetection::error)
         .def("__repr__", [](const apriltags_vpi::TagDetection& tag) {
             return "<TagDetection id=" + std::to_string(tag.id) + ">";
         });

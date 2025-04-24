@@ -127,5 +127,3 @@ class camera(cameraBase):
 
     def close(self):
         ''' close the camera'''
-        super().close()
-        return

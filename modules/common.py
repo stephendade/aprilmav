@@ -207,12 +207,12 @@ def getFontSize(image):
     testText = "Test1_1234567890"
 
     # Binary search to find optimal font scale
-    (text_width, text_height), baseline = cv2.getTextSize(
+    (text_width, text_height), _ = cv2.getTextSize(
         testText, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
 
     while text_width < target_width:
         font_scale *= 1.1
-        (text_width, text_height), baseline = cv2.getTextSize(
+        (text_width, text_height), _ = cv2.getTextSize(
             testText, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
 
     return font_scale, thickness, text_height
@@ -254,9 +254,8 @@ def tryCheckCuda(useCuda):
         try:
             if cv2.cuda.getCudaEnabledDeviceCount() > 0:
                 return True
-            else:
-                print("Error: No CUDA devices found or OpenCV not compiled with CUDA support")
-                sys.exit(0)
+            print("Error: No CUDA devices found or OpenCV not compiled with CUDA support")
+            sys.exit(0)
         except cv2.error:
             print("Error: No CUDA devices found or OpenCV not compiled with CUDA support")
             sys.exit(0)

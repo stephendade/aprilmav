@@ -34,24 +34,22 @@ class tagEngines:
     def toString(tagEngine):
         if tagEngine == tagEngines.OpenCV:
             return "OpenCV"
-        elif tagEngine == tagEngines.PyAprilTags:
+        if tagEngine == tagEngines.PyAprilTags:
             return "PyAprilTags"
-        elif tagEngine == tagEngines.JetsonVPI:
+        if tagEngine == tagEngines.JetsonVPI:
             return "JetsonVPI"
-        else:
-            return "Unknown"
+        return "Unknown"
 
     '''converts from string'''
     @staticmethod
     def fromString(tagEngine):
         if tagEngine == "OpenCV":
             return tagEngines.OpenCV
-        elif tagEngine == "PyAprilTags":
+        if tagEngine == "PyAprilTags":
             return tagEngines.PyAprilTags
-        elif tagEngine == "JetsonVPI":
+        if tagEngine == "JetsonVPI":
             return tagEngines.JetsonVPI
-        else:
-            return None
+        return None
 
 
 class aprilDetect:

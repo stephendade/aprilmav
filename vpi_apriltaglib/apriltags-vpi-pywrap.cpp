@@ -1,5 +1,5 @@
 /*
-PyBind11 bindings for ApriltagVPI
+sudo apt install python3-pybind11
 */
 
 #define NPY_NO_DEPRECATED_API NPY_API_VERSION
@@ -14,6 +14,7 @@ PyBind11 bindings for ApriltagVPI
 
 #include "apriltags-vpi.h"
 
+// Because I'm lazy and there is no risk of name collision
 namespace apriltagvpi = pybind11;
 
 PYBIND11_MODULE(apriltagVPI, m) {
@@ -29,15 +30,15 @@ PYBIND11_MODULE(apriltagVPI, m) {
     });
 
     apriltagvpi::class_<apriltags_vpi::TagDetection>(m, "TagDetection")
-        .def_readwrite("id", &apriltags_vpi::TagDetection::id)
+        .def_readwrite("tag_id", &apriltags_vpi::TagDetection::tag_id)
         .def_readwrite("center", &apriltags_vpi::TagDetection::center)
         .def_readwrite("corners", &apriltags_vpi::TagDetection::corners)
         .def_readwrite("decisionMargin", &apriltags_vpi::TagDetection::decisionMargin)
-        .def_readwrite("rotation", &apriltags_vpi::TagDetection::rotation)
-        .def_readwrite("translation", &apriltags_vpi::TagDetection::translation)
-        .def_readwrite("error", &apriltags_vpi::TagDetection::error)
+        .def_readwrite("pose_R", &apriltags_vpi::TagDetection::pose_R)
+        .def_readwrite("pose_t", &apriltags_vpi::TagDetection::pose_t)
+        .def_readwrite("pose_err", &apriltags_vpi::TagDetection::pose_err)
         .def("__repr__", [](const apriltags_vpi::TagDetection& tag) {
-            return "<TagDetection id=" + std::to_string(tag.id) + ">";
+            return "<TagDetection tag_id=" + std::to_string(tag.tag_id) + ">";
         });
 
     //PYBIND11_NUMPY_DTYPE(B, z, a);

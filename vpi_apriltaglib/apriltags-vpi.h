@@ -17,13 +17,13 @@ namespace apriltags_vpi {
  * @brief Detected AprilTag information
  */
 struct TagDetection {
-    int id;                      // Tag ID
+    int tag_id;                      // Tag ID
     cv::Point2f center;          // Tag center in image coordinates
     std::vector<cv::Point2f> corners; // Tag corners in image coordinates (clockwise)
-    py::array_t<double> rotation;         // Rotation matrix
-    py::array_t<double> translation;      // Translation vector
+    py::array_t<double> pose_R;         // Rotation matrix
+    py::array_t<double> pose_t;      // Translation vector
     double decisionMargin;     // Decision margin for tag detection
-    double error;              // Object-space error of the pose estimation
+    double pose_err;              // Object-space error of the pose estimation
 };
 
 /**

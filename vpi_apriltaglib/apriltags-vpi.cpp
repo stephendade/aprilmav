@@ -151,9 +151,9 @@ std::vector<TagDetection> ApriltagDetectorVPI::detect(py::array_t<uint8_t>& img,
 
         // Create a TagDetection object and fill it with the data
         TagDetection tag_detection;
-        tag_detection.id = detection.id;
+        tag_detection.tag_id = detection.id;
         tag_detection.decisionMargin = detection.decisionMargin;
-        tag_detection.error = pose.error;
+        tag_detection.pose_err = pose.error;
         tag_detection.corners = std::vector<cv::Point2f>(4);
         // Copy the corners from the VPIAprilTagDetection to the TagDetection
         tag_detection.corners[0] = cv::Point2f(detection.corners[0].x, detection.corners[0].y);
@@ -179,9 +179,8 @@ std::vector<TagDetection> ApriltagDetectorVPI::detect(py::array_t<uint8_t>& img,
         }
 
         // Now assign this properly-filled array to the tag_detection
-        tag_detection.rotation = rotation;
+        tag_detection.pose_R = rotation;
 
-        std::cout << "Translation" << std::endl;
         // Create a 1D array for translation
         py::array_t<double> translation({3});
 
@@ -192,7 +191,7 @@ std::vector<TagDetection> ApriltagDetectorVPI::detect(py::array_t<uint8_t>& img,
         t(2) = pose.transform[2][3];
 
         // Assign to tag_detection
-        tag_detection.translation = translation;
+        tag_detection.pose_t = translation;
 
         // Add the tag detection to the output vector
         detections_out.push_back(tag_detection);

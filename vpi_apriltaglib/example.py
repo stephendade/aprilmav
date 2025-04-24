@@ -4,12 +4,7 @@ Example of using the VPI Apriltag detector
 
 Requires a NVIDIA Jetson with VPI 3.2
 
-To build and run:
-mkdir build && cd build
-cmake ..
-make
-
-Then run example.py
+Ensure the C++ bindings are built before running this script
 
 """
 import sys

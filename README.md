@@ -188,6 +188,17 @@ If running on a NVIDIA Jetson, hardware acceleration of some parts of the detect
 
 - Use ``--cuda`` to use CUDA-accelerated fisheye undistortion
 - Use ``--tagEngine=JetsonVPI`` to use the Jetson VPI processor for Apriltag detection
+
+To use the ``JetsonVPI`` detector, the custom C++ bindings need to be built. This can 
+be done via the following commands:
+
+```
+sudo apt install python3-pybind11 libnvvpi3 vpi3-dev
+cd ./vpi_apriltaglib
+mkdir build && cd build
+cmake ..
+make
+```
   
 ### Running Simulations
 

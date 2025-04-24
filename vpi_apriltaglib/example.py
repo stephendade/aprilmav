@@ -4,6 +4,9 @@ Example of using the VPI Apriltag detector
 
 Requires a NVIDIA Jetson with VPI 3.2
 
+Requires PyBind11:
+sudo apt install python3-pybind11
+
 To build and run:
 mkdir build && cd build
 cmake ..
@@ -25,7 +28,7 @@ if __name__ == "__main__":
     detector = ApriltagVPI(family="tagStandard41h12", hamming=0, width=3840, height=2160)
 
     # Load an image
-    img = cv2.imread("1740705627994.png", cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread("example.jpg", cv2.IMREAD_GRAYSCALE)
     if img is None:
         print("Error: Could not load test image")
         sys.exit(1)
@@ -46,5 +49,6 @@ if __name__ == "__main__":
         print(f"  Corners: {det.corners}")
         print(f"  Translation: {det.translation}")
         print(f"  Rotation: {det.rotation}")
+        print(f"  Pose error 1E5: {1E5 * det.error}")
 
     print("Done")

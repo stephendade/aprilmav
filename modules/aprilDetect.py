@@ -166,7 +166,7 @@ class aprilDetect:
                 tag.decision_margin = 0
                 tag.pose_R = tagVPI.rotation
                 tag.pose_t = tagVPI.translation
-                tag.pose_err = 0
+                tag.pose_err = tagVPI.error
                 tag.homography = None
                 tags.append(tag)
 

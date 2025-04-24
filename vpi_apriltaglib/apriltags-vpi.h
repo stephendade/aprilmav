@@ -23,6 +23,7 @@ struct TagDetection {
     py::array_t<double> rotation;         // Rotation matrix
     py::array_t<double> translation;      // Translation vector
     double decisionMargin;     // Decision margin for tag detection
+    double error;              // Object-space error of the pose estimation
 };
 
 /**

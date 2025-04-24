@@ -153,6 +153,7 @@ std::vector<TagDetection> ApriltagDetectorVPI::detect(py::array_t<uint8_t>& img,
         TagDetection tag_detection;
         tag_detection.id = detection.id;
         tag_detection.decisionMargin = detection.decisionMargin;
+        tag_detection.error = pose.error;
         tag_detection.corners = std::vector<cv::Point2f>(4);
         // Copy the corners from the VPIAprilTagDetection to the TagDetection
         tag_detection.corners[0] = cv::Point2f(detection.corners[0].x, detection.corners[0].y);

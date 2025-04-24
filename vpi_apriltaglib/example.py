@@ -4,9 +4,6 @@ Example of using the VPI Apriltag detector
 
 Requires a NVIDIA Jetson with VPI 3.2
 
-Requires PyBind11:
-sudo apt install python3-pybind11
-
 To build and run:
 mkdir build && cd build
 cmake ..
@@ -43,12 +40,12 @@ if __name__ == "__main__":
     # Print results
     print(f"Found {len(detections)} tags")
     for det in detections:
-        print(f"Tag ID: {det.id}")
+        print(f"Tag ID: {det.tag_id}")
         print(f"  Center: ({det.center.x:.2f}, {det.center.y:.2f})")
         print(f"  Decision margin: {det.decisionMargin:.2f}")
         print(f"  Corners: {det.corners}")
-        print(f"  Translation: {det.translation}")
-        print(f"  Rotation: {det.rotation}")
-        print(f"  Pose error 1E5: {1E5 * det.error}")
+        print(f"  Translation: {det.pose_t}")
+        print(f"  Rotation: {det.pose_R}")
+        print(f"  Pose error 1E5: {1E5 * det.pose_err}")
 
     print("Done")

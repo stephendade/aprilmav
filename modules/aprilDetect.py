@@ -154,21 +154,7 @@ class aprilDetect:
                 self.at_detector = ApriltagVPI(family=self.tagFamily, hamming=0, width=width, height=height)
 
             # Detect tags
-            tagsVPI = self.at_detector.detect(image, tagSize=self.tagSize, fx=K[0], fy=K[1], cx=K[2], cy=K[3])
-            # Convert to ApriltagDectection objects
-            tags = []
-            for tagVPI in tagsVPI:
-                tag = ApriltagDectection()
-                tag.tag_id = tagVPI.id
-                tag.corners = tagVPI.corners
-                tag.center = tagVPI.center
-                tag.hamming = 0
-                tag.decision_margin = 0
-                tag.pose_R = tagVPI.rotation
-                tag.pose_t = tagVPI.translation
-                tag.pose_err = tagVPI.error
-                tag.homography = None
-                tags.append(tag)
+            tags = self.at_detector.detect(image, tagSize=self.tagSize, fx=K[0], fy=K[1], cx=K[2], cy=K[3])
 
         # Determine if tag rotation is similar to previous frame and filter out if not
         filteredTags = self.filterTags(tags)

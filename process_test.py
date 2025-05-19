@@ -65,7 +65,7 @@ def main(mainargs):
         # Capture images from all cameras (in parallel)
         img_by_cam = {}
         tags_by_cam = {}
-
+        timestamp = time.time()
         img_by_cam = do_multi_capture(CAMERAS)
         # check for any bad captures
         shouldExit = False
@@ -75,10 +75,6 @@ def main(mainargs):
                 shouldExit = True
         if shouldExit:
             break
-        if mainargs.inputFolder:
-            timestamp = time.time()
-        else:
-            timestamp = get_average_timestamps(img_by_cam)
 
         # Detect tags in each camera
         for CAMERA in CAMERAS:

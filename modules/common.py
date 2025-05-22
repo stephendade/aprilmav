@@ -147,6 +147,42 @@ def do_multi_capture(CAMERAS, get_raw=False):
     return img_by_cam
 
 
+def do_multi_detect(CAMERAS, img_by_cam, tagSize, tagFamily, decimation, tagEngine):
+    """
+    Detects AprilTags in images captured from multiple cameras.
+
+    Args:
+        CAMERAS (list): A list of camera objects to capture from.
+        img_by_cam (dict): A dictionary containing captured images and metadata for each camera.
+        tagSize (float): The size of the AprilTag in meters.
+        tagFamily (str): The family of the AprilTag to be detected.
+        decimation (int): Decimation factor for the detection algorithm.
+        tagEngine (str): The engine to be used for AprilTag detection.
+
+    Returns:
+        dict: A dictionary containing detected tags for each camera.
+    """
+    tags_by_cam = {}
+    with Pool() as pool:
+        # Use the pool to map the function to the arguments
+        results = pool.starmap(aprilTagDetectStatic, [(tagSize, tagFamily, decimation, tagEngine,
+                                                       img_by_cam[CAMERA.camName][0], CAMERA.K, CAMERA.KFlat) for CAMERA in CAMERAS])
+        for i, CAMERA in enumerate(CAMERAS):
+            tags_by_cam[CAMERA.camName] = results[i]
+    return tags_by_cam
+
+
+def aprilTagDetectStatic(tagSize, tagFamily, decimation, tagEngine, img, K, KFlat):
+    at_detector = aprilDetect(tagSize, tagFamily, decimation, tagEngine)
+    # AprilDetect, after accounting for distortion  (if fisheye)
+    if at_detector.tagEngine == tagEngines.OpenCV:
+        tags = at_detector.detect(img, K)
+    else:
+        tags = at_detector.detect(img, KFlat)
+
+    return tags
+
+
 def get_average_timestamps(img_by_cam):
     """
     Get the average timestamp from a list of timestamps

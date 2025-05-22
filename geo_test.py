@@ -106,21 +106,19 @@ def main(args):
 
         # Detect tags in each camera
         detectStart = time.time()
-        for CAMERA in CAMERAS:
-            # AprilDetect, after accounting for distortion  (if fisheye)
-            if at_detector.tagEngine == tagEngines.OpenCV:
-                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.K)
-            else:
-                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.KFlat)
+        tags_by_cam = do_multi_detect(CAMERAS, img_by_cam, args.tagSize, args.tagFamily,
+                                      args.decimation, args.tagEngine)
+        #for CAMERA in CAMERAS:
+        #    tags = aprilTagDetectStatic(args.tagSize, args.tagFamily, args.decimation, args.tagEngine,
+        #                                img_by_cam[CAMERA.camName][0], CAMERA.K, CAMERA.KFlat)
+        #    tags_by_cam[CAMERA.camName] = tags
+        allTimeDetect.append(time.time() - detectStart)
 
-            tags_by_cam[CAMERA.camName] = tags
+        for CAMERA in CAMERAS:
             if img_by_cam[CAMERA.camName][2]:
                 print("File: {0} ({1}/{2})".format(img_by_cam[CAMERA.camName][2], i + 1, loops))
             else:
                 print("Capture {0}: ({1}/{2})".format(CAMERA.camName, i + 1, loops))
-        allTimeDetect.append(time.time() - detectStart)
-
-        for CAMERA in CAMERAS:
             print("Camera {0} found {1} tags. ".format(CAMERA.camName, len(tags_by_cam[CAMERA.camName])))
 
         # feed tags into tagPlacement

@@ -80,6 +80,7 @@ def main(args):
 
     for i in range(loops):
         print("--------------------------------------")
+        print("Frame {0}/{1}".format(i, loops))
         # Capture and detect images from all cameras (in parallel)
         img_tags_by_cam = {}
 

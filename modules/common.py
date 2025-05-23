@@ -140,18 +140,27 @@ def do_multi_capture_detection(CAMERAS, get_raw=False, do_detect=False):
         - If any camera capture fails (returns None), the function will break early
     """
     img_tags_by_cam = {}
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {executor.submit(capture_detect_image, CAMERA, get_raw, do_detect): CAMERA for CAMERA in CAMERAS}
-        for future in concurrent.futures.as_completed(futures):
-            cam_name, imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time = future.result()
-            if imageBW is not None:
-                img_tags_by_cam[cam_name] = (imageBW, timestamp, filename, tags, capture_time,
-                                             rectify_time, detect_time)
-                # print("Camera {0} capture time is {1:.1f}ms".format(cam_name, 1000*(time.time() - timestamp)))
-            else:
-                # print("Bad capture")
-                img_tags_by_cam[cam_name] = (None, timestamp, filename, tags, capture_time, rectify_time, detect_time)
-                break
+    if len(CAMERAS) == 1:
+        # if only one camera, no need for threads
+        cam_name, imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time = capture_detect_image(
+            CAMERAS[0], get_raw, do_detect)
+        img_tags_by_cam[cam_name] = (imageBW, timestamp, filename, tags, capture_time,
+                                     rectify_time, detect_time)
+    # if multiple cameras, use threads
+    else:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {executor.submit(capture_detect_image, CAMERA, get_raw, do_detect): CAMERA for CAMERA in CAMERAS}
+            for future in concurrent.futures.as_completed(futures):
+                cam_name, imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time = future.result()
+                if imageBW is not None:
+                    img_tags_by_cam[cam_name] = (imageBW, timestamp, filename, tags, capture_time,
+                                                 rectify_time, detect_time)
+                    # print("Camera {0} capture time is {1:.1f}ms".format(cam_name, 1000*(time.time() - timestamp)))
+                else:
+                    # print("Bad capture")
+                    img_tags_by_cam[cam_name] = (None, timestamp, filename, tags, capture_time,
+                                                 rectify_time, detect_time)
+                    break
     return img_tags_by_cam
 
 

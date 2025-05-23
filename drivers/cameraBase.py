@@ -124,8 +124,7 @@ class cameraBase:
                 imageUndistort = cv2.remap(image, self.map1, self.map2, interpolation=cv2.INTER_LINEAR,
                                            borderMode=cv2.BORDER_CONSTANT)
             return imageUndistort
-        else:
-            return image
+        return image
 
     def doDetect(self, image):
         if self.at_detector is None:

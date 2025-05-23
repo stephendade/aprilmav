@@ -15,11 +15,10 @@ import numpy
 
 from pymavlink import mavutil
 
-from modules.common import do_multi_capture, get_average_timestamps, loadCameras, tryCheckCuda
+from modules.common import do_multi_capture_detection, get_average_timestamps, loadCameras, tryCheckCuda
 from modules.geo import tagDB
 from modules.videoStream import videoThread
 from modules.saveStream import saveThread
-from modules.aprilDetect import aprilDetect, tagEngines
 
 exit_event = threading.Event()
 
@@ -234,12 +233,11 @@ if __name__ == '__main__':
     tryCheckCuda(args.cuda)
 
     # Open camera settings and load camera(s)
-    CAMERAS = loadCameras(args.multiCamera, args.camera, None, args.cuda)
+    CAMERAS = loadCameras(args.multiCamera, args.camera, args.inputFolder, args.cuda,
+                          args.tagSize, args.tagFamily, args.decimation, args.tagEngine)
 
     # allow the camera to warmup
     time.sleep(2)
-
-    at_detector = aprilDetect(args.tagSize, args.tagFamily, args.decimation, args.tagEngine)
 
     # All tags live in here
     tagPlacement = tagDB(slidingWindow=args.outliers, extraOpt=args.extraOpt)
@@ -281,31 +279,22 @@ if __name__ == '__main__':
     prev_timestamp = time.time() - 0.1
     while True:
         # Capture images from all cameras (in parallel)
-        img_by_cam = {}
-        tags_by_cam = {}
+        img_tags_by_cam = {}
 
-        img_by_cam = do_multi_capture(CAMERAS)
+        img_tags_by_cam = do_multi_capture_detection(CAMERAS)
         # check for any bad captures
         shouldExit = False
         for CAMERA in CAMERAS:
-            if img_by_cam[CAMERA.camName][0] is None:
+            if img_tags_by_cam[CAMERA.camName][0] is None:
                 print("Bad capture from {0}. Exiting...".format(CAMERA.camName))
                 shouldExit = True
         if shouldExit:
             break
-        timestamp = get_average_timestamps(img_by_cam)
-        # Detect tags in each camera
-        for CAMERA in CAMERAS:
-            # AprilDetect, after accounting for distortion  (if fisheye)
-            if at_detector.tagEngine == tagEngines.OpenCV:
-                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.K)
-            else:
-                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.KFlat)
-            tags_by_cam[CAMERA.camName] = tags
+        timestamp = get_average_timestamps(img_tags_by_cam)
 
         # feed tags into tagPlacement
         for CAMERA in CAMERAS:
-            for tag in tags_by_cam[CAMERA.camName]:
+            for tag in img_tags_by_cam[CAMERA.camName][3]:
                 if tag.pose_err < args.maxError*1e-8:
                     tagPlacement.addTag(tag, CAMERA.T_CamtoVeh)
 
@@ -340,21 +329,21 @@ if __name__ == '__main__':
             #     ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
             if args.multiCamera:
                 for CAMERA in CAMERAS:
-                    threadSave.save_queue.put((img_by_cam[CAMERA.camName][0], os.path.join(
+                    threadSave.save_queue.put((img_tags_by_cam[CAMERA.camName][0], os.path.join(
                         ".", args.outputFolder, CAMERA.camName, "processed_{:04d}.png".format(i)), posR, rotD,
-                        tags_by_cam[CAMERA.camName]))
+                        img_tags_by_cam[CAMERA.camName][3]))
             else:
                 for CAMERA in CAMERAS:
-                    threadSave.save_queue.put((img_by_cam[CAMERA.camName][0], os.path.join(
+                    threadSave.save_queue.put((img_tags_by_cam[CAMERA.camName][0], os.path.join(
                         ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD,
-                        tags_by_cam[CAMERA.camName]))
+                        img_tags_by_cam[CAMERA.camName][3]))
 
         # Get ready for next frame
         tagPlacement.newFrame()
 
         # Send to video stream, if option
         if threadVideo:
-            threadVideo.frame_queue.put((img_by_cam, posR, rotD, tags_by_cam))
+            threadVideo.frame_queue.put((img_tags_by_cam, posR, rotD))
 
         # Update the timestamp
         prev_timestamp = timestamp

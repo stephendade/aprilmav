@@ -2,16 +2,19 @@
 A base class for the camera drivers
 '''
 
+import time
 import numpy
 import cv2
 
 from transforms3d.euler import euler2mat
 
+from modules.aprilDetect import aprilDetect, tagEngines
+
 
 class cameraBase:
     '''A Camera setup and capture base class'''
 
-    def __init__(self, camParams, use_cuda=False, camName=""):
+    def __init__(self, camParams, tagSize, tagFamily, decimation, tagEngine, use_cuda=False, camName=""):
         '''Initialise the camera, based on a dict of settings'''
 
         self.use_cuda = use_cuda
@@ -27,6 +30,11 @@ class cameraBase:
             pass
 
         self.camParams = camParams
+
+        if tagEngine is not None:
+            self.at_detector = aprilDetect(tagSize, tagFamily, decimation, tagEngine)
+        else:
+            self.at_detector = None
 
         try:
             # Need to reconstruct K and D for each camera
@@ -118,6 +126,18 @@ class cameraBase:
             return imageUndistort
         else:
             return image
+
+    def doDetect(self, image):
+        if self.at_detector is None:
+            print("Error: No tag detector available")
+            return None
+        detectStart = time.time()
+        if self.at_detector.tagEngine == tagEngines.OpenCV:
+            tags = self.at_detector.detect(image, self.K)
+        else:
+            tags = self.at_detector.detect(image, self.KFlat)
+        detectEnd = time.time()
+        return (tags, detectEnd - detectStart)
 
     def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera '''

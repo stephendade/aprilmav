@@ -17,8 +17,7 @@ from collections import defaultdict
 import numpy
 
 from modules.geo import getPos, getTransform, getRotation
-from modules.common import do_multi_capture, get_average_timestamps, loadCameras, get_num_images, tryCheckCuda
-from modules.aprilDetect import aprilDetect, tagEngines
+from modules.common import do_multi_capture_detection, loadCameras, get_num_images, tryCheckCuda
 
 exit_event = threading.Event()
 
@@ -36,12 +35,11 @@ def main(mainargs):
     tryCheckCuda(mainargs.cuda)
 
     # Open camera settings and load camera(s)
-    CAMERAS = loadCameras(mainargs.multiCamera, mainargs.camera, mainargs.inputFolder, mainargs.cuda)
+    CAMERAS = loadCameras(mainargs.multiCamera, mainargs.camera, mainargs.inputFolder, mainargs.cuda,
+                          mainargs.tagSize, mainargs.tagFamily, mainargs.decimation, mainargs.tagEngine)
 
     # allow the camera to warmup
     time.sleep(2)
-
-    at_detector = aprilDetect(mainargs.tagSize, mainargs.tagFamily, mainargs.decimation, mainargs.tagEngine)
 
     # how many loops. If using a file input, just use min images
     loops = get_num_images(CAMERAS, mainargs.loop)
@@ -63,14 +61,13 @@ def main(mainargs):
     for i in range(loops):
         print("--------------------------------------")
         # Capture images from all cameras (in parallel)
-        img_by_cam = {}
-        tags_by_cam = {}
+        img_tags_by_cam = {}
         timestamp = time.time()
-        img_by_cam = do_multi_capture(CAMERAS)
+        img_tags_by_cam = do_multi_capture_detection(CAMERAS, False, True)
         # check for any bad captures
         shouldExit = False
         for CAMERA in CAMERAS:
-            if img_by_cam[CAMERA.camName][0] is None:
+            if img_tags_by_cam[CAMERA.camName][0] is None:
                 print("Bad capture from {0}. Exiting".format(CAMERA.camName))
                 shouldExit = True
         if shouldExit:
@@ -78,26 +75,19 @@ def main(mainargs):
 
         # Detect tags in each camera
         for CAMERA in CAMERAS:
-            # AprilDetect, after accounting for distortion  (if fisheye)
-            if at_detector.tagEngine == tagEngines.OpenCV:
-                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.K)
-            else:
-                tags = at_detector.detect(img_by_cam[CAMERA.camName][0], CAMERA.KFlat)
-
-            tags_by_cam[CAMERA.camName] = tags
-            if img_by_cam[CAMERA.camName][2]:
-                print("File: {0} ({1}/{2})".format(img_by_cam[CAMERA.camName][2], i + 1, loops))
+            if img_tags_by_cam[CAMERA.camName][2]:
+                print("File: {0} ({1}/{2})".format(img_tags_by_cam[CAMERA.camName][2], i + 1, loops))
             else:
                 print("Capture {0}: ({1}/{2})".format(CAMERA.camName, i + 1, loops))
 
         # get time to capture and convert
         print("Time to capture and detect = {0:.1f} ms. ".format(1000*(time.time() - timestamp)))
         for CAMERA in CAMERAS:
-            print("Camera {0} found {1} tags. ".format(CAMERA.camName, len(tags_by_cam[CAMERA.camName])))
+            print("Camera {0} found {1} tags. ".format(CAMERA.camName, len(img_tags_by_cam[CAMERA.camName][3])))
 
         # Convert to vehicle frame and add to list
         for CAMERA in CAMERAS:
-            for tag in tags_by_cam[CAMERA.camName]:
+            for tag in img_tags_by_cam[CAMERA.camName][3]:
                 tag_Veh = CAMERA.T_CamtoVeh @ getTransform(tag)
 
                 tagpos = getPos(tag_Veh)
@@ -112,7 +102,7 @@ def main(mainargs):
                                                                                             tagrot.round(1),
                                                                                             tag.pose_err*1E8))
                 with open(mainargs.outFile, "a", encoding="utf-8") as outFile:
-                    outFile.write("{0},{1},{2},".format(img_by_cam[CAMERA.camName][2], CAMERA.camName, tag.tag_id))
+                    outFile.write("{0},{1},{2},".format(img_tags_by_cam[CAMERA.camName][2], CAMERA.camName, tag.tag_id))
                     outFile.write("{0:.3f},{1:.3f},{2:.3f},{3:.1f},{4:.1f},{5:.1f},{6}\n".format(tagpos[0],
                                                                                                  tagpos[1],
                                                                                                  tagpos[2],

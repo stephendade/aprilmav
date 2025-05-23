@@ -10,9 +10,9 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for a USB Camera'''
 
-    def __init__(self, camParams, use_cuda=False, camName=""):
+    def __init__(self, camParams, tagSize, tagFamily, decimation, tagEngine, use_cuda=False, camName=""):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams, use_cuda, camName)
+        super().__init__(camParams, tagSize, tagFamily, decimation, tagEngine, use_cuda, camName)
 
         self.camera = cv2.VideoCapture()
         self.camera.open(camParams['cameraPath'], cv2.CAP_V4L2)

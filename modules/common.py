@@ -15,7 +15,8 @@ from transforms3d.euler import mat2euler
 from drivers import cameraFile
 
 
-def loadCameras(multiCamera, singleCameraProfile, inputFolder, use_cuda=False, tagSize=0.1, tagFamily=None, decimation=None, tagEngine=None):
+def loadCameras(multiCamera, singleCameraProfile, inputFolder, use_cuda=False, tagSize=0.1, tagFamily=None,
+                decimation=None, tagEngine=None):
     '''
     Load camera parameters from the camera_params.yaml file and initialize the cameras.
 
@@ -53,7 +54,8 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, use_cuda=False, t
             imageFolder = inputFolder
             if multiCamera:
                 imageFolder = os.path.join(inputFolder, camName)
-            CAMERAS.append(cameraFile.FileCamera(camParam, tagSize, tagFamily, decimation, tagEngine, imageFolder, use_cuda, camName))
+            CAMERAS.append(cameraFile.FileCamera(camParam, tagSize, tagFamily, decimation, tagEngine,
+                                                 imageFolder, use_cuda, camName))
             print("Camera {0} initialized (driver: {1})".format(camName, "cameraFile"))
         else:
             try:
@@ -143,7 +145,8 @@ def do_multi_capture_detection(CAMERAS, get_raw=False, do_detect=False):
         for future in concurrent.futures.as_completed(futures):
             cam_name, imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time = future.result()
             if imageBW is not None:
-                img_tags_by_cam[cam_name] = (imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time)
+                img_tags_by_cam[cam_name] = (imageBW, timestamp, filename, tags, capture_time,
+                                             rectify_time, detect_time)
                 # print("Camera {0} capture time is {1:.1f}ms".format(cam_name, 1000*(time.time() - timestamp)))
             else:
                 # print("Bad capture")

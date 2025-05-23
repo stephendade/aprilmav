@@ -38,15 +38,15 @@ class videoThread(threading.Thread):
                 return
             if self.frame_queue.empty():
                 continue
-            (img_by_cam, posn, rot, tags_by_cam) = self.frame_queue.get()
+            (img_tags_by_cam, posn, rot) = self.frame_queue.get()
             imageColour = None
-            for camName in sorted(img_by_cam.keys()):
-                imageCam = cv2.cvtColor(img_by_cam[camName][0], cv2.COLOR_GRAY2BGR)
+            for camName in sorted(img_tags_by_cam.keys()):
+                imageCam = cv2.cvtColor(img_tags_by_cam[camName][0], cv2.COLOR_GRAY2BGR)
                 if not self.text_height:
                     self.font_scale, self.thickness, self.text_height = getFontSize(imageColour)
 
-                if tags_by_cam:
-                    img_by_cam[camName] = labelTags(imageCam, tags_by_cam[camName], self.thickness, self.font_scale)
+                if img_tags_by_cam[camName][3]:
+                    imageCam = labelTags(imageCam, img_tags_by_cam[camName][3], self.thickness, self.font_scale)
                 # overlay camera name on the image
                 cv2.putText(imageCam, camName, (10, self.text_height + 10),
                             cv2.FONT_HERSHEY_SIMPLEX, self.font_scale, (255, 0, 0), self.thickness, cv2.LINE_AA)

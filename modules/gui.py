@@ -97,20 +97,20 @@ class GUI:
         plt.draw()
         self.fig.canvas.flush_events()
 
-    def updateImage(self, img_by_cam, tags_by_cam):
+    def updateImage(self, img_tags_by_cam):
         '''
         Update the image window with a new image
         '''
         imageColour = None
-        for camName in sorted(img_by_cam.keys()):
-            imageCam = cv2.cvtColor(img_by_cam[camName][0], cv2.COLOR_GRAY2BGR)
+        for camName in sorted(img_tags_by_cam.keys()):
+            imageCam = cv2.cvtColor(img_tags_by_cam[camName][0], cv2.COLOR_GRAY2BGR)
 
             if not self.text_height:
                 self.font_scale, self.thickness, self.text_height = getFontSize(imageCam)
 
-            if tags_by_cam:
-                img_by_cam[camName] = labelTags(imageCam, tags_by_cam[camName], self.thickness,
-                                                self.font_scale)
+            if img_tags_by_cam[camName][3]:
+                imageCam = labelTags(imageCam, img_tags_by_cam[camName][3], self.thickness,
+                                     self.font_scale)
 
             cv2.putText(imageCam, camName, (10, self.text_height + 10),
                         cv2.FONT_HERSHEY_SIMPLEX, self.font_scale, (255, 0, 0), self.thickness)

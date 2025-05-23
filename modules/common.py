@@ -15,7 +15,7 @@ from transforms3d.euler import mat2euler
 from drivers import cameraFile
 
 
-def loadCameras(multiCamera, singleCameraProfile, inputFolder, use_cuda):
+def loadCameras(multiCamera, singleCameraProfile, inputFolder, use_cuda=False, tagSize=0.1, tagFamily=None, decimation=None, tagEngine=None):
     '''
     Load camera parameters from the camera_params.yaml file and initialize the cameras.
 
@@ -53,12 +53,12 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, use_cuda):
             imageFolder = inputFolder
             if multiCamera:
                 imageFolder = os.path.join(inputFolder, camName)
-            CAMERAS.append(cameraFile.FileCamera(camParam, imageFolder, use_cuda, camName))
+            CAMERAS.append(cameraFile.FileCamera(camParam, tagSize, tagFamily, decimation, tagEngine, imageFolder, use_cuda, camName))
             print("Camera {0} initialized (driver: {1})".format(camName, "cameraFile"))
         else:
             try:
                 mod = import_module("drivers." + camParam['cam_driver'])
-                CAMERAS.append(mod.camera(camParam, use_cuda, camName))
+                CAMERAS.append(mod.camera(camParam, tagSize, tagFamily, decimation, tagEngine, use_cuda, camName))
             except KeyError:
                 print('No camera with the name {0}, exiting'.format(camName))
                 sys.exit(0)
@@ -88,7 +88,7 @@ def get_num_images(CAMERAS, loop):
     return num_images
 
 
-def capture_image(CAMERA, get_raw=False):
+def capture_detect_image(CAMERA, get_raw=False, do_detect=False):
     """
     Captures an image using the provided CAMERA object. Used in seperate threads
 
@@ -106,15 +106,20 @@ def capture_image(CAMERA, get_raw=False):
     """
     filename = CAMERA.getFileName()
     (imageBW, timestamp, capture_time, rectify_time) = CAMERA.getImage(get_raw)
+    if do_detect:
+        (tags, detect_time) = CAMERA.doDetect(imageBW)
+    else:
+        tags = None
+        detect_time = None
 
     # we're out of images
     if imageBW is None:
-        return CAMERA.camName, None, None, None, None, None
+        return CAMERA.camName, None, None, None, None, None, None, None
 
-    return CAMERA.camName, imageBW, timestamp, filename, capture_time, rectify_time
+    return CAMERA.camName, imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time
 
 
-def do_multi_capture(CAMERAS, get_raw=False):
+def do_multi_capture_detection(CAMERAS, get_raw=False, do_detect=False):
     """
     Captures images from multiple cameras simultaneously using thread pooling.
     Args:
@@ -132,19 +137,19 @@ def do_multi_capture(CAMERAS, get_raw=False):
         - Uses ThreadPoolExecutor for parallel image capture
         - If any camera capture fails (returns None), the function will break early
     """
-    img_by_cam = {}
+    img_tags_by_cam = {}
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {executor.submit(capture_image, CAMERA, get_raw): CAMERA for CAMERA in CAMERAS}
+        futures = {executor.submit(capture_detect_image, CAMERA, get_raw, do_detect): CAMERA for CAMERA in CAMERAS}
         for future in concurrent.futures.as_completed(futures):
-            cam_name, imageBW, timestamp, filename, capture_time, rectify_time = future.result()
+            cam_name, imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time = future.result()
             if imageBW is not None:
-                img_by_cam[cam_name] = (imageBW, timestamp, filename, capture_time, rectify_time)
+                img_tags_by_cam[cam_name] = (imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time)
                 # print("Camera {0} capture time is {1:.1f}ms".format(cam_name, 1000*(time.time() - timestamp)))
             else:
                 # print("Bad capture")
-                img_by_cam[cam_name] = (None, timestamp, filename, capture_time, rectify_time)
+                img_tags_by_cam[cam_name] = (None, timestamp, filename, tags, capture_time, rectify_time, detect_time)
                 break
-    return img_by_cam
+    return img_tags_by_cam
 
 
 def get_average_timestamps(img_by_cam):

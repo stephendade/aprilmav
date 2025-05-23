@@ -14,7 +14,7 @@ import queue
 import threading
 import cv2
 
-from modules.common import do_multi_capture, get_average_timestamps, loadCameras
+from modules.common import do_multi_capture_detection, get_average_timestamps, loadCameras
 from modules.videoStream import videoThread
 
 save_queue = queue.Queue()
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         # Capture images from all cameras (in parallel)
         img_by_cam = {}
 
-        img_by_cam = do_multi_capture(CAMERAS, True)
+        img_by_cam = do_multi_capture_detection(CAMERAS, True)
         # check for any bad captures
         for CAMERA in CAMERAS:
             if img_by_cam[CAMERA.camName][0] is None:

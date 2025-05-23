@@ -13,9 +13,9 @@ from .cameraBase import cameraBase
 class camera(cameraBase):
     '''A Camera setup and capture class for the PiCamV2'''
 
-    def __init__(self, camParams, camName=""):
+    def __init__(self, camParams, tagSize, tagFamily, decimation, tagEngine, camName=""):
         '''Initialise the camera, based on a dict of settings'''
-        super().__init__(camParams, use_cuda=False, camName=camName)
+        super().__init__(camParams, tagSize, tagFamily, decimation, tagEngine, use_cuda=False, camName=camName)
 
         self.camera = PiCamera(resolution=camParams['resolution'], framerate=camParams['framerate'],
                                sensor_mode=camParams['sensor_mode'])

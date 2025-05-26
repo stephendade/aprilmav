@@ -43,7 +43,7 @@ class camera(cameraBase):
     def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera '''
 
-        timestamp = time.time()
+        self.image_timestamp = time.time()
         self.frame = self.camera.capture(encoding="i420")
         image = self.frame.as_array.reshape(
             int(self.camParams['resolution'][1]*1.5), self.camParams['resolution'][0])
@@ -56,15 +56,16 @@ class camera(cameraBase):
 
         # Halve the resolution
         if self.camera.halfres:
-            imageCrop = cv2.resize(
+            self.imageBW = cv2.resize(
                 imageCrop, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
 
         if not get_raw:
-            imageCrop = self.maybedoImageEnhancement(imageCrop)
-            imageCrop = self.maybeDoFishEyeConversion(imageCrop)
+            self.imageBW = self.maybedoImageEnhancement(self.imageBW)
+            self.imageBW = self.maybeDoFishEyeConversion(self.imageBW)
         timestamp_rectify = time.time()
 
-        return (imageCrop, timestamp, timestamp_capture - timestamp, timestamp_rectify - timestamp_capture)
+        self.time_capture = timestamp_capture - self.image_timestamp
+        self.time_rectify = timestamp_rectify - timestamp_capture
 
     def close(self):
         ''' close the camera'''

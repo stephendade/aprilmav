@@ -67,19 +67,20 @@ class camera(cameraBase):
     def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera '''
 
-        timestamp = time.time()
+        self.image_timestamp = time.time()
         self.frame = self.camera.capture_array()
         timestamp_capture = time.time()
 
         # Convert to greyscale
-        image = cv2.cvtColor(self.frame, cv2.COLOR_RGB2GRAY)
+        self.imageBW = cv2.cvtColor(self.frame, cv2.COLOR_RGB2GRAY)
 
         if not get_raw:
-            image = self.maybedoImageEnhancement(image)
-            image = self.maybeDoFishEyeConversion(image)
+            self.imageBW = self.maybedoImageEnhancement(self.imageBW)
+            self.imageBW = self.maybeDoFishEyeConversion(self.imageBW)
         timestamp_rectify = time.time()
 
-        return (image, timestamp, timestamp_capture - timestamp, timestamp_rectify - timestamp_capture)
+        self.time_capture = timestamp_capture - self.image_timestamp
+        self.time_rectify = timestamp_rectify - timestamp_capture
 
     def close(self):
         ''' close the camera'''

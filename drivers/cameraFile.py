@@ -22,6 +22,8 @@ class FileCamera(cameraBase):
         ]
         self.images.sort()
 
+        self.imageBW_filename = None
+
         print("FileCamera: Found {0} images in folder".format(
             len(self.images)))
 
@@ -38,10 +40,11 @@ class FileCamera(cameraBase):
         startTime = time.time()
         try:
             basename = os.path.splitext(os.path.basename(self.images[0]))[0]
-            timestamp = int(basename)/1000
+            self.image_timestamp = int(basename)/1000
         except ValueError:
-            timestamp = time.time()
-        img = cv2.imread(self.images.pop(0), cv2.IMREAD_GRAYSCALE)
+            self.image_timestamp = time.time()
+        self.imageBW_filename = self.images.pop(0)
+        img = cv2.imread(self.imageBW_filename, cv2.IMREAD_GRAYSCALE)
         timestamp_capture = time.time()
         if self.use_cuda:
             # Upload the image to the GPU
@@ -57,15 +60,16 @@ class FileCamera(cameraBase):
 
         # Download the result back to the CPU
         if self.use_cuda:
-            imageBW = pro_image.download()
+            self.imageBW = pro_image.download()
         else:
-            imageBW = pro_image
+            self.imageBW = pro_image
 
-        return (imageBW, timestamp, timestamp_capture - startTime, timestamp_rectify - timestamp_capture)
+        self.time_capture = timestamp_capture - startTime
+        self.time_rectify = timestamp_rectify - timestamp_capture
 
     def getFileName(self):
         '''Get current file in camera'''
-        return self.images[0]
+        return self.imageBW_filename
 
     def close(self):
         ''' close the camera'''

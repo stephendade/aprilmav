@@ -97,29 +97,10 @@ def capture_detect_image(CAMERA, get_raw=False, do_detect=False):
 
     Args:
         CAMERA: An object representing the camera
-
-    Returns:
-        tuple: A tuple containing:
-            - camName (str): The name of the camera.
-            - imageBW (numpy.ndarray or None): The captured image in black and white, or None if no image is captured.
-            - timestamp (float or None): The timestamp of the captured image, or None if no image is captured.
-            - filename (str or None): The filename of the captured image, or None if live camera feed is used.
-            - capture_time (float or None): The time taken to capture the image, or None if no image is captured.
-            - rectify_time (float or None): The time taken to rectify the image, or None if no image is captured.
     """
-    filename = CAMERA.getFileName()
-    (imageBW, timestamp, capture_time, rectify_time) = CAMERA.getImage(get_raw)
+    CAMERA.getImage(get_raw)
     if do_detect:
-        (tags, detect_time) = CAMERA.doDetect(imageBW)
-    else:
-        tags = None
-        detect_time = None
-
-    # we're out of images
-    if imageBW is None:
-        return CAMERA.camName, None, None, None, None, None, None, None
-
-    return CAMERA.camName, imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time
+        CAMERA.doDetect()
 
 
 def do_multi_capture_detection(CAMERAS, get_raw=False, do_detect=False):
@@ -127,56 +108,16 @@ def do_multi_capture_detection(CAMERAS, get_raw=False, do_detect=False):
     Captures images from multiple cameras simultaneously using thread pooling.
     Args:
         CAMERAS (list): A list of camera objects to capture from.
-    Returns:
-        dict: A dictionary containing captured images and metadata for each camera:
-            - Key: Camera name/identifier
-            - Value: Tuple containing:
-                - imageBW: Grayscale image captured from the camera
-                - timestamp: Time when image was captured
-                - filename: Name of file where image was saved
-                - capture_time: Time taken to capture the image (sec)
-                - rectify_time: Time taken to rectify the image (sec)
-    Notes:
-        - Uses ThreadPoolExecutor for parallel image capture
-        - If any camera capture fails (returns None), the function will break early
     """
-    img_tags_by_cam = {}
     if len(CAMERAS) == 1:
         # if only one camera, no need for threads
-        cam_name, imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time = capture_detect_image(
-            CAMERAS[0], get_raw, do_detect)
-        img_tags_by_cam[cam_name] = (imageBW, timestamp, filename, tags, capture_time,
-                                     rectify_time, detect_time)
+        capture_detect_image(CAMERAS[0], get_raw, do_detect)
     # if multiple cameras, use threads
     else:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = {executor.submit(capture_detect_image, CAMERA, get_raw, do_detect): CAMERA for CAMERA in CAMERAS}
             for future in concurrent.futures.as_completed(futures):
-                cam_name, imageBW, timestamp, filename, tags, capture_time, rectify_time, detect_time = future.result()
-                if imageBW is not None:
-                    img_tags_by_cam[cam_name] = (imageBW, timestamp, filename, tags, capture_time,
-                                                 rectify_time, detect_time)
-                    # print("Camera {0} capture time is {1:.1f}ms".format(cam_name, 1000*(time.time() - timestamp)))
-                else:
-                    # print("Bad capture")
-                    img_tags_by_cam[cam_name] = (None, timestamp, filename, tags, capture_time,
-                                                 rectify_time, detect_time)
-                    break
-    return img_tags_by_cam
-
-
-def get_average_timestamps(img_by_cam):
-    """
-    Get the average timestamp from a list of timestamps
-
-    Args:
-        timestamps (list): A list of timestamps
-
-    Returns:
-        float: The average timestamp
-    """
-    timestamps = [img_by_cam[cam][1] for cam in img_by_cam]
-    return sum(timestamps)/len(timestamps)
+                future.result()
 
 
 def labelTags(image, tags, thickness=1, fontsize=1):

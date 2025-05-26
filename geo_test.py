@@ -16,7 +16,7 @@ import signal
 import os
 import numpy
 
-from modules.common import do_multi_capture_detection, get_average_timestamps, loadCameras, get_num_images, tryCheckCuda
+from modules.common import do_multi_capture_detection, loadCameras, get_num_images, tryCheckCuda
 from modules.geo import tagDB
 from modules.saveStream import saveThread
 
@@ -82,14 +82,12 @@ def main(args):
         print("--------------------------------------")
         print("Frame {0}/{1}".format(i, loops))
         # Capture and detect images from all cameras (in parallel)
-        img_tags_by_cam = {}
-
         timestamp = time.time()
-        img_tags_by_cam = do_multi_capture_detection(CAMERAS, False, True)
+        do_multi_capture_detection(CAMERAS, False, True)
         # check for any bad captures
         shouldExit = False
         for CAMERA in CAMERAS:
-            if img_tags_by_cam[CAMERA.camName][0] is None:
+            if CAMERA.imageBW is None:
                 print("Bad capture from {0}. Exiting".format(CAMERA.camName))
                 shouldExit = True
         if shouldExit:
@@ -97,19 +95,19 @@ def main(args):
         if args.inputFolder:
             frameTime = time.time()
         else:
-            frameTime = get_average_timestamps(img_tags_by_cam)
+            frameTime = numpy.mean([CAMERA.image_timestamp for CAMERA in CAMERAS])
         # get the mean capture and rectify times
-        allTimeCapture.append(numpy.mean([img_tags_by_cam[CAMERA.camName][4] for CAMERA in CAMERAS]))
-        allTimeRectify.append(numpy.mean([img_tags_by_cam[CAMERA.camName][5] for CAMERA in CAMERAS]))
-        allTimeDetect.append(numpy.mean([img_tags_by_cam[CAMERA.camName][6] for CAMERA in CAMERAS]))
+        allTimeCapture.append(numpy.mean([CAMERA.time_capture for CAMERA in CAMERAS]))
+        allTimeRectify.append(numpy.mean([CAMERA.time_rectify for CAMERA in CAMERAS]))
+        allTimeDetect.append(numpy.mean([CAMERA.time_detect for CAMERA in CAMERAS]))
 
         for CAMERA in CAMERAS:
-            print("Camera {0} found {1} tags. ".format(CAMERA.camName, len(img_tags_by_cam[CAMERA.camName][3])))
+            print("Camera {0} found {1} tags. ".format(CAMERA.camName, len(CAMERA.tags)))
 
         # feed tags into tagPlacement
         localiseStart = time.time()
         for CAMERA in CAMERAS:
-            for tag in img_tags_by_cam[CAMERA.camName][3]:
+            for tag in CAMERA.tags:
                 if tag.pose_err < args.maxError*1e-8:
                     tagPlacement.addTag(tag, CAMERA.T_CamtoVeh)
 
@@ -126,7 +124,7 @@ def main(args):
         with open(args.outFile, "a", encoding="utf-8") as outFile:
             if args.inputFolder:
                 for CAMERA in CAMERAS:
-                    file = img_tags_by_cam[CAMERA.camName][2]
+                    file = CAMERA.getFileName()
                     outFile.write("{0}".format(file))
                 outFile.write(",")
             else:
@@ -140,9 +138,9 @@ def main(args):
         # Update the live graph
         if args.gui:
             AprilGUI.update(posR, rotD)
-            AprilGUI.updateImage(img_tags_by_cam)
+            #AprilGUI.updateImage(img_tags_by_cam)
 
-        totalTags = sum(len(img_tags_by_cam[CAMERA.camName][3]) for CAMERA in CAMERAS)
+        totalTags = sum(len(CAMERA.tags) for CAMERA in CAMERAS)
         print("Time to capture, detect, localise = {0:.2f} ms, {1}/{2} tags".format(1000*(allTimeTotal[-1]),
                                                                                     len(tagPlacement.tagDuplicatesT),
                                                                                     totalTags))
@@ -153,14 +151,14 @@ def main(args):
             #     ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
             if args.multiCamera:
                 for CAMERA in CAMERAS:
-                    threadSave.save_queue.put((img_tags_by_cam[CAMERA.camName][0], os.path.join(
+                    threadSave.save_queue.put((CAMERA.imageBW, os.path.join(
                         ".", args.outputFolder, CAMERA.camName, "processed_{:04d}.png".format(i)), posR, rotD,
-                        img_tags_by_cam[CAMERA.camName][3]))
+                        CAMERA.tags))
             else:
                 for CAMERA in CAMERAS:
-                    threadSave.save_queue.put((img_tags_by_cam[CAMERA.camName][0], os.path.join(
+                    threadSave.save_queue.put((CAMERA.imageBW, os.path.join(
                         ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD,
-                        img_tags_by_cam[CAMERA.camName][3]))
+                        CAMERA.tags))
 
         tagPlacement.newFrame()
 
@@ -175,7 +173,7 @@ def main(args):
     print("----Timing stats per frame----")
     print("Capture (per camera mean): {0:.2f} ms".format(1000*numpy.mean(allTimeCapture)))
     print("Rectify (per camera mean): {0:.2f} ms".format(1000*numpy.mean(allTimeRectify)))
-    print("Detect: {0:.2f} ms".format(1000*numpy.mean(allTimeDetect)))
+    print("Detect (per camera mean): {0:.2f} ms".format(1000*numpy.mean(allTimeDetect)))
     print("Localise: {0:.2f} ms".format(1000*numpy.mean(allTimeLocalise)))
     totalTime = numpy.mean(allTimeTotal)
     print("Total (all cameras): {0:.2f} ms / {1:.0f} FPS".format(1000*totalTime, 1/totalTime))

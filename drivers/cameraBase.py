@@ -20,6 +20,11 @@ class cameraBase:
         self.use_cuda = use_cuda
         self.camName = camName
         self.doEnhancement = camParams['doEnhancement'] if 'doEnhancement' in camParams else False
+        self.time_capture = 0
+        self.time_rectify = 0
+
+        self.imageBW = None
+        self.image_timestamp = 0
 
         try:
             if camParams['resolution'][0] % 16 != 0 or camParams['resolution'][1] % 16 != 0:
@@ -37,6 +42,8 @@ class cameraBase:
             self.at_detector = aprilDetect(tagSize, tagFamily, decimation, tagEngine)
         else:
             self.at_detector = None
+            self.tags = None
+            self.time_detect = 0
 
         try:
             # Need to reconstruct K and D for each camera
@@ -128,17 +135,19 @@ class cameraBase:
             return imageUndistort
         return image
 
-    def doDetect(self, image):
+    def doDetect(self):
         if self.at_detector is None:
             print("Error: No tag detector available")
             return None
+        if self.imageBW is None:
+            print("Error: No image to detect tags in")
+            return None
         detectStart = time.time()
         if self.at_detector.tagEngine == tagEngines.OpenCV:
-            tags = self.at_detector.detect(image, self.K)
+            self.tags = self.at_detector.detect(self.imageBW, self.K)
         else:
-            tags = self.at_detector.detect(image, self.KFlat)
-        detectEnd = time.time()
-        return (tags, detectEnd - detectStart)
+            self.tags = self.at_detector.detect(self.imageBW, self.KFlat)
+        self.time_detect = time.time() - detectStart
 
     def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera '''

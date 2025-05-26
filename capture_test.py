@@ -13,8 +13,9 @@ import os
 import queue
 import threading
 import cv2
+import numpy
 
-from modules.common import do_multi_capture_detection, get_average_timestamps, loadCameras
+from modules.common import do_multi_capture_detection, loadCameras
 from modules.videoStream import videoThread
 
 save_queue = queue.Queue()
@@ -92,22 +93,20 @@ if __name__ == '__main__':
 
     for i in range(args.loop):
         # Capture images from all cameras (in parallel)
-        img_by_cam = {}
-
-        img_by_cam = do_multi_capture_detection(CAMERAS, True)
+        do_multi_capture_detection(CAMERAS, True)
         # check for any bad captures
         for CAMERA in CAMERAS:
-            if img_by_cam[CAMERA.camName][0] is None:
+            if CAMERA.imageBW is None:
                 print("Bad capture from {0}. Exiting".format(CAMERA.camName))
                 shouldExit = True
         if shouldExit:
             break
-        timestamp = get_average_timestamps(img_by_cam)
+        timestamp = numpy.mean([CAMERA.image_timestamp for CAMERA in CAMERAS])
 
         # get time to capture and convert
         for CAMERA in CAMERAS:
             print("{0} captured {1:.0f}.png in {2:.0f}ms ({3}/{4})".format(
-                CAMERA.camName, img_by_cam[CAMERA.camName][1]*1000,
+                CAMERA.camName, CAMERA.image_timestamp*1000,
                 (time.time() - timestamp)*1000, i + 1, args.loop))
 
         time.sleep(args.delay/1000)
@@ -117,17 +116,17 @@ if __name__ == '__main__':
         if args.outputFolder != "":
             if args.multiCamera:
                 for CAMERA in CAMERAS:
-                    save_queue.put((img_by_cam[CAMERA.camName][0],
+                    save_queue.put((CAMERA.imageBW,
                                     os.path.join(".", args.outputFolder,
                                                  CAMERA.camName,
-                                                 "{0:.0f}.png".format(img_by_cam[CAMERA.camName][1]*1000))))
+                                                 "{0:.0f}.png".format(CAMERA.image_timestamp*1000))))
             else:
-                save_queue.put((img_by_cam[CAMERAS[0].camName][0], os.path.join(
-                    ".", args.outputFolder, "{0:.0f}.png".format(img_by_cam[CAMERAS[0].camName][1]*1000))))
+                save_queue.put((CAMERA.imageBW, os.path.join(
+                    ".", args.outputFolder, "{0:.0f}.png".format(CAMERA.image_timestamp*1000))))
 
         # Send to video stream, if option. Combine all images into one
         if threadVideo:
-            threadVideo.frame_queue.put((img_by_cam, None, None, None))
+            threadVideo.frame_queue.put((CAMERA.imageBW, None, None, None))
 
         if exit_event.is_set():
             break

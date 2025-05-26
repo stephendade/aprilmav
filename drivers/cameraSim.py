@@ -111,15 +111,17 @@ class camera(cameraBase):
 
         # Add Gaussian noise to the image
         noise = numpy.random.normal(self.NOISE_MEAN, self.NOISE_STDDEV, curFrame.shape).astype(numpy.uint8)
-        curFrame = cv2.add(curFrame, noise)
+        self.imageBW = cv2.add(curFrame, noise)
 
         self.location_in_script = (self.location_in_script + 1) % 80
 
         # Image enhancement
-        curFrame = self.maybedoImageEnhancement(curFrame)
+        self.imageBW = self.maybedoImageEnhancement(self.imageBW)
 
         # Return a fake time of 50ms for stable velocity calculations
-        return (curFrame, time.time() - 0.05, 0.05, 0.05)
+        self.image_timestamp = time.time() - 0.05
+        self.time_capture = 0.05
+        self.time_rectify = 0.05
 
     def getFileName(self):
         '''Get current file in camera. Returns None.'''

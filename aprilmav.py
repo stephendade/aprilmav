@@ -15,7 +15,7 @@ import numpy
 
 from pymavlink import mavutil
 
-from modules.common import do_multi_capture_detection, get_average_timestamps, loadCameras, tryCheckCuda
+from modules.common import do_multi_capture_detection, loadCameras, tryCheckCuda
 from modules.geo import tagDB
 from modules.videoStream import videoThread
 from modules.saveStream import saveThread
@@ -279,22 +279,20 @@ if __name__ == '__main__':
     prev_timestamp = time.time() - 0.1
     while True:
         # Capture images from all cameras (in parallel)
-        img_tags_by_cam = {}
-
-        img_tags_by_cam = do_multi_capture_detection(CAMERAS)
+        do_multi_capture_detection(CAMERAS)
         # check for any bad captures
         shouldExit = False
         for CAMERA in CAMERAS:
-            if img_tags_by_cam[CAMERA.camName][0] is None:
+            if CAMERA.imageBW is None:
                 print("Bad capture from {0}. Exiting...".format(CAMERA.camName))
                 shouldExit = True
         if shouldExit:
             break
-        timestamp = get_average_timestamps(img_tags_by_cam)
+        timestamp = numpy.mean([CAMERA.image_timestamp for CAMERA in CAMERAS])
 
         # feed tags into tagPlacement
         for CAMERA in CAMERAS:
-            for tag in img_tags_by_cam[CAMERA.camName][3]:
+            for tag in CAMERA.tags:
                 if tag.pose_err < args.maxError*1e-8:
                     tagPlacement.addTag(tag, CAMERA.T_CamtoVeh)
 
@@ -329,21 +327,21 @@ if __name__ == '__main__':
             #     ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
             if args.multiCamera:
                 for CAMERA in CAMERAS:
-                    threadSave.save_queue.put((img_tags_by_cam[CAMERA.camName][0], os.path.join(
+                    threadSave.save_queue.put((CAMERA.imageBW, os.path.join(
                         ".", args.outputFolder, CAMERA.camName, "processed_{:04d}.png".format(i)), posR, rotD,
-                        img_tags_by_cam[CAMERA.camName][3]))
+                        CAMERA.tags))
             else:
                 for CAMERA in CAMERAS:
-                    threadSave.save_queue.put((img_tags_by_cam[CAMERA.camName][0], os.path.join(
+                    threadSave.save_queue.put((CAMERA.imageBW, os.path.join(
                         ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD,
-                        img_tags_by_cam[CAMERA.camName][3]))
+                        CAMERA.tags))
 
         # Get ready for next frame
         tagPlacement.newFrame()
 
         # Send to video stream, if option
         if threadVideo:
-            threadVideo.frame_queue.put((img_tags_by_cam, posR, rotD))
+            threadVideo.frame_queue.put((CAMERA.imageBW, CAMERA.tags, posR, rotD))
 
         # Update the timestamp
         prev_timestamp = timestamp

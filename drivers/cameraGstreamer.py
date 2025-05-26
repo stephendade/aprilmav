@@ -51,7 +51,7 @@ class camera(cameraBase):
     def getImage(self, get_raw=False):
         ''' Capture a single image from the Camera '''
 
-        timestamp = time.time()
+        self.image_timestamp = time.time()
         return_value, self.frame = self.camera.read()
         timestamp_capture = time.time()
 
@@ -73,11 +73,12 @@ class camera(cameraBase):
 
         # Download the result back to the CPU
         if self.use_cuda:
-            imageBW = self.pro_image.download()
+            self.imageBW = self.pro_image.download()
         else:
-            imageBW = self.pro_image
+            self.imageBW = self.pro_image
 
-        return (imageBW, timestamp, timestamp_capture - timestamp, timestamp_rectify - timestamp_capture)
+        self.time_capture = timestamp_capture - self.image_timestamp
+        self.time_rectify = timestamp_rectify - timestamp_capture
 
     def close(self):
         ''' close the camera'''

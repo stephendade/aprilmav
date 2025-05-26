@@ -138,7 +138,7 @@ class camera(cameraBase):
 
         # grab from the queue
         try:
-            timestamp, self.frame = self.frame_queue.get()
+            self.image_timestamp, self.frame = self.frame_queue.get()
         except queue.Empty:
             print("Camera queue empty")
             return (None, None, None, None)
@@ -167,11 +167,12 @@ class camera(cameraBase):
 
         # Download the result back to the CPU
         if self.use_cuda:
-            imageBW = self.pro_image.download()
+            self.imageBW = self.pro_image.download()
         else:
-            imageBW = self.pro_image
+            self.imageBW = self.pro_image
 
-        return (imageBW, timestamp, timestamp_capture - timestamp, timestamp_rectify - timestamp_capture)
+        self.time_capture = timestamp_capture - self.image_timestamp
+        self.time_rectify = timestamp_rectify - timestamp_capture
 
     def close(self):
         ''' close the camera'''

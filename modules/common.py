@@ -67,7 +67,8 @@ def loadCameras(multiCamera, singleCameraProfile, inputFolder, use_cuda=False, t
             except ImportError as e:
                 print('Error importing camera driver {0}: {1}'.format(camParam['cam_driver'], e))
                 sys.exit(0)
-            print("Camera {0} initialized (driver: {1})".format(camName, camParam['cam_driver']))
+            print("Camera {0} initialized (driver: {1}, tagEngine {2})".format(camName, camParam['cam_driver'],
+                                                                               camParam.get('tagEngine', 'None')))
     return CAMERAS
 
 

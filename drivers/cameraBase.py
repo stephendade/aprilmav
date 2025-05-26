@@ -31,7 +31,9 @@ class cameraBase:
 
         self.camParams = camParams
 
-        if tagEngine is not None:
+        if 'tagEngine' in camParams and camParams['tagEngine'] is not None:
+            self.at_detector = aprilDetect(tagSize, tagFamily, decimation, camParams['tagEngine'])
+        elif tagEngine is not None:
             self.at_detector = aprilDetect(tagSize, tagFamily, decimation, tagEngine)
         else:
             self.at_detector = None

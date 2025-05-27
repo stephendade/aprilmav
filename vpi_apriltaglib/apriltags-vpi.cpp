@@ -52,7 +52,7 @@ namespace apriltags_vpi {
 ApriltagDetectorVPI::ApriltagDetectorVPI(std::string strFamily, int hamming, int width, int height)
     {
     // Initialize VPI
-    CHECK_STATUS(vpiStreamCreate(VPI_BACKEND_CUDA | VPI_BACKEND_CPU | VPI_BACKEND_PVA, &stream));
+    CHECK_STATUS(vpiStreamCreate(VPI_BACKEND_CPU | VPI_BACKEND_PVA, &stream));
 
     // convert the config tag family to VPIAprilTagFamily
     VPIAprilTagFamily family;
@@ -75,8 +75,8 @@ ApriltagDetectorVPI::ApriltagDetectorVPI(std::string strFamily, int hamming, int
     vpiCreateAprilTagDetector(VPI_BACKEND_CPU, width, height, &params, &payload);
     const int maxDetections = 64;
    
-    CHECK_STATUS(vpiArrayCreate(maxDetections, VPI_ARRAY_TYPE_APRILTAG_DETECTION, VPI_BACKEND_CPU, &detections));
-    CHECK_STATUS(vpiArrayCreate(maxDetections, VPI_ARRAY_TYPE_POSE, VPI_BACKEND_CPU, &poses));
+    CHECK_STATUS(vpiArrayCreate(maxDetections, VPI_ARRAY_TYPE_APRILTAG_DETECTION, VPI_BACKEND_CPU | VPI_BACKEND_PVA, &detections));
+    CHECK_STATUS(vpiArrayCreate(maxDetections, VPI_ARRAY_TYPE_POSE, VPI_BACKEND_CPU | VPI_BACKEND_PVA, &poses));
     }
 
 ApriltagDetectorVPI::~ApriltagDetectorVPI() {
@@ -123,7 +123,7 @@ std::vector<TagDetection> ApriltagDetectorVPI::detect(py::array_t<uint8_t>& img,
     if (vpi_img == nullptr)
     {
         // Now create a VPIImage that wraps it.
-        CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(cv_image, 0, &vpi_img));
+        CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(cv_image, VPI_BACKEND_CPU | VPI_BACKEND_PVA, &vpi_img));
     }
     else
     {

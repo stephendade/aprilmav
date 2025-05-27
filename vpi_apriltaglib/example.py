@@ -25,12 +25,19 @@ if __name__ == "__main__":
         print("Error: Could not load test image")
         sys.exit(1)
 
-    # Detect tags
-    time_start = time.time()
-    detections = detector.detect(img, tagSize=0.1, fx=2514.4519625308344, fy=2514.7614761401096,
-                                 cx=1858.299271966736, cy=1033.4589590209453)
-    time_end = time.time()
-    print(f"Detection time: {1000*(time_end - time_start):.0f} ms")
+    # print image dimensions
+    print(f"Image loaded with dimensions: {img.shape[1]}x{img.shape[0]}")
+
+    # Detect tags in loop for averaging performance
+    alltimes = []
+    for i in range(100):
+        time_start = time.time()
+        detections = detector.detect(img, tagSize=0.1, fx=2514.4519625308344, fy=2514.7614761401096,
+                                     cx=1858.299271966736, cy=1033.4589590209453)
+        time_end = time.time()
+        alltimes.append(time_end - time_start)
+    mean_time = sum(alltimes) / len(alltimes)
+    print(f"Detection time avg: {1000*(mean_time):.0f} ms")
 
     # Print results
     print(f"Found {len(detections)} tags")

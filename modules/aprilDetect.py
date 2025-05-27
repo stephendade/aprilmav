@@ -149,7 +149,7 @@ class aprilDetect:
             if self.at_detector is None:
                 from .apriltagVPI import ApriltagVPI
                 height, width = image.shape[:2]
-                self.at_detector = ApriltagVPI(family=self.tagFamily, hamming=0, width=width, height=height)
+                self.at_detector = ApriltagVPI(family=self.tagFamily, hamming=1, width=width, height=height)
 
             # Detect tags
             tags = self.at_detector.detect(image, tagSize=self.tagSize, fx=K[0], fy=K[1], cx=K[2], cy=K[3])

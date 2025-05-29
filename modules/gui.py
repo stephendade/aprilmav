@@ -10,6 +10,9 @@ from modules.common import getFontSize, labelTags
 
 
 class GUI:
+    '''
+    A simple GUI for displaying camera image, tags and vehicle position and rotation
+    '''
     def __init__(self):
         self.fig = None
         self.axRot = None
@@ -97,22 +100,22 @@ class GUI:
         plt.draw()
         self.fig.canvas.flush_events()
 
-    def updateImage(self, img_tags_by_cam):
+    def updateImage(self, CAMERAS):
         '''
         Update the image window with a new image
         '''
         imageColour = None
-        for camName in sorted(img_tags_by_cam.keys()):
-            imageCam = cv2.cvtColor(img_tags_by_cam[camName][0], cv2.COLOR_GRAY2BGR)
+        for CAMERA in CAMERAS:
+            imageCam = cv2.cvtColor(CAMERA.imageBW, cv2.COLOR_GRAY2BGR)
 
             if not self.text_height:
                 self.font_scale, self.thickness, self.text_height = getFontSize(imageCam)
 
-            if img_tags_by_cam[camName][3]:
-                imageCam = labelTags(imageCam, img_tags_by_cam[camName][3], self.thickness,
+            if CAMERA.tags:
+                imageCam = labelTags(imageCam, CAMERA.tags, self.thickness,
                                      self.font_scale)
 
-            cv2.putText(imageCam, camName, (10, self.text_height + 10),
+            cv2.putText(imageCam, CAMERA.camName, (10, self.text_height + 10),
                         cv2.FONT_HERSHEY_SIMPLEX, self.font_scale, (255, 0, 0), self.thickness)
 
             # put a border around the image

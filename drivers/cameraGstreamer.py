@@ -52,7 +52,7 @@ class camera(cameraBase):
         ''' Capture a single image from the Camera '''
 
         self.image_timestamp = time.time()
-        return_value, self.frame = self.camera.read()
+        _, self.frame = self.camera.read()
         timestamp_capture = time.time()
 
         if self.use_cuda:

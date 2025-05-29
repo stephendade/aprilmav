@@ -60,9 +60,13 @@ if __name__ == '__main__':
                         help="Use half resolution")
     args = parser.parse_args()
 
-    # initialize the camera
-    from drivers import cameraFile
-    camera = cameraFile.FileCamera(None, args.folder)
+    # initialize the folder
+    images = [
+        os.path.join(args.folder, file)
+        for file in os.listdir(args.folder)
+        if file.endswith(('.png', '.jpg'))
+        ]
+    images.sort()
 
     # Chessboard rows and cols
     cbcol = args.cbcol
@@ -79,7 +83,7 @@ if __name__ == '__main__':
     imgpoints = queue.Queue()  # 2d points in image plane.
 
     # how many loops
-    loops = camera.getNumberImages()
+    loops = len(images)
 
     # Use multithreading to speed up, but limit to number of cores - 1
     max_workers = max(os.cpu_count() - 1, 1)
@@ -88,7 +92,7 @@ if __name__ == '__main__':
 
     for i in range(loops):
         # grab an image from the camera
-        (grey, timestamp) = camera.getImage(get_raw=True)
+        grey = cv2.imread(images[i], cv2.IMREAD_GRAYSCALE)
 
         if args.halfres:
             grey = cv2.resize(grey, None, fx=0.5, fy=0.5,
@@ -111,9 +115,6 @@ if __name__ == '__main__':
             for future in futures:
                 future.result()
             futures = []
-
-    # close camera
-    camera.close()
 
     # wait for all threads to finish
     for future in futures:

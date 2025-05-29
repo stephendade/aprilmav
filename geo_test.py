@@ -31,6 +31,7 @@ def signal_handler(signum, frame):
 
 
 def main(args):
+    '''Main function to run the AprilMAV localisation script'''
     print("Initialising")
 
     tryCheckCuda(args.cuda)
@@ -138,7 +139,7 @@ def main(args):
         # Update the live graph
         if args.gui:
             AprilGUI.update(posR, rotD)
-            #AprilGUI.updateImage(img_tags_by_cam)
+            AprilGUI.updateImage(CAMERAS)
 
         totalTags = sum(len(CAMERA.tags) for CAMERA in CAMERAS)
         print("Time to capture, detect, localise = {0:.2f} ms, {1}/{2} tags".format(1000*(allTimeTotal[-1]),

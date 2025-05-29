@@ -136,12 +136,13 @@ class cameraBase:
         return image
 
     def doDetect(self):
+        '''Detect tags in the imageBW using the at_detector'''
         if self.at_detector is None:
             print("Error: No tag detector available")
-            return None
+            return
         if self.imageBW is None:
             print("Error: No image to detect tags in")
-            return None
+            return
         detectStart = time.time()
         if self.at_detector.tagEngine == tagEngines.OpenCV:
             self.tags = self.at_detector.detect(self.imageBW, self.K)

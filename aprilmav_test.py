@@ -5,7 +5,7 @@ import argparse
 import os
 import geo_test
 import process_test
-
+import cameracal
 
 def test_geo_execution():
     """
@@ -129,3 +129,32 @@ def test_process_execution_multi():
     args = parser.parse_args()
     process_test.main(args)
     assert os.path.exists("processed.csv")
+
+
+def test_camera_calibration():
+    """
+    Test the camera calibration process.
+
+    This function sets up an argument parser to handle command-line arguments
+    for camera calibration. It includes options for chessboard columns, rows,
+    folder of images, fisheye lens, half resolution, and GUI display. After
+    parsing the arguments, it calls the main function of the cameracal module.
+
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cbcol", type=int, default=6,
+                        help="Number of chessboard columns-1")
+    parser.add_argument("--cbrow", type=int, default=9,
+                        help="Number of chessboard rows-1")
+    parser.add_argument("--folder", type=str, default="./caldataArduCam",
+                        help="Use a folder of images")
+    parser.add_argument("--fisheye", action="store_true",
+                        help="Use fisheye lens model", default=True)
+    parser.add_argument("--halfres", action="store_true",
+                        help="Use half resolution images")
+    parser.add_argument('--gui', dest='gui',
+                        default=False, action='store_true')
+    args = parser.parse_args()
+
+    # Assuming cameracal is a module that contains the main function for calibration
+    cameracal.run_camera_calibration(args)

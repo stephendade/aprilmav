@@ -39,6 +39,10 @@ def getImagepoints(image, i, loops, cbcol, cbrow, objpoints, imgpoints):
     pret, corners = cv2.findChessboardCorners(
         image, (cbcol, cbrow), flags=cv2.CALIB_CB_ADAPTIVE_THRESH)
     if pret:
+        # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
+        objp = numpy.zeros((1, cbrow*cbcol, 3), numpy.float32)
+        objp[0, :, :2] = numpy.mgrid[0:cbcol, 0:cbrow].T.reshape(-1, 2)
+
         print("Found chessboard in image {0}/{1}".format(i, loops))
         corners2 = cv2.cornerSubPix(image, corners, (11, 11), (-1, -1),
                                     (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01))
@@ -46,19 +50,16 @@ def getImagepoints(image, i, loops, cbcol, cbrow, objpoints, imgpoints):
         imgpoints.put(corners2)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--cbcol", type=int, default=6,
-                        help="Number of chessboard columns-1")
-    parser.add_argument("--cbrow", type=int, default=9,
-                        help="Number of chessboard rows-1")
-    parser.add_argument("--folder", type=str, default=None,
-                        help="Use a folder of images")
-    parser.add_argument("--fisheye", action="store_true",
-                        help="Use Fisheye calibration model")
-    parser.add_argument("--halfres", action="store_true",
-                        help="Use half resolution")
-    args = parser.parse_args()
+def run_camera_calibration(args):
+    """
+    Main function to run camera calibration.
+    It initializes the camera, captures images, detects chessboard corners,
+    and performs camera calibration using the detected points.
+    """
+
+    # Chessboard rows and cols
+    cbcol = args.cbcol
+    cbrow = args.cbrow
 
     # initialize the folder
     images = [
@@ -68,16 +69,8 @@ if __name__ == '__main__':
         ]
     images.sort()
 
-    # Chessboard rows and cols
-    cbcol = args.cbcol
-    cbrow = args.cbrow
-
     # Image dimensions
     imgDim = None
-
-    # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-    objp = numpy.zeros((1, cbrow*cbcol, 3), numpy.float32)
-    objp[0, :, :2] = numpy.mgrid[0:cbcol, 0:cbrow].T.reshape(-1, 2)
 
     objpoints = queue.Queue()  # 3d point in real world space
     imgpoints = queue.Queue()  # 2d points in image plane.
@@ -169,7 +162,7 @@ if __name__ == '__main__':
         print("  cam_params: !!python/tuple [{0}, {1}, {2}, {3}]".format(K[0, 0], K[1, 1], K[0, 2], K[1, 2]))
         if args.fisheye:
             print("  cam_paramsD: !!python/tuple [{0}, {1}, {2}, {3}]".format(D[0][0], D[1][0],
-                                                                                      D[2][0], D[3][0]))
+                                                                              D[2][0], D[3][0]))
         if args.halfres:
             print("  resolution: !!python/tuple [{0}, {1}]".format(imgDim[0]*2, imgDim[1]*2))
         else:
@@ -200,12 +193,32 @@ if __name__ == '__main__':
             undistorted_img = cv2.remap(
                 img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
 
-            cv2.namedWindow("Corrected", cv2.WINDOW_NORMAL)
-            cv2.resizeWindow("Corrected", 500, 500)
-            cv2.imshow("Corrected", undistorted_img)
-            cv2.namedWindow("Original", cv2.WINDOW_NORMAL)
-            cv2.resizeWindow("Original", 500, 500)
-            cv2.imshow("Original", img)
-            print("Type 0 into image window to exit")
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            if args.gui:
+                cv2.namedWindow("Corrected", cv2.WINDOW_NORMAL)
+                cv2.resizeWindow("Corrected", 500, 500)
+                cv2.imshow("Corrected", undistorted_img)
+                cv2.namedWindow("Original", cv2.WINDOW_NORMAL)
+                cv2.resizeWindow("Original", 500, 500)
+                cv2.imshow("Original", img)
+                print("Type 0 into image window to exit")
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cbcol", type=int, default=6,
+                        help="Number of chessboard columns-1")
+    parser.add_argument("--cbrow", type=int, default=9,
+                        help="Number of chessboard rows-1")
+    parser.add_argument("--folder", type=str, default=None,
+                        help="Use a folder of images")
+    parser.add_argument("--fisheye", action="store_true",
+                        help="Use Fisheye calibration model")
+    parser.add_argument("--gui", action="store_true",
+                        help="Show GUI for fisheye undistortion")
+    parser.add_argument("--halfres", action="store_true",
+                        help="Use half resolution")
+    mainArgs = parser.parse_args()
+
+    run_camera_calibration(mainArgs)

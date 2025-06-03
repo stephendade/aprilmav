@@ -66,6 +66,14 @@ def test_geo_execution():
                         help="multiple cameras using the specified yaml file")
     parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
                         default='PyAprilTags', choices=['OpenCV', 'PyAprilTags', 'JetsonVPI'])
+    parser.add_argument('--R', type=float, default=0.06,
+                        help="EKF measurement uncertainty, in m")
+    parser.add_argument('--Ppos', type=float, default=0.05,
+                        help="EKF position uncertainty, in m")
+    parser.add_argument('--PVel', type=float, default=0.1,
+                        help="EKF velocity uncertainty, in m/s")
+    parser.add_argument('--PAccel', type=float, default=0.1,
+                        help="EKF acceleration uncertainty, in m/s^2")
     args = parser.parse_args()
     geo_test.main(args)
     assert os.path.exists("geo_test_results.csv")
@@ -96,6 +104,14 @@ def test_process_execution_single():
                         help="multiple cameras using the specified yaml file")
     parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
                         default='PyAprilTags', choices=['OpenCV', 'PyAprilTags', 'JetsonVPI'])
+    parser.add_argument('--R', type=float, default=0.06,
+                        help="EKF measurement uncertainty, in m")
+    parser.add_argument('--Ppos', type=float, default=0.05,
+                        help="EKF position uncertainty, in m")
+    parser.add_argument('--PVel', type=float, default=0.1,
+                        help="EKF velocity uncertainty, in m/s")
+    parser.add_argument('--PAccel', type=float, default=0.1,
+                        help="EKF acceleration uncertainty, in m/s^2")
     args = parser.parse_args()
     process_test.main(args)
     assert os.path.exists("processed.csv")

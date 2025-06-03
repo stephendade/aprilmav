@@ -98,6 +98,10 @@ $ aprilmav.py
 - ``--cuda``          Use OpenCV CUDA Extensions. Only applies to Gstreamer, GenericUSB and File camera drivers.
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
 - ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default), OpenCV or JetsonVPI
+- ``--R``             EKF measurement uncertainty, in m. Defaults to 0.06
+- ``--Ppos``          EKF position uncertainty, in m. Defaults to 0.05
+- ``--PVel``          EKF velocity uncertainty, in m/s. Defaults to 0.1
+- ``--PAccel``        EKF acceleration uncertainty, in m/s^2. Defaults to 0.1
   
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.
@@ -175,6 +179,8 @@ If the velocity numbers are too noisy, the following options will help:
 - Decrease camera gain to reduce any noise in the images. Apriltags are capabile of being detected in quite low-light environments
 - A good camera calibration (if not using one of the supplied calibrations) is essential
 - Ensure at least 3 Apriltags are visible at all times
+
+Use ``geo_test.py`` to tune the EKF arguments. In particular, there must be minimum lag between position and velocity reporting.
 
 ### Latency
 

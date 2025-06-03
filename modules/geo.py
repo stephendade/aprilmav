@@ -26,7 +26,17 @@ def mag(x):
 class tagDB:
     '''Database of all detected tags'''
 
-    def __init__(self, debug=False, slidingWindow=5, extraOpt=False):
+    def __init__(self, debug=False, slidingWindow=5, extraOpt=False, R=0.06, Ppos=0.01, PVel=0.1, PAccel=0.05):
+        """
+        Initialize the tag database with initial settings.
+        :param debug: If True, print debug information.
+        :param slidingWindow: Number of frames to keep in the sliding window for position filtering.
+        :param extraOpt: If True, perform extra optimization on the best transform.
+        :param R: Measurement noise for position (default 0.04 m).
+        :param Ppos: Process noise for position (default 0.01 m).
+        :param PVel: Process noise for velocity (default 0.1 m/s).
+        :param PAccel: Process noise for acceleration (default 0.1 m/s^2).
+        """
         self.T_VehToWorld = deque(maxlen=slidingWindow+1)
         self.timestamps = deque(maxlen=slidingWindow+1)
         self.tagPlacement = {}
@@ -49,32 +59,35 @@ class tagDB:
         # Tag candidates. If they are present for 5 frames, add them to the database
         self.tagCandidates = deque(maxlen=5)
 
-        # Initialize a 6-state Kalman filter (x,y,z,vx,vy,vz)
-        self.kalman = KalmanFilter(6, 3)  # 6 state variables, 3 measurements
-        self.kalman.x = numpy.zeros((6, 1))  # Initial state [x, y, z, vx, vy, vz]
+        # Initialize a 9-state Kalman filter (x,y,z, vx,vy,vz, ax,ay,az)
+        self.kalman = KalmanFilter(9, 3)  # 9 state variables, 3 measurements
+        self.kalman.x = numpy.zeros((9, 1))  # Initial state [x,y,z, vx,vy,vz, ax,ay,az]
 
-        # State transition matrix - update position with velocity
-        self.kalman.F = numpy.eye(6)
-        self.kalman.F[0, 3] = 1.0  # x += vx * dt (dt will be set during prediction)
-        self.kalman.F[1, 4] = 1.0  # y += vy * dt
-        self.kalman.F[2, 5] = 1.0  # z += vz * dt
+        # State transition matrix - update position with velocity and acceleration
+        self.kalman.F = numpy.eye(9)
+        dt = 0.1  # default dt, will be updated during predict
+        self.kalman.F[0:3, 3:6] = numpy.eye(3) * dt  # pos += vel * dt
+        self.kalman.F[3:6, 6:9] = numpy.eye(3) * dt  # vel += acc * dt
+        self.kalman.F[0:3, 6:9] = numpy.eye(3) * 0.5 * dt**2  # pos += 0.5 * acc * dt^2
 
         # Measurement matrix - we only measure position (x,y,z)
-        self.kalman.H = numpy.zeros((3, 6))
-        self.kalman.H[0, 0] = 1.0  # measure x
-        self.kalman.H[1, 1] = 1.0  # measure y
-        self.kalman.H[2, 2] = 1.0  # measure z
+        self.kalman.H = numpy.zeros((3, 9))
+        self.kalman.H[0:3, 0:3] = numpy.eye(3)  # measure x,y,z
 
         # Initial state uncertainty
-        self.kalman.P = numpy.eye(6) * 10.0
-        self.kalman.P[3:6, 3:6] *= 3.0  # Higher initial uncertainty for velocity
+        self.kalman.P = numpy.eye(9)
+        self.kalman.P[0:3, 0:3] *= 0.05  # Position uncertainty (m)
+        self.kalman.P[3:6, 3:6] *= 0.05   # Velocity uncertainty (m/s)
+        self.kalman.P[6:9, 6:9] *= 0.1   # Acceleration uncertainty (m/s^2)
 
-        # Measurement noise (lower = trust measurements more)
-        self.kalman.R = numpy.eye(3) * 0.04  # Adjust based on your position measurement noise
+        # Measurement noise
+        self.kalman.R = numpy.eye(3) * R
 
-        # Process noise (how much we expect state to change between updates)
-        self.kalman.Q = numpy.eye(6) * 0.01
-        self.kalman.Q[3:6, 3:6] *= 3.0  # Higher process noise for velocity to make it more responsive
+        # Process noise
+        self.kalman.Q = numpy.eye(9)
+        self.kalman.Q[0:3, 0:3] *= Ppos     # Position noise
+        self.kalman.Q[3:6, 3:6] *= PVel     # Velocity noise 
+        self.kalman.Q[6:9, 6:9] *= PAccel   # Acceleration noise
 
     def printTags(self):
         '''Print all tags in the database'''
@@ -136,9 +149,9 @@ class tagDB:
             deltaT = 0.01  # Default small time step if no previous timestamp exists
 
         # Update state transition matrix with current time delta
-        self.kalman.F[0, 3] = deltaT  # x += vx * dt
-        self.kalman.F[1, 4] = deltaT  # y += vy * dt
-        self.kalman.F[2, 5] = deltaT  # z += vz * dt
+        self.kalman.F[0:3, 3:6] = numpy.eye(3) * deltaT  # pos += vel * dt
+        self.kalman.F[3:6, 6:9] = numpy.eye(3) * deltaT  # vel += acc * dt
+        self.kalman.F[0:3, 6:9] = numpy.eye(3) * 0.5 * deltaT**2  # pos += 0.5 * acc * dt^2
 
         # Predict the next state
         self.kalman.predict()

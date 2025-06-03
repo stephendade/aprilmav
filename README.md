@@ -97,7 +97,7 @@ $ aprilmav.py
 - ``--outliers=N``    Reject any outlier positions (more than 3 std dev above mean), based on last N frames.
 - ``--cuda``          Use OpenCV CUDA Extensions. Only applies to Gstreamer, GenericUSB and File camera drivers.
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
-- ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default), OpenCV or JetsonVPI
+- ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default), OpenCV or JetsonPVA
 - ``--R``             EKF measurement uncertainty, in m. Defaults to 0.06
 - ``--Ppos``          EKF position uncertainty, in m. Defaults to 0.05
 - ``--PVel``          EKF velocity uncertainty, in m/s. Defaults to 0.1
@@ -193,9 +193,9 @@ frame (20fps). Multiplying by 2 for the Kalman filter gives a total 100ms delay.
 If running on a NVIDIA Jetson, hardware acceleration of some parts of the detection pipeline are available:
 
 - Use ``--cuda`` to use CUDA-accelerated fisheye undistortion
-- Use ``--tagEngine=JetsonVPI`` to use the Jetson VPI processor for Apriltag detection
+- Use ``--tagEngine=JetsonPVA`` to use the Jetson PVA processor for Apriltag detection
 
-To use the ``JetsonVPI`` detector, the custom C++ bindings need to be built. This can 
+To use the ``JetsonPVA`` detector, the custom C++ bindings need to be built. This can 
 be done via the following commands:
 
 ```

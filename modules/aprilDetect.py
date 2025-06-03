@@ -27,7 +27,7 @@ class tagEngines:
     '''
     OpenCV = 0
     PyAprilTags = 1
-    JetsonVPI = 2
+    JetsonPVA = 2
 
     '''converts to string'''
     @staticmethod
@@ -36,8 +36,8 @@ class tagEngines:
             return "OpenCV"
         if tagEngine == tagEngines.PyAprilTags:
             return "PyAprilTags"
-        if tagEngine == tagEngines.JetsonVPI:
-            return "JetsonVPI"
+        if tagEngine == tagEngines.JetsonPVA:
+            return "JetsonPVA"
         return "Unknown"
 
     '''converts from string'''
@@ -47,8 +47,8 @@ class tagEngines:
             return tagEngines.OpenCV
         if tagEngine == "PyAprilTags":
             return tagEngines.PyAprilTags
-        if tagEngine == "JetsonVPI":
-            return tagEngines.JetsonVPI
+        if tagEngine == "JetsonPVA":
+            return tagEngines.JetsonPVA
         return None
 
 
@@ -98,8 +98,8 @@ class aprilDetect:
                                         refine_edges=1,
                                         decode_sharpening=0.25,
                                         debug=0)
-        elif self.tagEngine == tagEngines.JetsonVPI:
-            # Can't initialize VPI detector here, as we need to know the image size
+        elif self.tagEngine == tagEngines.JetsonPVA:
+            # Can't initialize PVA detector here, as we need to know the image size
             self.at_detector = None
 
     def detect(self, image, K):
@@ -144,12 +144,12 @@ class aprilDetect:
         elif self.tagEngine == tagEngines.PyAprilTags:
             # Detect tags
             tags = self.at_detector.detect(image, True, K, self.tagSize)
-        elif self.tagEngine == tagEngines.JetsonVPI:
-            # Initialize VPI detector
+        elif self.tagEngine == tagEngines.JetsonPVA:
+            # Initialize PVA detector
             if self.at_detector is None:
-                from .apriltagVPI import ApriltagVPI
+                from .apriltagPVA import ApriltagPVA
                 height, width = image.shape[:2]
-                self.at_detector = ApriltagVPI(family=self.tagFamily, hamming=1, width=width, height=height)
+                self.at_detector = ApriltagPVA(family=self.tagFamily, hamming=1, width=width, height=height)
 
             # Detect tags
             tags = self.at_detector.detect(image, tagSize=self.tagSize, fx=K[0], fy=K[1], cx=K[2], cy=K[3])

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Example of using the VPI Apriltag detector
+Example of using the PVA Apriltag detector
 
-Requires a NVIDIA Jetson with VPI 3.2
+Requires a NVIDIA Jetson with PVA 3.2
 
 Ensure the C++ bindings are built before running this script
 
@@ -10,14 +10,14 @@ Ensure the C++ bindings are built before running this script
 import sys
 import time
 import cv2
-from build.apriltagVPI import ApriltagVPI
+from build.apriltagPVA import ApriltagPVA
 
 
 # Example usage
 if __name__ == "__main__":
 
     # Create detector
-    detector = ApriltagVPI(family="tagStandard41h12", hamming=0, width=3840, height=2160)
+    detector = ApriltagPVA(family="tagStandard41h12", hamming=0, width=3840, height=2160)
 
     # Load an image
     img = cv2.imread("example.jpg", cv2.IMREAD_GRAYSCALE)

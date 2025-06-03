@@ -1,10 +1,10 @@
-# C Library for using the Jetson VPI interface for
+# C Library for using the Jetson PVA interface for
 # detecting Apriltags
 #
 
 cmake_minimum_required(VERSION 3.5)
 
-project(apriltagVPI VERSION 0.1.0 DESCRIPTION "VPI accelerated Apriltag detection")
+project(apriltagPVA VERSION 0.1.0 DESCRIPTION "PVA accelerated Apriltag detection")
 
 set(CMAKE_CXX_STANDARD 11)
 

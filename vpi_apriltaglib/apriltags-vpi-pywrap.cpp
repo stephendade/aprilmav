@@ -30,10 +30,10 @@
 #include "apriltags-vpi.h"
 
 // Because I'm lazy and there is no risk of name collision
-namespace apriltagvpi = pybind11;
+namespace apriltagpva = pybind11;
 
-PYBIND11_MODULE(apriltagVPI, m) {
-    m.doc() = "Apriltag-VPI bindings";
+PYBIND11_MODULE(apriltagPVA, m) {
+    m.doc() = "Apriltag-PVA bindings";
 
     py::class_<cv::Point2f>(m, "Point2f")
     .def(py::init<>())
@@ -44,7 +44,7 @@ PYBIND11_MODULE(apriltagVPI, m) {
         return "<Point2f x=" + std::to_string(p.x) + ", y=" + std::to_string(p.y) + ">";
     });
 
-    apriltagvpi::class_<apriltags_vpi::TagDetection>(m, "TagDetection")
+    apriltagpva::class_<apriltags_vpi::TagDetection>(m, "TagDetection")
         .def_readwrite("tag_id", &apriltags_vpi::TagDetection::tag_id)
         .def_readwrite("center", &apriltags_vpi::TagDetection::center)
         .def_readwrite("corners", &apriltags_vpi::TagDetection::corners)
@@ -58,18 +58,18 @@ PYBIND11_MODULE(apriltagVPI, m) {
 
     //PYBIND11_NUMPY_DTYPE(B, z, a);
 
-    apriltagvpi::class_<apriltags_vpi::ApriltagDetectorVPI>(m, "ApriltagVPI")
-        .def(apriltagvpi::init<std::string, int, int, int>(),
-                apriltagvpi::arg("family") = "tag36h11",
-                apriltagvpi::arg("hamming") = 0,
-                apriltagvpi::arg("width") = 640,
-                apriltagvpi::arg("height") = 480)
+    apriltagpva::class_<apriltags_vpi::ApriltagDetectorVPI>(m, "ApriltagPVA")
+        .def(apriltagpva::init<std::string, int, int, int>(),
+                apriltagpva::arg("family") = "tag36h11",
+                apriltagpva::arg("hamming") = 0,
+                apriltagpva::arg("width") = 640,
+                apriltagpva::arg("height") = 480)
         .def("detect", &apriltags_vpi::ApriltagDetectorVPI::detect,
-            apriltagvpi::arg("image"),
-            apriltagvpi::arg("tagSize") = 0.05f,
-            apriltagvpi::arg("fx") = 0.0f,
-            apriltagvpi::arg("fy") = 0.0f,
-            apriltagvpi::arg("cx") = 0.0f,
-            apriltagvpi::arg("cy") = 0.0f);
+            apriltagpva::arg("image"),
+            apriltagpva::arg("tagSize") = 0.05f,
+            apriltagpva::arg("fx") = 0.0f,
+            apriltagpva::arg("fy") = 0.0f,
+            apriltagpva::arg("cx") = 0.0f,
+            apriltagpva::arg("cy") = 0.0f);
 }
 

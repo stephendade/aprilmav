@@ -94,10 +94,7 @@ def main(args):
                 shouldExit = True
         if shouldExit:
             break
-        if args.inputFolder:
-            frameTime = time.time()
-        else:
-            frameTime = numpy.mean([CAMERA.image_timestamp for CAMERA in CAMERAS])
+        frameTime = numpy.mean([CAMERA.image_timestamp for CAMERA in CAMERAS])
         # get the mean capture and rectify times
         allTimeCapture.append(numpy.mean([CAMERA.time_capture for CAMERA in CAMERAS]))
         allTimeRectify.append(numpy.mean([CAMERA.time_rectify for CAMERA in CAMERAS]))

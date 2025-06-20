@@ -40,10 +40,11 @@ class cameraBase:
             self.at_detector = aprilDetect(tagSize, tagFamily, decimation, camParams['tagEngine'])
         elif tagEngine is not None:
             self.at_detector = aprilDetect(tagSize, tagFamily, decimation, tagEngine)
+            camParams['tagEngine'] = tagEngine
         else:
             self.at_detector = None
-            self.tags = None
-            self.time_detect = 0
+        self.tags = []
+        self.time_detect = 0
 
         try:
             # Need to reconstruct K and D for each camera

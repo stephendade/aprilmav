@@ -226,7 +226,7 @@ if __name__ == '__main__':
                         help="multiple cameras using the specified yaml file")
     parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
                         default='PyAprilTags', choices=['OpenCV', 'PyAprilTags', 'JetsonPVA'])
-    parser.add_argument('--R', type=float, default=0.07,
+    parser.add_argument('--R', type=float, default=0.2,
                         help="EKF measurement uncertainty, in m")
     parser.add_argument('--Ppos', type=float, default=0.001,
                         help="EKF position uncertainty, in m")
@@ -241,7 +241,7 @@ if __name__ == '__main__':
     tryCheckCuda(args.cuda)
 
     # Open camera settings and load camera(s)
-    CAMERAS = loadCameras(args.multiCamera, args.camera, args.inputFolder, args.cuda,
+    CAMERAS = loadCameras(args.multiCamera, args.camera, None, args.cuda,
                           args.tagSize, args.tagFamily, args.decimation, args.tagEngine)
 
     # allow the camera to warmup
@@ -288,7 +288,7 @@ if __name__ == '__main__':
     prev_timestamp = time.time() - 0.1
     while True:
         # Capture images from all cameras (in parallel)
-        do_multi_capture_detection(CAMERAS)
+        do_multi_capture_detection(CAMERAS, False, True)
         # check for any bad captures
         shouldExit = False
         for CAMERA in CAMERAS:

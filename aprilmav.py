@@ -241,7 +241,7 @@ if __name__ == '__main__':
     tryCheckCuda(args.cuda)
 
     # Open camera settings and load camera(s)
-    CAMERAS = loadCameras(args.multiCamera, args.camera, args.inputFolder, args.cuda,
+    CAMERAS = loadCameras(args.multiCamera, args.camera, None, args.cuda,
                           args.tagSize, args.tagFamily, args.decimation, args.tagEngine)
 
     # allow the camera to warmup
@@ -288,7 +288,7 @@ if __name__ == '__main__':
     prev_timestamp = time.time() - 0.1
     while True:
         # Capture images from all cameras (in parallel)
-        do_multi_capture_detection(CAMERAS)
+        do_multi_capture_detection(CAMERAS, False, True)
         # check for any bad captures
         shouldExit = False
         for CAMERA in CAMERAS:

@@ -98,7 +98,7 @@ $ aprilmav.py
 - ``--cuda``          Use OpenCV CUDA Extensions. Only applies to Gstreamer, GenericUSB and File camera drivers.
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
 - ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default), OpenCV or JetsonPVA
-- ``--R``             EKF measurement uncertainty, in m. Defaults to 0.07
+- ``--R``             EKF measurement uncertainty, in m. Defaults to 0.20
 - ``--Ppos``          EKF position uncertainty, in m. Defaults to 0.001
 - ``--PVel``          EKF velocity uncertainty, in m/s. Defaults to 0.01
 - ``--PAccel``        EKF acceleration uncertainty, in m/s^2. Defaults to 0.04

@@ -226,13 +226,13 @@ if __name__ == '__main__':
                         help="multiple cameras using the specified yaml file")
     parser.add_argument('--tagEngine', dest='tagEngine', help="Tag detector engine",
                         default='PyAprilTags', choices=['OpenCV', 'PyAprilTags', 'JetsonPVA'])
-    parser.add_argument('--R', type=float, default=0.2,
+    parser.add_argument('--R', type=float, default=0.15,
                         help="EKF measurement uncertainty, in m")
-    parser.add_argument('--Ppos', type=float, default=0.001,
+    parser.add_argument('--Ppos', type=float, default=0.01,
                         help="EKF position uncertainty, in m")
-    parser.add_argument('--PVel', type=float, default=0.01,
+    parser.add_argument('--PVel', type=float, default=0.3,
                         help="EKF velocity uncertainty, in m/s")
-    parser.add_argument('--PAccel', type=float, default=0.04,
+    parser.add_argument('--PAccel', type=float, default=2,
                         help="EKF acceleration uncertainty, in m/s^2")
     args = parser.parse_args()
 

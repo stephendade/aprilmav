@@ -98,10 +98,10 @@ $ aprilmav.py
 - ``--cuda``          Use OpenCV CUDA Extensions. Only applies to Gstreamer, GenericUSB and File camera drivers.
 - ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
 - ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default), OpenCV or JetsonPVA
-- ``--R``             EKF measurement uncertainty, in m. Defaults to 0.20
-- ``--Ppos``          EKF position uncertainty, in m. Defaults to 0.001
-- ``--PVel``          EKF velocity uncertainty, in m/s. Defaults to 0.01
-- ``--PAccel``        EKF acceleration uncertainty, in m/s^2. Defaults to 0.04
+- ``--R``             EKF measurement uncertainty, in m. Defaults to 0.15
+- ``--Ppos``          EKF position uncertainty, in m. Defaults to 0.01
+- ``--PVel``          EKF velocity uncertainty, in m/s. Defaults to 0.3
+- ``--PAccel``        EKF acceleration uncertainty, in m/s^2. Defaults to 4
   
 Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
 to a connected ArduPilot.
@@ -184,15 +184,14 @@ Use ``geo_test.py`` to tune the EKF arguments. In particular, there must be mini
 
 In tuning the EKF, the following arguments should be set:
 - ``--R``: The noise in the measured position (m). Set higher to weight in favour of the measured position and velocity
-- ``--Ppos``: Process uncertainty for position (m). The typical position change per frame
-- ``--PVel``: Process uncertainty for velocity (m/s). The typical velocity change per frame
-- ``--PAccel``: Process uncertainty for acceleration (m/s^2). The typical acceleration change per frame
+- ``--PVel``: Process uncertainty for velocity (m/s). The typical velocity of the vehicle
+- ``--PAccel``: Process uncertainty for acceleration (m/s^2). The typical acceleration of the vehicle
 
 ### Latency
 
-Aprilmav's latency is typcially 1-2 frames, due to the in-built Kalman filter. This should be combined with the average processing
-time (as per the ``geo_test.py`` summary). For a Raspberry Pi5 with the IMX298 camera, the average processing time is 50ms per
-frame (20fps). Multiplying by 2 for the Kalman filter gives a total 100ms delay.
+Aprilmav's latency is typcially 4 frames, due to the in-built Kalman filter. This should be multiplied by the average processing
+time (as per the ``geo_test.py`` summary). For example, for a Raspberry Pi5 with the IMX298 camera, the average processing time is 50ms per
+frame (20fps). Multiplying by 4 for the Kalman filter gives a total 200ms delay.
 
 ### Hardware Acceleration
 

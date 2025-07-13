@@ -354,6 +354,7 @@ if __name__ == '__main__':
 
         # Update the timestamp
         prev_timestamp = timestamp
+        i += 1
 
         if exit_event.is_set():
             break

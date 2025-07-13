@@ -275,6 +275,7 @@ if __name__ == '__main__':
     # Start save image thread, if desired
     threadSave = None
     threadSave_prev_timestamp = 0
+    i = 0
     if args.outputFolder != "":
         threadSave = saveThread(args.outputFolder, exit_event, CAMERAS, compression=3)
         threadSave.start()
@@ -285,8 +286,6 @@ if __name__ == '__main__':
         threadVideo = videoThread(args.video, exit_event)
         threadVideo.start()
 
-    i = 0
-    prev_timestamp = time.time() - 0.1
     while True:
         # Capture images from all cameras (in parallel)
         do_multi_capture_detection(CAMERAS, False, True)
@@ -344,6 +343,7 @@ if __name__ == '__main__':
                         ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD,
                         CAMERA.tags))
             threadSave_prev_timestamp = timestamp
+            i += 1
 
         # Get ready for next frame
         tagPlacement.newFrame()
@@ -351,10 +351,6 @@ if __name__ == '__main__':
         # Send to video stream, if option.
         if threadVideo:
             threadVideo.frame_queue.put((CAMERA.imageBW, CAMERA.tags, posR, rotD))
-
-        # Update the timestamp
-        prev_timestamp = timestamp
-        i += 1
 
         if exit_event.is_set():
             break

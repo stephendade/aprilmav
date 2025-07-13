@@ -275,7 +275,7 @@ if __name__ == '__main__':
     # Start save image thread, if desired
     threadSave = None
     if args.outputFolder != "":
-        threadSave = saveThread(args.outputFolder, exit_event, CAMERAS)
+        threadSave = saveThread(args.outputFolder, exit_event, CAMERAS, compression=3)
         threadSave.start()
 
     # video stream out, if desired
@@ -330,10 +330,8 @@ if __name__ == '__main__':
                                 (rotD[0], rotD[1], rotD[2]),
                                 threadMavlink.getPktSent())
 
-        # Send to save thread
-        if threadSave:
-            # threadSave.save_queue.put((imageBW, os.path.join(
-            #     ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD, tags))
+        # Send to save thread. Limit to 10fps
+        if threadSave and (timestamp - prev_timestamp) > 0.1:
             if args.multiCamera:
                 for CAMERA in CAMERAS:
                     threadSave.save_queue.put((CAMERA.imageBW, os.path.join(
@@ -348,7 +346,7 @@ if __name__ == '__main__':
         # Get ready for next frame
         tagPlacement.newFrame()
 
-        # Send to video stream, if option
+        # Send to video stream, if option.
         if threadVideo:
             threadVideo.frame_queue.put((CAMERA.imageBW, CAMERA.tags, posR, rotD))
 

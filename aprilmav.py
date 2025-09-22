@@ -234,6 +234,8 @@ if __name__ == '__main__':
                         help="EKF velocity uncertainty, in m/s")
     parser.add_argument('--PAccel', type=float, default=2,
                         help="EKF acceleration uncertainty, in m/s^2")
+    parser.add_argument('--gui', dest='gui',
+                        default=False, action='store_true')
     args = parser.parse_args()
 
     print("Initialising")
@@ -246,6 +248,11 @@ if __name__ == '__main__':
 
     # allow the camera to warmup
     time.sleep(2)
+
+    # GUI
+    if args.gui:
+        from modules.gui import GUI
+        AprilGUI = GUI()
 
     # All tags live in here
     tagPlacement = tagDB(slidingWindow=args.outliers, extraOpt=args.extraOpt, R=args.R,
@@ -324,6 +331,11 @@ if __name__ == '__main__':
         threadMavlink.sendPos(posR, rotR)
         threadMavlink.sendSpeed(speed)
 
+        # Update the live graph
+        if args.gui:
+            AprilGUI.update(posR, rotD)
+            AprilGUI.updateImage(CAMERAS)
+
         # Send to status thread
         threadStatus.updateData(time.time() - timestamp,
                                 (posR[0], posR[1], posR[2]),
@@ -358,5 +370,9 @@ if __name__ == '__main__':
     # close camera
     for CAMERA in CAMERAS:
         CAMERA.close()
+
+    # Close GUI
+    if args.gui:
+        AprilGUI.on_end()
 
     exit_event.set()

@@ -1,4 +1,6 @@
 name: Pylint and Pytest
+permissions:
+  contents: read
 
 on: [push]
 

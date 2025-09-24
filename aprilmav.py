@@ -284,7 +284,7 @@ if __name__ == '__main__':
     threadSave_prev_timestamp = 0
     i = 0
     if args.outputFolder != "":
-        threadSave = saveThread(args.outputFolder, exit_event, CAMERAS, compression=3)
+        threadSave = saveThread(args.outputFolder, exit_event, CAMERAS, compression=95, useJpg=True)
         threadSave.start()
 
     # video stream out, if desired
@@ -347,12 +347,12 @@ if __name__ == '__main__':
             if args.multiCamera:
                 for CAMERA in CAMERAS:
                     threadSave.save_queue.put((CAMERA.imageBW, os.path.join(
-                        ".", args.outputFolder, CAMERA.camName, "processed_{:04d}.png".format(i)), posR, rotD,
+                        ".", args.outputFolder, CAMERA.camName, "processed_{:04d}.jpg".format(i)), posR, rotD,
                         CAMERA.tags))
             else:
                 for CAMERA in CAMERAS:
                     threadSave.save_queue.put((CAMERA.imageBW, os.path.join(
-                        ".", args.outputFolder, "processed_{:04d}.png".format(i)), posR, rotD,
+                        ".", args.outputFolder, "processed_{:04d}.jpg".format(i)), posR, rotD,
                         CAMERA.tags))
             threadSave_prev_timestamp = timestamp
             i += 1

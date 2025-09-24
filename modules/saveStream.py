@@ -14,7 +14,7 @@ class saveThread(threading.Thread):
     """
     Save images to a folder
     """
-    def __init__(self, folder, exit_event, CAMERAS=None, compression=0):
+    def __init__(self, folder, exit_event, CAMERAS=None, compression=0, useJpg=False):
         threading.Thread.__init__(self)
         self.save_queue = queue.Queue()
         self.exit_event = exit_event
@@ -24,6 +24,7 @@ class saveThread(threading.Thread):
         self.thickness = 4
 
         self.compression = compression
+        self.imagetype = cv2.IMWRITE_JPEG_QUALITY if useJpg else cv2.IMWRITE_PNG_COMPRESSION
 
         # create the capture folder if required
         try:
@@ -60,5 +61,5 @@ class saveThread(threading.Thread):
                         (10, 2*(self.text_height + 10)), cv2.FONT_HERSHEY_SIMPLEX,
                         self.font_scale, (0, 0, 255), self.thickness, cv2.LINE_AA)
             imageColour = labelTags(imageColour, tags, self.thickness, self.font_scale)
-            cv2.imwrite(filename, imageColour, [cv2.IMWRITE_PNG_COMPRESSION, self.compression])
+            cv2.imwrite(filename, imageColour, [self.imagetype, self.compression])
             print("Saved {0}".format(filename))

@@ -134,6 +134,9 @@ details.
 
 To check if your OpenCV has GStreamer support, see https://learnopencv.com/get-opencv-build-information-getbuildinformation/
 
+Note if the ``--outputFolder`` option is selected, ``aprilmav.py`` will use jpeg compression. This is to reduce the performance
+impact, as jpg compression is much faster than png compression. Other scripts (such as ``geo_test.py``) will use png compression.
+
 ## Camera compatibility
 
 The following cameras have been tested as compatible with Aprilmav:

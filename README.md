@@ -1,190 +1,185 @@
 # aprilmav - Indoor navigation via Apriltags over MAVLink
 
-This library is a work-in-progress to provide accurate (cm-level)
-indoor navigation for MAVlink (APM, etc) vehicles via Apriltags (
-developed by [AprilRobotics](https://april.eecs.umich.edu/))
+AprilMAV provides accurate (cm-level) indoor navigation for MAVLink vehicles (ArduPilot, PX4) using AprilTags. This is a low-effective alternative to expensive indoor positioning systems.
 
-The advantage of this method is that it does not require any expensive
-or complicated equipment. All you need is:
-- Printed April tags on a ~A4 paper mounted around the areas of travel
-- Small embedded computer (Raspberry Pi or similar) with camera (Global shutter preferred)
+## What You Need
 
-This library uses the the [Apriltags Python bindings](https://github.com/WillB97/pyapriltags).
+**Hardware:**
+- Printed AprilTags (included in this repo as `tagStandard41h12.pdf`)
+- Small embedded computer (Raspberry Pi 5 recommended)
+- Camera with global shutter (preferred) or rolling shutter
+- Vehicle running ArduPilot/PX4
 
-## How to get started
+**No expensive equipment required!** Just paper tags and a basic camera setup.
 
-Note for the ArduCam, use ``sudo apt install i2c-tools`` and ensure ``dtparam=i2c_vc=on`` is in ``/boot/config.txt``.
+## Quick Start Guide
 
-Note for using libcamera, ensure that the picamera2 package is installed via ``sudo apt install -y python3-picamera2 --no-install-recommends``
-before creating the virtual environment.
+### 1. Hardware Setup
 
-Set up the virtual environment and install the required packages:
+**Print and Mount Tags:**
+- Print the AprilTags from `tagStandard41h12.pdf` on paper
+- Mount tags on the ceiling or walls of your flight area
+- The tags should be arranged out such the the camera can see 3+ tags at all times
 
-```
+**Camera Suggestions:**
+- Global shutter cameras (like the IMX296) work best for moving vehicles
+- Rolling shutter cameras (like the Pi Camera HQ camera or IMX678) work but need good lighting
+
+### 2. Software Installation
+
+```bash
+# Install system dependencies (Ubuntu/Raspberry Pi OS)
+sudo apt update
+sudo apt install python3-pip python3-venv python3-opencv python3-matplotlib
+
+# For Raspberry Pi Camera support
+sudo apt install -y python3-picamera2 --no-install-recommends
+
+# Clone and setup
+git clone https://github.com/stephendade/aprilmav.git
+cd aprilmav
+
+# Create virtual environment
 python -m venv --system-site-packages .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Users running in a headless environment may need to also ``sudo apt install ffmpeg libsm6 libxext6``.
+### 3. Test Your Setup
 
-Print the Apriltags (``tagStandard41h12.pdf``) and place on the ceiling of the travel area of the robot. A density of 2-4 tags per m^2 is recommended, the idea being that the camera is able to see 3+ tags at any one time.
+Check the ``camera.yaml`` for a list of supported cameras. To use
+a supported camera, note the ``--camera`` argument to load it.
 
-The camera should be mounted such that it has an unobstructed view of the tags on the ceiling.
-
-If you are not using one of the currently supported cameras, you will need to calibrate the camera (see Adding a New Camera below).
-
-Run the ``capture_test.py`` to check the image quality, particularly when the vehicle is moving and turning. ``process_test.py`` can then be used to confirm if the Apriltags are detectable and system performance.
-
-### Note for the Raspberry Pi
-
-The Raspberry Pi 4 is *just* powerful enough to run aprilmav in realtime (~10fps). It is highly recommended
-to use the Raspberry Pi 5 instead, which can give ~30fps with a 1.5MP camera
-
-In some cases, the default OpenCV for the Raspberry Pi 4 may not process frames fast enough.
-
-In general, 5+ FPS is enough for a live feed to ArduPilot.
-
-See https://qengineering.eu/install-opencv-4.4-on-raspberry-pi-4.html for building an optimised
-version of OpenCV.
-
-## Performance Testing
-
-There are several scripts for testing the performance - both accuracy and
-detected speed:
-
-Speed of camera capture. Useful for confirming if the camera itself is a system
-bottleneck. Use ``--outputFolder=xxx`` to save the images to a specific folder, which is
-useful for playing back datasets in the other scripts:
-
-```
-$ capture_test.py
+**Test camera capture:**
+```bash
+# Check if camera works and measure frame rate
+python capture_test.py --camera=<cameraname>  # your camera profile
 ```
 
-Speed of camera capture and Apriltag detection. Useful for confirming the camera
-calibration via the Apriltag distances from the camera:
-
-```
-$ process_test.py
-```
-
-Localisation test. Estimates the vehicles current position and velocity based on Apriltags and 
-outputs to csv. Useful for confirming the camera calibration and data quality. 
-Uses many of the same options as ``aprilmav.py``
-
-```
-$ geo_test.py
-```
-[Use the --gui option to get a plot of the tag and vehicle locations]
-
-## Connecting to ArduPilot
-
-```
-$ aprilmav.py
+**Test AprilTag detection:**
+```bash
+# Check if tags are detected properly
+python process_test.py --camera=<cameraname> --tagSize=100  # tag size in mm
 ```
 
-- ``--tagSize``       Apriltag size in mm
-- ``--camera``        Camera profile in camera.yaml
-- ``--maxError``      Maximum pose error to use, in n*E-8 units
-- ``--outFile``       Output position data to this file in csv format
-- ``--device``        MAVLink connection string
-- ``--baud``          MAVLink baud rate, if using serial port in ``--device``
-- ``--source-system`` MAVLink Source system
-- ``--outputFolder``  Save processed images to this folder
-- ``--video``         Output an RTP H264 video to this IP:Port, 0 to disable
-- ``--decimation``    Apriltag decimation. Tradeoff against detection speed and distance.
-- ``--extraOpt``      Optimise detected position better. Uses a lot of extra CPU.
-- ``--outliers=N``    Reject any outlier positions (more than 3 std dev above mean), based on last N frames.
-- ``--cuda``          Use OpenCV CUDA Extensions. Only applies to Gstreamer, GenericUSB and File camera drivers.
-- ``--tagFamily``     Use this Apriltag family. Defaults to ``tagStandard41h12``
-- ``--tagEngine``     Use the specified library for Apriltag detection. Choices are PyAprilTags (default), OpenCV or JetsonPVA
-- ``--R``             EKF measurement uncertainty, in m. Defaults to 0.15
-- ``--Ppos``          EKF position uncertainty, in m. Defaults to 0.01
-- ``--PVel``          EKF velocity uncertainty, in m/s. Defaults to 0.3
-- ``--PAccel``        EKF acceleration uncertainty, in m/s^2. Defaults to 4
-  
-Captures, processes and localises vehicle position and orientation. Sends this in MAVLink format
-to a connected ArduPilot.
-
-It will send a heartbeat, plus the VISION_POSITION_DELTA and VISION_POSITION_ESTIMATE messages. By default, these messages will be sent to ``udp:127.0.0.1:14550``, but can be changed via the ``--device`` argument.
-
-The following parameters will need to be set in ArduPilot:
-
-```
-VISO_TYPE        1
-VISO_ORIENT      0
-EK3_SRC1_POSXY   6
-EK3_SRC1_POSZ    1
-EK3_SRC1_VELXY   6
-EK3_SRC1_VELZ    6
-EK3_SRC1_YAW     6
+**Test position estimation:**
+```bash
+# Test full positioning system
+python geo_test.py --camera=<cameraname> --tagSize=100 --gui
 ```
 
-Note that coordinate frame conversion from the camera (see [here](https://github.com/AprilRobotics/apriltag#coordinate-system)) to 
-vehicle (NED) frames takes place in aprilmav. Use the ``rotationRelVehicle`` in ``camera.yaml`` to define the camera-to-vehicle 
-conversion. Thus the ``VISO_ORIENT`` should be 0 in ArduPilot. An example of this is a ``rotationRelVehicle = !!python/tuple [0, 180, 90]`` for a upwards facing camera, with the bottom of the image towards the pack of the vehicle.
+### 4. Connect to ArduPilot
 
-The ``VISO_DELAY_MS`` should be as per the "Latency" section below. This will typically be 100-300ms
+**Configure ArduPilot parameters:**
+```
+VISO_TYPE        1     # Enable visual odometry
+VISO_ORIENT      0     # No rotation (aprilmav handles this)
+EK3_SRC1_POSXY   6     # Use vision for XY position
+EK3_SRC1_POSZ    1     # Use barometer for Z (altitude)
+EK3_SRC1_VELXY   6     # Use vision for XY velocity  
+EK3_SRC1_VELZ    6     # Use vision for Z velocity
+EK3_SRC1_YAW     6     # Use vision for heading
+VISO_DELAY_MS    200   # Typical delay (adjust based on your system)
+```
 
-The ``--video`` and ``--imageFolder`` options will have a performance impact. It is recommended not to use these options unless for debugging purposes.
+**Run AprilMAV:**
+```bash
+# Basic connection to ArduPilot
+python aprilmav.py --camera=<cameraname> --tagSize=100
 
-Note if you are using the ``--video`` option, you will likely require to build OpenCV from source, as most pre-built
-packages do not include GStreamer support. See https://linuxize.com/post/how-to-install-opencv-on-ubuntu-20-04/ for
-details.
+# Connect to specific MAVLink address, assuming a mavlink connection on 192.168.1.100:14550
+python aprilmav.py --camera=<cameraname> --tagSize=100 --device=udp:192.168.1.100:14550
+```
 
-To check if your OpenCV has GStreamer support, see https://learnopencv.com/get-opencv-build-information-getbuildinformation/
+## Supported Cameras
 
-Note if the ``--outputFolder`` option is selected, ``aprilmav.py`` will use jpeg compression. This is to reduce the performance
-impact, as jpg compression is much faster than png compression. Other scripts (such as ``geo_test.py``) will use png compression.
+Note some cameras have multiple profiles, depending on which camera lens is used.
 
-## Camera compatibility
+| Camera | Profile Name | Notes |
+|--------|-------------|-------|
+| Raspberry Pi Camera V2 | `PiCamV2FullFoVHD` | Needs very good lighting, rolling shutter |
+| Pi Camera GS (IMX296) with wide angle lens | `imx296-6mmlens` | Global shutter, excellent quality |
+| ArduCam B0445 (IMX296) | `imx296-2.7mmlens` `imx296-2.1mmlens` | Global shutter, wide angle lens |
+| ArduCam OV9281 | `ArduCamUC580` | Global shutter, good performance |
+| Generic USB Webcam | `GenericUSB` | Requires calibration |
+| ArduCam B0497 (IMX678) | `Arducam_B0497` | Rolling shutter. Requires a Jetson Orin NX for realtime processing |
 
-The following cameras have been tested as compatible with Aprilmav:
+For detailed camera setup, see the [Camera Compatibility](#camera-compatibility) section below.
 
-- Raspberry Pi Camera V2 (needs to be used in a very well lit room. Is not accurate in Apriltag pose detection). Use ``--camera=PiCamV2FullFoVHD``
-- Raspberry Pi Camera GS (IMX296). The 6mm lens is quite narrow, so will need a greater density of Apriltags. Use ``--camera=imx296-6mmlens``. 
-- [ArduCam UC-717 (IMX296)](https://www.arducam.com/product/1-58mp-imx296-color-global-shutter-camera-module-with-m12-lens-for-raspberry-pi/). The default 6mm lens is too narrow. For a 2.7mm lens use ``--camera=imx296-2.7mmlens``
-- Arducam 1MP OV9281 (works quite well, as it has a global shutter). Requires specific libraries. Run ``./lib/getArduCamfiles.sh`` to download the files. Use ``--camera=ArduCamUC580``
-- Generic USB webcams. Will need a specific calibration and settings file for each camera model. Use ``--camera=GenericUSB``
-- IMX219 Cameras on the Nvidia Jetson at a variety of resolutions: ``--camera=JetsonCameraIMX219-8MP``, ``--camera=JetsonCameraIMX219-6MP`` and ``--camera=JetsonCameraIMX219-2MP``.
-- IMX678 Camera (Arducam B0497 USB camera). Works quite well. Requires a high-end platform (Jetson or Laptop) to process in realtime. Use ``--camera=Arducam_B0497``
-- Allied Vision Alvium Camera, via the VimbaX SDK. See the ``AlliedVision1800`` entry in ``camera.yaml``.
-Cameras with global shutters are preferred, as they give much more accurate position solutions.
+## Performance Requirements
 
-### Adding a new camera
+**System Requirements:**
+- Raspberry Pi 4 or 5, NVIDIA Jetson, or similar device.
+- Good lighting for rolling shutter cameras
+- Ubuntu or similar installed on device
 
-To add a new camera, follow the following steps:
+10+ FPS is required for smooth velocity estimation. This will be dependent
+of the camera resolution and the processing capacity of the device.
 
-- Create a camera driver in the ``./drivers`` directory. Look at ``cameraGenericUSB.py`` as an example.
-- Add a camera profile in ``camera.yaml``
-- Run ``capture_test.py`` whilst showing a chessboard (https://github.com/opencv/opencv/blob/master/doc/pattern.png) in a variety of orientations and distances
-- Run ``cameracal.py`` using the above images and put the resultant camera parameters in in ``camera.yaml``
+In general, a Raspberry Pi5 can process a 2MPixel camera at 15FPS and
+a NVIDIA Orin NX can process a 8MPixel camera at 20 FPS.
 
-Note a separate profile will be required for a specific lens and resolution combination, and camera rotation/position.
+## Troubleshooting
 
-In ``camera.yaml``, note that the ``cam_params`` are in the order of [fx, fy, cx, cy] for the "K" matrix. ``cam_paramsD`` is in the order of [k1, k2, k3, k4] for "D" matrix for fisheye undistortion.
+**Tags not detected:**
+- Ensure tags are printed clearly and flat
+- Check lighting conditions
+- Verify tag size parameter matches actual printed size
+- Use `process_test.py` to debug detection
 
-### Accuracy and Performance
+**Poor position accuracy:**
+- Calibrate camera if using new hardware
+- Ensure 3+ tags visible at all times
+- Check for motion blur (reduce exposure time)
+- Verify tag placement is level and secure
 
-ArduPilot requires a good velocity estimate from AprilMAV. This can be graphed via the xxx MAVLink messages.
+**Connection issues with ArduPilot:**
+- Check MAVLink connection string
+- Verify ArduPilot parameters are set correctly
+- Monitor MAVLink traffic with QGroundControl or Mission Planner
 
-In general, 10+ FPS is required for a stable calculation of the pose and velocity. Raising ``--decimation`` will increase the framerate, at the cost of lowering the maximum detection distance. It does not affect the accuracy of the tag pose estimate.
+## Advanced Usage
 
-``process_test.py`` can used in a static scence to confirm the detected distance is correct and the distance stability.
+### Custom Camera Calibration
 
-``geo_test.py`` can be used to output a csv file showing the postion and velocity values for analysis. This analysis is best when with an image capture set of the vehicle moving at a constant velocity in 1 direction.
+If using an unsupported camera:
 
-``geo_test.py`` will output the timing statistics for various stages of the pipeline. This is useful for performance tuning.
+1. Capture calibration images:
+```bash
+python capture_test.py --camera=GenericUSB --outputFolder=calibration_images
+```
 
-If the velocity numbers are too noisy, the following options will help:
-- Ensure the camera's focus is as sharp as possible for the typical Apriltag distances
-- Decrease exposure time as much as possible to reduce motion blur during sharp turns (<5ms preferred)
-- Decrease camera gain to reduce any noise in the images. Apriltags are capabile of being detected in quite low-light environments
-- A good camera calibration (if not using one of the supplied calibrations) is essential
-- Ensure at least 3 Apriltags are visible at all times
+2. Run calibration (show chessboard pattern to camera):
+```bash
+python cameracal.py --inputFolder=calibration_images
+```
 
-Use ``geo_test.py`` to tune the EKF arguments. In particular, there must be minimum lag between position and velocity reporting.
+3. Add results to `camera.yaml`
 
+### Performance Tuning
+
+**Speed up detection:**
+- Increase `--decimation` (reduces max detection distance)
+- Use `--cuda` on NVIDIA Jetson systems
+- Use `--tagEngine=JetsonPVA` on Jetson for hardware acceleration
+
+**Improve accuracy:**
+- Decrease `--maxError` to reject poor detections
+- Use `--extraOpt` for better position optimization (uses more CPU)
+- Tune EKF parameters: `--R`, `--Ppos`, `--PVel`, `--PAccel`
+
+### Development and Testing
+
+**Record datasets:**
+```bash
+python capture_test.py --outputFolder=dataset1
+python geo_test.py --inputFolder=dataset1 --camera=YourCamera
+```
+
+**Generate performance reports:**
+```bash
+python geo_test.py --camera=YourCamera --outFile=results.csv
+```
 In tuning the EKF, the following arguments should be set:
 - ``--R``: The noise in the measured position (m). Set higher to weight in favour of the measured position and velocity
 - ``--PVel``: Process uncertainty for velocity (m/s). The typical velocity of the vehicle

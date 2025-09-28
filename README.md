@@ -1,6 +1,6 @@
 # aprilmav - Indoor navigation via Apriltags over MAVLink
 
-AprilMAV provides accurate (cm-level) indoor navigation for MAVLink vehicles (ArduPilot, PX4) using AprilTags. This is a low-effective alternative to expensive indoor positioning systems.
+AprilMAV provides accurate (5cm-level) indoor navigation for MAVLink vehicles (ArduPilot, PX4) using AprilTags. This is a low-effective alternative to expensive indoor positioning systems.
 
 ## What You Need
 
@@ -109,15 +109,15 @@ For detailed camera setup, see the [Camera Compatibility](#camera-compatibility)
 ## Performance Requirements
 
 **System Requirements:**
-- Raspberry Pi 4 or 5, NVIDIA Jetson, or similar device.
+- Raspberry Pi 4 or 5, NVIDIA Jetson, laptop, or similar device.
 - Good lighting for rolling shutter cameras
 - Ubuntu or similar installed on device
 
 10+ FPS is required for smooth velocity estimation. This will be dependent
 of the camera resolution and the processing capacity of the device.
 
-In general, a Raspberry Pi5 can process a 2MPixel camera at 15FPS and
-a NVIDIA Orin NX can process a 8MPixel camera at 20 FPS.
+In general, a Raspberry Pi5 can process a 2MPixel camera at 20FPS and
+a NVIDIA Orin NX can process a 8MPixel camera at 15 FPS.
 
 ## Troubleshooting
 

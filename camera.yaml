@@ -193,7 +193,7 @@ Arducam_B0497:
   backlight: 1    # Ultra Low Light Mode: 1, Normal Mode: 0
   doEnhancement: False    # do extra denoising and sharpening. Optional
   cameraPath: "/dev/v4l/by-id/usb-Arducam_Arducam_B0497__USB3_8.3MP__Arducam_20231205_0001-video-index0"
-  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
+  rotationRelVehicle: !!python/tuple [90, 0, 90]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
 
 # Allied Vision Alvium 1800 U-811
@@ -209,5 +209,19 @@ AlliedVision1800:
   gain: 15     # dB
   doEnhancement: False    # do extra denoising and sharpening. Optional
   cameraName: "DEV_1AB22C0632B8"
+  rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
+  positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters
+  
+# Logitech C920 USB Camera
+LogitechC920:
+  cam_driver: "cameraGenericUSB"
+  resolution: !!python/tuple [1280, 720]
+  cam_params: !!python/tuple [958.5244672281616, 955.8133857084837, 671.6282231689531, 358.7530021005746]
+  fisheye: False
+  exposure: 100
+  fps: 10
+  gain: 100
+  backlight: 0
+  cameraPath: "/dev/video2"
   rotationRelVehicle: !!python/tuple [0, 0, 0]   #roll-pitch-yaw in degrees
   positionRelVehicle: !!python/tuple [0, 0, 0]   #fwd-right-down (NED) in meters

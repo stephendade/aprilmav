@@ -5,7 +5,7 @@ Camera Interfacing for a directory of images
 import os
 import time
 import cv2
-from .cameraBase import cameraBase
+from drivers.cameraBase import cameraBase
 
 
 class FileCamera(cameraBase):

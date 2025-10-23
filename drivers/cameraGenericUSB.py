@@ -4,7 +4,7 @@ Camera Interfacing for a generic USB Camera via OpenCV
 
 import time
 import cv2
-from .cameraBase import cameraBase
+from drivers.cameraBase import cameraBase
 
 
 class camera(cameraBase):

@@ -6,7 +6,7 @@ Camera Interfacing for Libcamera
 import time
 import cv2
 from picamera2 import Picamera2
-from .cameraBase import cameraBase
+from drivers.cameraBase import cameraBase
 
 
 class camera(cameraBase):

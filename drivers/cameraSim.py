@@ -5,7 +5,7 @@ Camera Interfacing for a simulated camera
 import time
 import numpy
 import cv2
-from .cameraBase import cameraBase
+from drivers.cameraBase import cameraBase
 
 
 class camera(cameraBase):

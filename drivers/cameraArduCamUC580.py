@@ -5,7 +5,7 @@ Camera Interfacing for the ArduCam UC-580 (OV9281 Global Shutter)
 import time
 import cv2
 from . import arducam_mipicamera as arducam
-from .cameraBase import cameraBase
+from drivers.cameraBase import cameraBase
 
 
 class camera(cameraBase):

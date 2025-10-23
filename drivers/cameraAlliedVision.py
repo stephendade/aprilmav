@@ -12,7 +12,7 @@ import copy
 import cv2
 from vmbpy import VmbSystem, Camera, Stream, Frame, FrameStatus, PixelFormat, VmbFeatureError
 
-from .cameraBase import cameraBase
+from drivers.cameraBase import cameraBase
 
 
 # Handler for the camera stream

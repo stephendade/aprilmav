@@ -7,7 +7,7 @@ import numpy
 import cv2
 
 from picamera import PiCamera
-from .cameraBase import cameraBase
+from drivers.cameraBase import cameraBase
 
 
 class camera(cameraBase):

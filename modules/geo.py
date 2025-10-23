@@ -20,7 +20,7 @@ def isclose(x, y, rtol=1.e-5, atol=1.e-8):
 
 def mag(x):
     '''Return magnitude of vector'''
-    return math.sqrt(sum(i**2 for i in x))
+    return numpy.sqrt(numpy.sum(numpy.array(x)**2))
 
 
 class tagDB:

@@ -2,6 +2,8 @@
 
 AprilMAV provides accurate (5cm-level) indoor navigation for MAVLink vehicles (ArduPilot, PX4) using AprilTags. This is a low-effective alternative to expensive indoor positioning systems.
 
+A YouTube video explaing how AprilMAV works is available from https://youtu.be/JC1D4SzYrkI.
+
 ## What You Need
 
 **Hardware:**
